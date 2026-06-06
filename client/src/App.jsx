@@ -10,6 +10,7 @@ import Sleep from './pages/Sleep';
 import Chat from './pages/Chat';
 import CalmMode from './pages/CalmMode';
 import VoiceChat from './pages/VoiceChat';
+import Patterns from './pages/Patterns';
 import HomeButton from './components/HomeButton';
 import './styles/global.css';
 
@@ -42,6 +43,7 @@ function AppContent() {
       <Route path="/sleep" element={<Sleep />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/voice" element={<VoiceChat />} />
+      <Route path="/patterns" element={<Patterns />} />
       <Route path="/calm" element={<CalmMode />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

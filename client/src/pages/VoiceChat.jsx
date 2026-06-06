@@ -75,7 +75,7 @@ export default function VoiceChat() {
     setResponse('');
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 

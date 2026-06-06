@@ -22,6 +22,10 @@ const moodPatternSchema = new mongoose.Schema({
     sleepLogs: { type: Number, default: 0 },
     journalEntries: { type: Number, default: 0 },
     chatSessions: { type: Number, default: 0 }
+  },
+  aiInsight: {
+    headline: { type: String },
+    summary: { type: String }
   }
 }, { timestamps: true });
 

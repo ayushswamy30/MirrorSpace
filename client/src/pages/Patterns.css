@@ -1,0 +1,157 @@
+/* ═══════════════════════════════════════════════
+   Patterns / Predictions UI
+   ═══════════════════════════════════════════════ */
+
+.patterns-page {
+  position: relative;
+  z-index: 1;
+}
+
+.patterns-header {
+  padding-top: calc(var(--space-xl) + 50px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-2xl);
+}
+
+.patterns-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+}
+
+.patterns-hint {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+/* ─── Main Content ─── */
+.patterns-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.patterns-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 40px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+}
+
+/* ─── Scanner Animation ─── */
+.patterns-scanning {
+  width: 100%;
+  max-width: 200px;
+  height: 2px;
+  background: rgba(196, 181, 160, 0.1);
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.scanner-line {
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent-reflect), transparent);
+  animation: scan 1.5s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+/* ─── Dashboard ─── */
+.patterns-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+}
+
+.pattern-insight-card {
+  text-align: center;
+  padding: var(--space-xl);
+  background: rgba(196, 181, 160, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.pattern-headline {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  line-height: 1.4;
+}
+
+.pattern-summary {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ─── Meters ─── */
+.pattern-meters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.meter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meter-label {
+  font-size: 0.7rem;
+  color: var(--text-ghost);
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+}
+
+.meter-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.meter-value {
+  align-self: flex-end;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* ─── Sources ─── */
+.pattern-sources {
+  font-size: 0.65rem;
+  color: var(--text-ghost);
+  text-align: center;
+  opacity: 0.6;
+}
+
+.update-prediction-btn {
+  align-self: center;
+  font-size: 0.75rem;
+}

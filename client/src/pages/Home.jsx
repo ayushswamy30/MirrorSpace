@@ -41,6 +41,7 @@ export default function Home() {
     { id: 'sleep', label: 'Sleep', desc: 'log last night', path: '/sleep' },
     { id: 'chat', label: 'Talk to Mirror', desc: 'a quiet conversation', path: '/chat' },
     { id: 'voice', label: 'Voice Mirror', desc: 'speak your mind', path: '/voice' },
+    { id: 'patterns', label: 'Prediction Center', desc: 'view my patterns', path: '/patterns', accent: 'full-width' },
     { id: 'calm', label: 'I feel anxious', desc: null, path: '/calm', accent: 'calm' }
   ];
 

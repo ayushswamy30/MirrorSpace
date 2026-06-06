@@ -97,6 +97,13 @@
   background: var(--bg-elevated);
 }
 
+.module-card.full-width {
+  grid-column: 1 / -1;
+  text-align: center;
+  min-height: auto;
+  padding: var(--space-md) var(--space-lg);
+}
+
 .module-card.calm {
   grid-column: 1 / -1;
   text-align: center;

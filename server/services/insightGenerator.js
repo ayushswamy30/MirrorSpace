@@ -6,7 +6,7 @@ import OpenAI from 'openai';
 /**
  * Generate AI response using Groq (primary) or OpenAI (fallback)
  */
-async function generateAIResponse(systemPrompt, userPrompt) {
+export async function generateAIResponse(systemPrompt, userPrompt) {
   // Try Groq first (free, fastest)
   if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your_groq_api_key_here') {
     try {
