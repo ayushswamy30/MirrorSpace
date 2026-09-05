@@ -1,6 +1,7 @@
-import Insight from '../models/Insight.js';
 import { getUserContext } from './patternEngine.js';
 import { PERSONALITY_PROMPT, DAILY_INSIGHT_PROMPT } from '../prompts/personality.js';
+import * as insights from '../db/insights.js';
+import { config } from '../config/env.js';
 import OpenAI from 'openai';
 
 /**
@@ -8,10 +9,10 @@ import OpenAI from 'openai';
  */
 export async function generateAIResponse(systemPrompt, userPrompt) {
   // Try Groq first (free, fastest)
-  if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your_groq_api_key_here') {
+  if (config.ai.groqApiKey) {
     try {
       const groq = new OpenAI({
-        apiKey: process.env.GROQ_API_KEY,
+        apiKey: config.ai.groqApiKey,
         baseURL: 'https://api.groq.com/openai/v1'
       });
       const completion = await groq.chat.completions.create({
@@ -30,9 +31,9 @@ export async function generateAIResponse(systemPrompt, userPrompt) {
   }
 
   // Try OpenAI
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+  if (config.ai.openaiApiKey) {
     try {
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const openai = new OpenAI({ apiKey: config.ai.openaiApiKey });
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -96,17 +97,7 @@ export async function generateDailyInsight(userId) {
     if (context.recentPatterns.journalEntries > 0) basedOn.push('journal');
     if (context.recentPatterns.chatSessions > 0) basedOn.push('chat');
 
-    const insight = await Insight.create({
-      userId,
-      type: 'daily',
-      headline,
-      subtext,
-      basedOn,
-      date: new Date(),
-      seen: false
-    });
-
-    return insight;
+    return insights.create(userId, { type: 'daily', headline, subtext, basedOn });
   } catch (error) {
     console.error('Daily insight generation error:', error);
     return null;
@@ -143,17 +134,12 @@ export async function generateWeeklyInsight(userId) {
       subtext = "Patterns noticed across your rhythms.";
     }
 
-    const insight = await Insight.create({
-      userId,
+    return insights.create(userId, {
       type: 'weekly',
       headline,
       subtext,
-      basedOn: ['sleep', 'journal', 'activity'],
-      date: new Date(),
-      seen: false
+      basedOn: ['sleep', 'journal', 'activity']
     });
-
-    return insight;
   } catch (error) {
     console.error('Weekly insight generation error:', error);
     return null;

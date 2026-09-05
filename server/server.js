@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import connectDB from './config/db.js';
+
+import { config, isProduction } from './config/env.js';
+import { verifyConnection } from './config/health.js';
 
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
@@ -12,17 +13,23 @@ import chatRoutes from './routes/chat.js';
 import calmRoutes from './routes/calm.js';
 import patternRoutes from './routes/patterns.js';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// Behind a platform proxy (Render, Railway, Fly) so req.ip is the real client.
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
 
-// Connect to MongoDB
-connectDB();
+app.use(cors({
+  origin(origin, callback) {
+    // Non-browser callers (curl, health checks) send no Origin.
+    if (!origin) return callback(null, true);
+    if (config.corsOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`Origin not allowed: ${origin}`));
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '1mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -34,20 +41,48 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/calm', calmRoutes);
 app.use('/api/patterns', patternRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'MirrorSpace is breathing', timestamp: new Date() });
-});
+// Health check — reports whether Supabase is actually reachable.
+app.get('/api/health', async (req, res) => {
+  const database = await verifyConnection();
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went quietly wrong',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  res.status(database.ok ? 200 : 503).json({
+    status: database.ok ? 'MirrorSpace is breathing' : 'MirrorSpace is holding its breath',
+    database,
+    timestamp: new Date().toISOString()
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🪞 MirrorSpace server listening on port ${PORT}`);
+app.use((req, res) => {
+  res.status(404).json({ message: 'Nothing lives at this address' });
 });
+
+// Error handling middleware
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: 'Something went quietly wrong',
+    error: isProduction ? undefined : err.message
+  });
+});
+
+const server = app.listen(config.port, async () => {
+  console.log(`🪞 MirrorSpace server listening on port ${config.port}`);
+
+  const database = await verifyConnection();
+  if (database.ok) {
+    console.log(`   Supabase connected: ${config.supabase.url}`);
+  } else {
+    console.error(`   Supabase unreachable: ${database.error}`);
+  }
+});
+
+// Let the platform's rolling deploy drain in-flight requests.
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    console.log(`${signal} received, closing server`);
+    server.close(() => process.exit(0));
+  });
+}
+
+export default app;

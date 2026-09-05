@@ -1,14 +1,15 @@
 import OpenAI from 'openai';
 import { PERSONALITY_PROMPT, CHATBOT_PROMPT, VENT_REFLECTION_PROMPT } from '../prompts/personality.js';
+import { config } from '../config/env.js';
 
 // Initialize AI clients — Groq first (fastest + most generous free tier), then Gemini, then OpenAI
 let groqClient = null;
 let openaiClient = null;
 
 function initGroq() {
-  if (!groqClient && process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your_groq_api_key_here') {
+  if (!groqClient && config.ai.groqApiKey) {
     groqClient = new OpenAI({
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: config.ai.groqApiKey,
       baseURL: 'https://api.groq.com/openai/v1'
     });
   }
@@ -16,8 +17,8 @@ function initGroq() {
 }
 
 function initOpenAI() {
-  if (!openaiClient && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
-    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!openaiClient && config.ai.openaiApiKey) {
+    openaiClient = new OpenAI({ apiKey: config.ai.openaiApiKey });
   }
   return openaiClient;
 }
