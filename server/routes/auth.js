@@ -1,33 +1,34 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-import User from '../models/User.js';
+import { randomUUID } from 'node:crypto';
+import { config } from '../config/env.js';
+import * as users from '../db/users.js';
 
 const router = express.Router();
 
-// POST /api/auth/init — Initialize anonymous user (local-first)
-router.post('/init', async (req, res) => {
-  try {
-    const { localId } = req.body;
-    const id = localId || uuidv4();
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    // Find or create user atomically
-    const user = await User.findOneAndUpdate(
-      { localId: id },
-      { $setOnInsert: { localId: id } },
-      { upsert: true, new: true }
-    );
+// POST /api/auth/init — Initialize anonymous user (local-first)
+router.post('/init', async (req, res, next) => {
+  try {
+    const { localId } = req.body ?? {};
+
+    // A client-supplied localId is an identity claim, so only accept the UUID
+    // shape the app generates. Anything else gets a fresh one.
+    const id = typeof localId === 'string' && UUID_PATTERN.test(localId) ? localId : randomUUID();
+
+    const user = await users.findOrCreateByLocalId(id);
 
     const token = jwt.sign(
-      { userId: user._id, localId: user.localId },
-      process.env.JWT_SECRET,
-      { expiresIn: '365d' }
+      { userId: user.id, localId: user.localId },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
     );
 
     res.status(200).json({
       token,
       user: {
-        id: user._id,
+        id: user.id,
         localId: user.localId,
         onboardingComplete: user.onboardingComplete,
         intents: user.intents,
@@ -35,8 +36,7 @@ router.post('/init', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Auth init error:', error);
-    res.status(500).json({ message: 'Could not initialize' });
+    next(error);
   }
 });
 

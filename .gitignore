@@ -1,6 +1,14 @@
 node_modules/
-.env
 dist/
 build/
 .DS_Store
 *.log
+
+# Secrets — .env.example files are the versioned templates
+.env
+.env.*
+!.env.example
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/

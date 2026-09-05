@@ -1,1 +1,27 @@
-{"name":"mirrorspace-server","version":"1.0.0","description":"MirrorSpace Backend","main":"server.js","type":"module","scripts":{"dev":"nodemon server.js","start":"node server.js"},"dependencies":{"@google/generative-ai":"^0.24.1","bcryptjs":"^3.0.3","cors":"^2.8.6","dotenv":"^17.3.1","express":"^5.2.1","jsonwebtoken":"^9.0.3","mongoose":"^9.3.0","natural":"^8.1.1","nodemon":"^3.1.14","openai":"^6.27.0","sentiment":"^5.0.2","uuid":"^13.0.0"}}
+{
+  "name": "mirrorspace-server",
+  "version": "1.0.0",
+  "description": "MirrorSpace Backend — Express + Supabase",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test:e2e": "node test/api.e2e.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "openai": "^6.27.0",
+    "sentiment": "^5.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
