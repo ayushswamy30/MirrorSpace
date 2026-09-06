@@ -168,6 +168,48 @@ export function UserProvider({ children }) {
     if (error) throw error;
   };
 
+  /**
+   * Download everything this account holds. The file is built in the browser
+   * from the API's response rather than linked to directly, because the
+   * endpoint needs an Authorization header that a plain <a href> cannot send.
+   */
+  const exportData = async () => {
+    const { data } = await api.get('/user/export');
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `mirrorspace-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    return data;
+  };
+
+  /**
+   * Erase the account. The API deletes the Supabase Auth identity, which
+   * cascades through every table, so by the time this returns the current
+   * session points at a user that no longer exists — hence the local sign-out
+   * and reload into a fresh anonymous space.
+   */
+  const deleteAccount = async () => {
+    await api.delete('/user');
+
+    // The token now references a deleted user, so the server-side sign-out
+    // can legitimately fail. Clearing the local session is what matters.
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.warn('Sign-out after deletion:', error);
+    }
+
+    setUser(null);
+    setSession(null);
+  };
+
   const value = {
     user,
     session,
@@ -182,7 +224,9 @@ export function UserProvider({ children }) {
     linkGoogle,
     signInWithEmail,
     signInWithGoogle,
-    signOut
+    signOut,
+    exportData,
+    deleteAccount
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

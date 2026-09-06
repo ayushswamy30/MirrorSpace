@@ -42,10 +42,32 @@ Tables: `users`, `sleep_logs`, `journal_entries`, `insights`,
 Deleting a user cascades to all of their rows, and `public.users.auth_user_id`
 cascades from `auth.users` — so deleting the auth identity erases everything.
 
-### How authorisation works
+## Privacy
+
+Two things every account can do, anonymous ones included — an anonymous space
+still holds real writing, and its owner is still entitled to take it or
+destroy it:
+
+- **Export** (`GET /api/user/export`) returns everything as one JSON file:
+  entries, sleep logs, whole conversations, generated insights, *and* the
+  sentiment analysis the app never surfaces in the UI. An export that hid the
+  inferences would be a worse answer to "what do you know about me" than
+  saying nothing.
+- **Erase** (`DELETE /api/user`) deletes the Supabase Auth identity. Because
+  `public.users` cascades from `auth.users` and every other table cascades
+  from `public.users`, that one delete removes everything, with nothing
+  orphaned. The UI requires typing `delete everything` first; there is no
+  undo.
+
+Both are capped at 5 requests an hour.
+
+## How authorisation works
 
 Three layers, deliberately:
 
+0. **Security headers.** `helmet` sets HSTS (production only), `nosniff`,
+   `no-referrer`, and a content policy of `default-src 'none'` — this process
+   only ever answers JSON, so nothing needs to be allowed.
 1. **The API verifies every token itself.** Supabase Auth signs access tokens;
    the API verifies them locally against the project's JWKS (asymmetric keys)
    or the legacy HMAC secret, checking issuer, audience, expiry and role. No
@@ -74,9 +96,12 @@ supabase link --project-ref YOUR-PROJECT-REF
 supabase db push
 ```
 
-or by pasting `supabase/migrations/0001_init.sql` and then `0002_auth.sql`
-into the SQL editor in Supabase Studio. Both are idempotent, so re-running
-them is safe.
+or by pasting `0001_init.sql`, `0002_auth.sql` and `0003_harden_functions.sql`
+from `supabase/migrations/` into the SQL editor in Supabase Studio, in that
+order. All three are idempotent, so re-running them is safe.
+
+Afterwards, Supabase's own database linter (Advisors → Security in the
+dashboard) should report nothing; `0003` exists to keep it that way.
 
 Do **not** run anything from `supabase/tests/` against a real project — that
 directory recreates parts of the hosted `auth` schema for local testing.
@@ -176,6 +201,8 @@ setup.
 | Method | Path | Notes |
 | --- | --- | --- |
 | `GET` | `/api/user/profile` | Provisions the app user on first call |
+| `GET` | `/api/user/export` | Everything this account holds, as JSON |
+| `DELETE` | `/api/user` | Erases the account and all of it, permanently |
 | `PUT` | `/api/user/onboarding` | Intents + permissions |
 | `POST` | `/api/sleep` | One log per night; re-posting a date corrects it |
 | `GET` | `/api/sleep?range=week\|month\|year\|all` | Oldest first, for the chart |
@@ -196,14 +223,17 @@ where the token is a Supabase Auth access token. There is no sign-in endpoint
 here — Supabase Auth issues sessions, and this API only verifies them.
 
 Rate limits: 300 requests / 15 min per IP across the API, then per-user
-ceilings on the paths that cost money — 60 chat messages / 15 min, 10
-predictions / hour, 120 writes / 15 min.
+ceilings on the paths that cost money or cannot be undone — 60 chat messages /
+15 min, 10 predictions / hour, 120 writes / 15 min, 5 export-or-delete /
+hour.
 
 ## Where this is going
 
 Done: Supabase Postgres, schema and migrations, Supabase Auth with
 anonymous-first accounts, local JWT verification with key rotation, per-user
-RLS policies, per-user rate limiting, validated config, CORS allowlist.
+RLS policies, per-user rate limiting, security headers, data export and
+account erasure, validated config, CORS allowlist.
 
-Next: security headers and a CSP, an export-my-data and delete-my-account
-flow (the cascade is already in place for it), and deployment.
+Next: deployment — the front end as a static build with its own CSP, the API
+wherever it can hold a service-role key, and the production origins added to
+`CORS_ORIGINS` and Supabase's redirect allowlist.

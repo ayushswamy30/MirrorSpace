@@ -27,6 +27,10 @@
   --accent-reflect-dim: rgba(158, 143, 181, 0.15);
   --accent-warm: #b8956a;
 
+  /* Used by the prediction meters and the destructive actions on /account.
+     Referenced before it existed, which left high-risk meters colourless. */
+  --text-error: #9e6b6b;
+
   /* ─── Borders ─── */
   --border-subtle: #1f1f24;
   --border-glow: rgba(196, 181, 160, 0.1);

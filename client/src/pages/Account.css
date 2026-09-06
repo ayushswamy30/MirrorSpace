@@ -166,3 +166,78 @@
   color: var(--text-ghost);
   line-height: 1.7;
 }
+
+/* Your data — export and erasure */
+
+.account-data {
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.account-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-lg);
+}
+
+.account-data-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-md) 0;
+}
+
+.account-data-row + .account-data-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.account-data-label {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  margin: 0 0 var(--space-xs);
+}
+
+.account-data-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 34ch;
+}
+
+.account-data-row button { flex-shrink: 0; }
+
+.account-danger-btn { color: var(--text-error); }
+.account-danger-btn:hover:not(:disabled) { color: #b87d7d; }
+.account-danger-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.account-confirm {
+  margin-top: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--bg-surface);
+  border: 1px solid rgba(158, 107, 107, 0.25);
+  border-radius: var(--radius-md);
+}
+
+.account-confirm-note {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-md);
+  line-height: 1.7;
+}
+
+.account-confirm-note strong {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.account-confirm-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}

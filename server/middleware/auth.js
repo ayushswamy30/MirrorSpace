@@ -1,4 +1,5 @@
-import { verifyAccessToken, AuthError } from '../config/supabaseAuth.js';
+import { verifyAccessToken } from '../config/supabaseAuth.js';
+import { AuthError } from '../lib/errors.js';
 import * as users from '../db/users.js';
 
 /**
