@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, decodeProtectedHeader } from 'jose';
 import { config } from './env.js';
+import { AuthError } from '../lib/errors.js';
 
 /**
  * Verification of Supabase Auth access tokens.
@@ -28,13 +29,6 @@ const VERIFY_OPTIONS = {
   issuer: config.supabase.issuer,
   audience: 'authenticated'
 };
-
-export class AuthError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
 
 /**
  * @returns {Promise<{ authUserId: string, email: string|null, isAnonymous: boolean }>}

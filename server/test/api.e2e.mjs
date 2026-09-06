@@ -164,6 +164,43 @@ check('dataPoints reflect real rows', pred.json.dataPoints.sleepLogs === 3 && pr
 const plist = await call('GET', '/patterns', { token });
 check('GET /patterns lists newest first', Array.isArray(plist.json) && plist.json[0]?.id === pred.json.id);
 
+console.log('\n== export my data ==');
+const exportRes = await fetch(`${BASE}/user/export`, { headers: { authorization: `Bearer ${token}` } });
+const exported = await exportRes.json();
+check('GET /user/export succeeds', exportRes.status === 200);
+check('offers itself as a download', /attachment; filename=/.test(exportRes.headers.get('content-disposition') || ''),
+  String(exportRes.headers.get('content-disposition')));
+check('is not cacheable', (exportRes.headers.get('cache-control') || '').includes('no-store'),
+  String(exportRes.headers.get('cache-control')));
+check('carries every section', ['account', 'sleepLogs', 'journalEntries', 'insights', 'chatSessions', 'moodPatterns', 'calmTriggers']
+  .every(k => k in exported), Object.keys(exported).join(','));
+check('includes the actual journal text', exported.journalEntries.some(e => e.content.includes('tired today')),
+  JSON.stringify(exported.journalEntries.map(e => e.content.slice(0, 20))));
+check('includes the analysis the UI never shows', exported.journalEntries.every(e => 'sentiment' in e && 'patterns' in e));
+check('includes whole conversations', exported.chatSessions[0]?.messages?.length === 4,
+  String(exported.chatSessions[0]?.messages?.length));
+check('counts match what was written', exported.sleepLogs.length === 3 && exported.journalEntries.length === 2,
+  `${exported.sleepLogs.length} sleep, ${exported.journalEntries.length} journals`);
+
+const otherExport = await (await fetch(`${BASE}/user/export`, { headers: { authorization: `Bearer ${otherToken}` } })).json();
+check('another account exports nothing of ours',
+  otherExport.journalEntries.length === 0 && otherExport.sleepLogs.length === 0,
+  JSON.stringify({ j: otherExport.journalEntries.length, s: otherExport.sleepLogs.length }));
+
+console.log('\n== delete my account ==');
+// A throwaway account, so the assertions above keep their data.
+const doomedToken = await newSession();
+await call('POST', '/journal', { token: doomedToken, body: { content: 'this should not survive' } });
+check('throwaway account has an entry', (await call('GET', '/journal', { token: doomedToken })).json.total === 1);
+
+const del = await call('DELETE', '/user', { token: doomedToken });
+check('DELETE /user succeeds', del.status === 200 && del.json.deleted === true, JSON.stringify(del.json));
+
+const afterDelete = await call('GET', '/user/profile', { token: doomedToken });
+check('the token no longer authenticates', afterDelete.status === 401, `got ${afterDelete.status}`);
+check('the survivor account is untouched',
+  (await call('GET', '/journal', { token })).json.total === 2);
+
 console.log('\n== misc ==');
 check('unknown route 404s', (await call('GET', '/nope')).status === 404);
 

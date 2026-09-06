@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 
 import { config, isProduction } from './config/env.js';
 import { verifyConnection } from './config/health.js';
@@ -18,6 +19,32 @@ const app = express();
 // Behind a platform proxy (Render, Railway, Fly) so req.ip is the real client.
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+
+// Security headers. This process only ever answers JSON, so the directives
+// that matter are the ones that stop a browser from treating a response as
+// something it is not, or from embedding the API in someone else's page.
+app.use(helmet({
+  // Nothing here is a document, so lock the whole content policy down rather
+  // than enumerating sources. The front end is served separately and carries
+  // its own policy.
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      'default-src': ["'none'"],
+      'frame-ancestors': ["'none'"],
+      'base-uri': ["'none'"],
+      'form-action': ["'none'"]
+    }
+  },
+  // Journals are the content here. Keep referrers off entirely.
+  referrerPolicy: { policy: 'no-referrer' },
+  hsts: isProduction
+    ? { maxAge: 15552000, includeSubDomains: true, preload: false }
+    : false,
+  // Lets the front end on another origin read responses; without it the
+  // default same-origin policy blocks the browser from doing so.
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 app.use(cors({
   origin(origin, callback) {

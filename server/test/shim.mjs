@@ -8,13 +8,16 @@
 //   /auth/v1/signup                 -> anonymous sign-in (a GoTrue subset)
 //   /auth/v1/token                  -> refresh
 //   /auth/v1/user, /auth/v1/logout
+//   /auth/v1/admin/users/:id        -> delete (what account erasure calls)
 //
 // The private half of the keypair is written to a keys file so the test suites
 // can sign tokens exactly as Supabase Auth would. See ./README.md for how to
 // bring the whole stack up.
 //
-// Run it with node_modules on the path, e.g. from the server directory:
-//   KEYS_OUT=keys.json node ../supabase/tests/shim.mjs
+// It lives here rather than in supabase/tests/ because Node resolves imports
+// from the file's own location: `jose` is in server/node_modules.
+//
+//   cd server && KEYS_OUT=keys.json PSQL="psql -d mirrorspace" node test/shim.mjs
 import http from 'node:http';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -126,6 +129,19 @@ async function handleAuth(req, res, body) {
 
   if (url.pathname === '/auth/v1/logout' && req.method === 'POST') {
     res.writeHead(204); return res.end();
+  }
+
+  // supabase.auth.admin.deleteUser(). Removing the auth.users row is what
+  // triggers the cascade through public.users to everything else.
+  const adminDelete = url.pathname.match(/^\/auth\/v1\/admin\/users\/([0-9a-f-]{36})$/i);
+  if (adminDelete && req.method === 'DELETE') {
+    try {
+      execFileSync('bash', ['-c',
+        `${PSQL} -q -c "delete from auth.users where id = '${adminDelete[1]}';"`]);
+      return json(res, 200, {});
+    } catch (err) {
+      return json(res, 500, { message: err.message });
+    }
   }
 
   return json(res, 404, { message: `shim: unimplemented auth route ${url.pathname}` });

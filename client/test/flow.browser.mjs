@@ -16,6 +16,8 @@ import { chromium } from 'playwright';
 const PREVIEW = process.env.PREVIEW_URL || 'http://127.0.0.1:4173';
 const API = process.env.API_URL || 'http://127.0.0.1:5055/api';
 const CHROME = process.env.CHROMIUM_PATH || undefined;
+// Set SHOT_DIR to capture a screenshot at each step.
+const SHOTS = process.env.SHOT_DIR || null;
 
 const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
 const page = await (await browser.newContext()).newPage();
@@ -32,6 +34,15 @@ const check = (name, ok, detail = '') => {
 };
 const text = () => page.locator('body').innerText().then(t => t.trim());
 
+let shotNo = 0;
+const shot = async (name) => {
+  if (!SHOTS) return;
+  shotNo += 1;
+  const file = `${SHOTS}/${String(shotNo).padStart(2, '0')}-${name}.png`;
+  await page.screenshot({ path: file, fullPage: true });
+  console.log(`        ↳ ${file}`);
+};
+
 /** Call the API as the browser's current user. */
 const asUser = (path) => page.evaluate(async ({ api, path }) => {
   const key = Object.keys(localStorage).find(k => k.includes('auth-token'));
@@ -45,6 +56,7 @@ await page.goto(PREVIEW);
 await page.waitForTimeout(2500);
 check('the app renders at all', (await page.locator('#root').innerHTML()).length > 0);
 check('a brand-new visitor gets onboarding, not a sign-in wall', (await text()).includes("doesn't ask"));
+await shot('first-run-anonymous-session');
 check('an anonymous session was stored', await page.evaluate(() => {
   const k = Object.keys(localStorage).find(k => k.includes('auth-token'));
   return k ? Boolean(JSON.parse(localStorage.getItem(k))?.access_token) : false;
@@ -52,11 +64,16 @@ check('an anonymous session was stored', await page.evaluate(() => {
 
 console.log('\n== onboarding ==');
 await page.getByRole('button', { name: 'Continue' }).click();
+await page.waitForTimeout(600);
+await shot('onboarding-intents');
 await page.getByRole('button', { name: 'Sleep better' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
+await page.waitForTimeout(600);
+await shot('onboarding-permissions');
 await page.locator('.permission-label').first().click();
 await page.locator('.onboarding-btn').last().click();
 await page.waitForTimeout(2500);
+await shot('home-anonymous');
 
 check('lands on Home', (await text()).includes('Vent It Out'));
 check('Home offers to save the anonymous space', (await text()).includes('save it'));
@@ -74,10 +91,12 @@ check('offers the upgrade path', account.includes('Save your space'), account.sl
 check('offers a magic link', account.includes('send me a link'));
 check('offers Google', account.includes('continue with Google'));
 check('says plainly what anonymous means', account.toLowerCase().includes('only in this browser'));
+await shot('account-save-your-space');
 
 await page.getByRole('button', { name: /I already have a space/ }).click();
 await page.waitForTimeout(300);
 check('switches to restore mode', (await text()).includes('Find your space'));
+await shot('account-find-your-space');
 
 console.log('\n== email handling ==');
 await page.fill('#account-email', 'not-an-email');
@@ -106,6 +125,42 @@ await page.getByRole('button', { name: /release|save|let it go|done/i }).first()
 await page.waitForTimeout(2000);
 check('the entry reached the database under this account',
   (await asUser('/journal')).total === 1);
+await shot('vent-saved');
+
+console.log('\n== export my data ==');
+await page.goto(`${PREVIEW}/account`);
+await page.waitForTimeout(1500);
+await shot('account-your-data');
+
+const exported = await page.evaluate(async ({ api }) => {
+  const key = Object.keys(localStorage).find(k => k.includes('auth-token'));
+  const token = JSON.parse(localStorage.getItem(key)).access_token;
+  const res = await fetch(api + '/user/export', { headers: { authorization: `Bearer ${token}` } });
+  return res.json();
+}, { api: API });
+check('the export carries the entry just written',
+  exported.journalEntries?.some(e => e.content.includes('written anonymously')),
+  JSON.stringify(exported.journalEntries?.map(e => e.content.slice(0, 24))));
+check('the export includes the analysis the UI never shows',
+  Boolean(exported.journalEntries?.[0]?.sentiment));
+
+console.log('\n== delete my account ==');
+await page.getByRole('button', { name: 'delete' }).click();
+await page.waitForTimeout(400);
+check('deletion asks for a typed confirmation', (await text()).includes('to confirm'));
+await shot('account-delete-confirm');
+
+const eraseBtn = page.getByRole('button', { name: 'erase permanently' });
+check('erase stays disabled until the phrase matches', await eraseBtn.isDisabled());
+await page.fill('.account-confirm input', 'delete everything');
+await page.waitForTimeout(200);
+check('erase enables on the exact phrase', !(await eraseBtn.isDisabled()));
+await eraseBtn.click();
+await page.waitForTimeout(3000);
+await shot('after-deletion-fresh-space');
+check('lands back in a fresh space after erasure',
+  (await text()).includes("doesn't ask") || (await text()).includes('Vent It Out'),
+  (await text()).slice(0, 150));
 
 console.log('\n== a separate browser profile is a separate user ==');
 const other = await (await browser.newContext()).newPage();

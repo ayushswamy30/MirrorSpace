@@ -158,7 +158,7 @@ check('sees none of the first user\'s sleep logs',
 // the foreign key is the last line of defence if a token is ever forged.
 const ghost = await mint({ sub: randomUUID() });
 const ghostRes = await call('GET', '/user/profile', { token: ghost });
-check('token for a non-existent auth user cannot provision', ghostRes.status >= 400,
+check('token for a non-existent auth user is rejected as unauthorised', ghostRes.status === 401,
   `got ${ghostRes.status} ${JSON.stringify(ghostRes.json)}`);
 
 console.log('\n== JWKS key rotation ==');

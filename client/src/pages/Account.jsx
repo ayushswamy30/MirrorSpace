@@ -5,9 +5,124 @@ import { useUser } from '../context/useUser';
 import './Account.css';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DELETE_PHRASE = 'delete everything';
+
+/**
+ * Export and erasure. Shown to anonymous and permanent accounts alike — an
+ * anonymous space still holds real writing, and its owner is still entitled
+ * to take it with them or destroy it.
+ */
+function DataSection({ exportData, deleteAccount, onDeleted }) {
+  const [busy, setBusy] = useState(null);      // 'exporting' | 'deleting'
+  const [exported, setExported] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [phrase, setPhrase] = useState('');
+  const [error, setError] = useState(null);
+
+  const download = async () => {
+    setBusy('exporting');
+    setError(null);
+    try {
+      await exportData();
+      setExported(true);
+    } catch {
+      setError('The export did not come through. Try again in a moment.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const erase = async () => {
+    setBusy('deleting');
+    setError(null);
+    try {
+      await deleteAccount();
+      onDeleted();
+    } catch {
+      setError('Deletion did not go through. Nothing was removed.');
+      setBusy(null);
+    }
+  };
+
+  return (
+    <section className="account-data">
+      <h3 className="account-section-title">Your data</h3>
+
+      <div className="account-data-row">
+        <div>
+          <p className="account-data-label">Take it with you</p>
+          <p className="mono account-data-desc">
+            Every entry, every conversation, and what was inferred from them —
+            as one JSON file.
+          </p>
+        </div>
+        <button className="btn-ghost" onClick={download} disabled={busy !== null}>
+          {busy === 'exporting' ? 'gathering...' : exported ? 'downloaded' : 'download'}
+        </button>
+      </div>
+
+      <div className="account-data-row account-data-danger">
+        <div>
+          <p className="account-data-label">Erase everything</p>
+          <p className="mono account-data-desc">
+            Deletes this account and all of it, permanently. There is no undo
+            and no copy kept.
+          </p>
+        </div>
+        {!confirming && (
+          <button
+            className="btn-ghost account-danger-btn"
+            onClick={() => setConfirming(true)}
+            disabled={busy !== null}
+          >
+            delete
+          </button>
+        )}
+      </div>
+
+      {confirming && (
+        <div className="account-confirm">
+          <p className="mono account-confirm-note">
+            Type <strong>{DELETE_PHRASE}</strong> to confirm.
+          </p>
+          <input
+            className="account-input"
+            value={phrase}
+            onChange={(e) => setPhrase(e.target.value)}
+            placeholder={DELETE_PHRASE}
+            aria-label={`Type ${DELETE_PHRASE} to confirm`}
+            disabled={busy === 'deleting'}
+          />
+          <div className="account-confirm-actions">
+            <button
+              className="btn-ghost"
+              onClick={() => { setConfirming(false); setPhrase(''); }}
+              disabled={busy === 'deleting'}
+            >
+              keep it
+            </button>
+            <button
+              className="btn-ghost account-danger-btn"
+              onClick={erase}
+              disabled={phrase.trim() !== DELETE_PHRASE || busy === 'deleting'}
+            >
+              {busy === 'deleting' ? 'erasing...' : 'erase permanently'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mono account-error">{error}</p>}
+    </section>
+  );
+}
 
 export default function Account() {
-  const { isAnonymous, email, linkEmail, linkGoogle, signInWithEmail, signInWithGoogle, signOut } = useUser();
+  const {
+    isAnonymous, email, linkEmail, linkGoogle,
+    signInWithEmail, signInWithGoogle, signOut,
+    exportData, deleteAccount
+  } = useUser();
   const navigate = useNavigate();
 
   // 'save' attaches an identity to the space you are already in.
@@ -70,6 +185,12 @@ export default function Account() {
               Your entries follow you to any device you open this on.
             </p>
           </div>
+
+          <DataSection
+            exportData={exportData}
+            deleteAccount={deleteAccount}
+            onDeleted={() => navigate('/', { replace: true })}
+          />
 
           <div className="account-actions">
             <button className="btn-ghost" onClick={() => navigate('/')}>go back</button>
@@ -175,6 +296,12 @@ export default function Account() {
           </button>
           <button className="account-link" onClick={() => navigate('/')}>not now</button>
         </div>
+
+        <DataSection
+          exportData={exportData}
+          deleteAccount={deleteAccount}
+          onDeleted={() => navigate('/', { replace: true })}
+        />
       </motion.div>
     </div>
   );

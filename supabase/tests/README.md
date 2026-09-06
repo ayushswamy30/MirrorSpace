@@ -9,7 +9,8 @@ stand-in:
   `auth` schema the migrations depend on (`auth.users`, `auth.uid()`).
 - **PostgREST** in front of it, which is what `@supabase/supabase-js` talks to
   on a real project.
-- **`shim.mjs`**, which presents the URL shapes a Supabase project exposes:
+- **`server/test/shim.mjs`**, which presents the URL shapes a Supabase project
+  exposes (it lives under `server/` so that its `jose` import resolves):
   `/rest/v1/*` proxied to PostgREST, `/auth/v1/.well-known/jwks.json` serving
   the public half of a real ES256 keypair, and a small subset of GoTrue
   (`/auth/v1/signup` for anonymous sign-in, `/auth/v1/token`, `/auth/v1/user`,
@@ -42,8 +43,8 @@ psql -d mirrorspace -f ../migrations/0002_auth.sql
 
 # 2. PostgREST on :3999, with db-anon-role=anon and a jwt-secret of your choosing
 
-# 3. The shim on :4000 (needs node_modules, so run it from server/)
-cd ../../server && KEYS_OUT=keys.json node ../supabase/tests/shim.mjs
+# 3. The shim on :4000
+cd ../../server && KEYS_OUT=keys.json PSQL="psql -d mirrorspace" node test/shim.mjs
 
 # 4. The API against the shim
 SUPABASE_URL=http://127.0.0.1:4000 \

@@ -54,3 +54,15 @@ export const writeLimiter = rateLimit({
   limit: 120,
   message: { message: 'Too many entries at once. Slow down.' }
 });
+
+/**
+ * Export reads the whole account and deletion is irreversible. Neither is
+ * something anyone does repeatedly, and a tight ceiling limits the damage if
+ * a token is ever stolen.
+ */
+export const accountLimiter = rateLimit({
+  ...base,
+  windowMs: HOUR,
+  limit: 5,
+  message: { message: 'Too many account requests. Try again in an hour.' }
+});

@@ -1,4 +1,5 @@
 import { supabase, unwrap } from '../config/supabase.js';
+import { AuthError } from '../lib/errors.js';
 
 const COLUMNS = 'id, local_id, auth_user_id, email, is_anonymous, intents, permissions, onboarding_complete, last_active_at, created_at, updated_at';
 
@@ -84,17 +85,23 @@ export async function findOrProvisionByAuthUser({ authUserId, email, isAnonymous
     return toUser(updated);
   }
 
-  const created = unwrap(
-    await supabase
-      .from('users')
-      .upsert(
-        { auth_user_id: authUserId, email, is_anonymous: isAnonymous },
-        { onConflict: 'auth_user_id', ignoreDuplicates: true }
-      )
-      .select(COLUMNS)
-      .maybeSingle(),
-    'users.provision'
-  );
+  const insert = await supabase
+    .from('users')
+    .upsert(
+      { auth_user_id: authUserId, email, is_anonymous: isAnonymous },
+      { onConflict: 'auth_user_id', ignoreDuplicates: true }
+    )
+    .select(COLUMNS)
+    .maybeSingle();
+
+  // 23503 is a foreign key violation: the token verifies, but the auth.users
+  // row it points at is gone — the account was deleted while this token was
+  // still in someone's browser. That is an expired identity, not a fault.
+  if (insert.error?.code === '23503') {
+    throw new AuthError('Auth identity no longer exists');
+  }
+
+  const created = unwrap(insert, 'users.provision');
 
   if (created) return toUser(created);
 
