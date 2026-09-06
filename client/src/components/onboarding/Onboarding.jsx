@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../context/useUser';
 import './Onboarding.css';
 
 const pageVariants = {

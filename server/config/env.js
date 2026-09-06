@@ -41,20 +41,36 @@ function list(name, fallback = []) {
   return value.split(',').map(entry => entry.trim()).filter(Boolean);
 }
 
+const supabaseUrl = required('SUPABASE_URL').replace(/\/+$/, '');
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
 
   supabase: {
-    url: required('SUPABASE_URL'),
+    url: supabaseUrl,
     // The service role key bypasses RLS. It must never reach the browser —
     // it lives only in the API process.
-    serviceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY')
+    serviceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
+    // Tokens this API will accept must carry this issuer.
+    issuer: `${supabaseUrl}/auth/v1`,
+    jwksUrl: `${supabaseUrl}/auth/v1/.well-known/jwks.json`
   },
 
-  // Signs the app's own anonymous session tokens.
-  jwtSecret: required('JWT_SECRET', { minLength: 32 }),
-  jwtExpiresIn: optional('JWT_EXPIRES_IN', '365d'),
+  // Sessions are issued by Supabase Auth, not by this server. All we do is
+  // verify the access tokens it signs.
+  //
+  // Projects on asymmetric JWT signing keys (the current default) need
+  // nothing here: the public keys come from the project's JWKS endpoint.
+  // Projects still on the legacy shared HMAC secret set SUPABASE_JWT_SECRET.
+  supabaseJwtSecret: optional('SUPABASE_JWT_SECRET'),
+
+  // Minimum gap between JWKS refetches. This is what bounds how quickly a
+  // newly rotated signing key is picked up — and, in the other direction,
+  // stops a stream of tokens bearing unknown key ids from turning into a
+  // stream of outbound fetches. Supabase publishes a new key as standby
+  // before it signs anything with it, so the default is comfortable.
+  jwksCooldownMs: Number(optional('SUPABASE_JWKS_COOLDOWN_MS', '30000')),
 
   corsOrigins: list('CORS_ORIGINS', ['http://localhost:5173']),
 

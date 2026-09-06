@@ -1,26 +1,30 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
-
-const UserContext = createContext(null);
+import { supabase, AUTH_REDIRECT_URL } from '../lib/supabase';
+import { UserContext } from './UserContextValue.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export function UserProvider({ children }) {
+  const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('mirrorspace_token'));
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
 
-  // Stable axios instance that updates auth header reactively
+  // StrictMode mounts effects twice in development; without this the app would
+  // create two anonymous accounts on first load.
+  const bootstrapped = useRef(false);
+
   const api = useMemo(() => {
-    const instance = axios.create({
-      baseURL: API_URL,
-    });
+    const instance = axios.create({ baseURL: API_URL });
 
-    // Add auth interceptor
-    instance.interceptors.request.use((config) => {
-      const currentToken = localStorage.getItem('mirrorspace_token');
-      if (currentToken) {
-        config.headers.Authorization = `Bearer ${currentToken}`;
+    instance.interceptors.request.use(async (config) => {
+      // Ask the client for the session rather than caching the token here:
+      // getSession refreshes it when it is close to expiring, so a long
+      // journalling session never fails on a stale token.
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        config.headers.Authorization = `Bearer ${data.session.access_token}`;
       }
       return config;
     });
@@ -28,65 +32,158 @@ export function UserProvider({ children }) {
     return instance;
   }, []);
 
-  // Initialize user (local-first)
-  const initUser = useCallback(async () => {
+  /** Pull this app's profile for the current Supabase session. */
+  const loadProfile = useCallback(async () => {
     try {
-      let localId = localStorage.getItem('mirrorspace_local_id');
-      
-      if (!localId) {
-        localId = crypto.randomUUID();
-        localStorage.setItem('mirrorspace_local_id', localId);
-      }
-
-      const { data } = await api.post('/auth/init', { localId });
-      
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('mirrorspace_token', data.token);
+      const { data } = await api.get('/user/profile');
+      setUser(data);
+      setOffline(false);
+      return data;
     } catch (error) {
-      console.error('Init error:', error);
-      // Offline fallback — work with local data
-      setUser({
-        localId: localStorage.getItem('mirrorspace_local_id'),
+      console.error('Profile load failed:', error);
+      // The API is unreachable but the session is real. Fall back to whatever
+      // onboarding state we remember so the app still opens.
+      setOffline(true);
+      setUser(prev => prev ?? {
+        id: null,
+        email: null,
+        isAnonymous: true,
         onboardingComplete: localStorage.getItem('mirrorspace_onboarding') === 'true',
         intents: JSON.parse(localStorage.getItem('mirrorspace_intents') || '[]'),
         permissions: JSON.parse(localStorage.getItem('mirrorspace_permissions') || '{}')
       });
-    } finally {
-      setLoading(false);
+      return null;
     }
   }, [api]);
 
   useEffect(() => {
-    initUser();
-  }, [initUser]);
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
 
-  // Save onboarding
+    // Everyone gets a session immediately — anonymous if they have none yet.
+    // There is no sign-in wall; an account is something you add later.
+    const bootstrap = async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error('Anonymous sign-in failed:', error);
+          setOffline(true);
+          setLoading(false);
+          return;
+        }
+      }
+    };
+
+    bootstrap();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      setSession(nextSession);
+
+      if (!nextSession) {
+        // Signing out drops you back into a fresh anonymous space rather than
+        // a locked door.
+        setUser(null);
+        if (event === 'SIGNED_OUT') await supabase.auth.signInAnonymously();
+        return;
+      }
+
+      // TOKEN_REFRESHED fires often and changes nothing about who you are.
+      if (event !== 'TOKEN_REFRESHED') {
+        await loadProfile();
+      }
+
+      setLoading(false);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [loadProfile]);
+
   const completeOnboarding = async (intents, permissions) => {
+    // Remembered locally too, so the flow is not repeated if the API is down.
+    localStorage.setItem('mirrorspace_onboarding', 'true');
+    localStorage.setItem('mirrorspace_intents', JSON.stringify(intents));
+    localStorage.setItem('mirrorspace_permissions', JSON.stringify(permissions));
+
     try {
       const { data } = await api.put('/user/onboarding', { intents, permissions });
       setUser(data);
-      localStorage.setItem('mirrorspace_onboarding', 'true');
-      localStorage.setItem('mirrorspace_intents', JSON.stringify(intents));
-      localStorage.setItem('mirrorspace_permissions', JSON.stringify(permissions));
     } catch (error) {
-      // Save locally if offline
-      localStorage.setItem('mirrorspace_onboarding', 'true');
-      localStorage.setItem('mirrorspace_intents', JSON.stringify(intents));
-      localStorage.setItem('mirrorspace_permissions', JSON.stringify(permissions));
+      console.error('Onboarding save failed:', error);
       setUser(prev => ({ ...prev, onboardingComplete: true, intents, permissions }));
     }
   };
 
-  return (
-    <UserContext.Provider value={{ user, token, loading, api, completeOnboarding }}>
-      {children}
-    </UserContext.Provider>
-  );
-}
+  /**
+   * Attach an email to the current anonymous account. Supabase sends a
+   * confirmation link; the account keeps its id, so nothing written so far is
+   * lost. This is deliberately updateUser and not a fresh sign-in, which
+   * would strand the anonymous data behind a different user.
+   */
+  const linkEmail = async (email) => {
+    const { error } = await supabase.auth.updateUser(
+      { email },
+      { emailRedirectTo: AUTH_REDIRECT_URL }
+    );
+    if (error) throw error;
+  };
 
-export function useUser() {
-  const context = useContext(UserContext);
-  if (!context) throw new Error('useUser must be used within UserProvider');
-  return context;
+  /** Attach a Google identity to the current anonymous account. */
+  const linkGoogle = async () => {
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: AUTH_REDIRECT_URL }
+    });
+    if (error) throw error;
+  };
+
+  /**
+   * Sign in to an account that already exists — a returning user on a new
+   * device. This replaces the current anonymous session, which is the point.
+   */
+  const signInWithEmail = async (email) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: AUTH_REDIRECT_URL,
+        // Restoring an existing space must not quietly create a new empty one
+        // because of a typo — an unknown address should fail, not sign up.
+        shouldCreateUser: false
+      }
+    });
+    if (error) throw error;
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: AUTH_REDIRECT_URL }
+    });
+    if (error) throw error;
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
+
+  const value = {
+    user,
+    session,
+    loading,
+    offline,
+    api,
+    isAnonymous: user?.isAnonymous !== false,
+    email: user?.email ?? null,
+    completeOnboarding,
+    refreshProfile: loadProfile,
+    linkEmail,
+    linkGoogle,
+    signInWithEmail,
+    signInWithGoogle,
+    signOut
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

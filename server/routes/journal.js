@@ -1,5 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { writeLimiter } from '../middleware/rateLimit.js';
 import * as journalEntries from '../db/journalEntries.js';
 import { analyzeText } from '../services/patternEngine.js';
 
@@ -9,7 +10,7 @@ const MAX_CONTENT_LENGTH = 20000;
 const VALID_TYPES = ['text', 'chaos'];
 
 // POST /api/journal — Create journal/vent entry
-router.post('/', auth, async (req, res, next) => {
+router.post('/', auth, writeLimiter, async (req, res, next) => {
   try {
     const { content, type = 'text' } = req.body ?? {};
 

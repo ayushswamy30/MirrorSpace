@@ -1,6 +1,6 @@
 import { supabase, unwrap } from '../config/supabase.js';
 
-const COLUMNS = 'id, local_id, intents, permissions, onboarding_complete, last_active_at, created_at, updated_at';
+const COLUMNS = 'id, local_id, auth_user_id, email, is_anonymous, intents, permissions, onboarding_complete, last_active_at, created_at, updated_at';
 
 const DEFAULT_PERMISSIONS = {
   sleepTracking: false,
@@ -15,11 +15,14 @@ const VALID_INTENTS = [
   'vent_without_judgment'
 ];
 
-export function toUser(row) {
+function toUser(row) {
   if (!row) return null;
   return {
     id: row.id,
     localId: row.local_id,
+    authUserId: row.auth_user_id,
+    email: row.email,
+    isAnonymous: row.is_anonymous,
     intents: row.intents ?? [],
     permissions: { ...DEFAULT_PERMISSIONS, ...(row.permissions ?? {}) },
     onboardingComplete: row.onboarding_complete,
@@ -33,12 +36,12 @@ export function toUser(row) {
  * Reject anything the app doesn't recognise before it reaches Postgres, so a
  * malformed request comes back as a 400 rather than a constraint violation.
  */
-export function sanitizeIntents(intents) {
+function sanitizeIntents(intents) {
   if (!Array.isArray(intents)) return [];
   return [...new Set(intents.filter(intent => VALID_INTENTS.includes(intent)))];
 }
 
-export function sanitizePermissions(permissions) {
+function sanitizePermissions(permissions) {
   const input = permissions && typeof permissions === 'object' ? permissions : {};
   return {
     sleepTracking: Boolean(input.sleepTracking),
@@ -48,45 +51,62 @@ export function sanitizePermissions(permissions) {
 }
 
 /**
- * Upsert on local_id: the same anonymous device always lands on the same row,
- * and two concurrent inits race safely instead of creating a duplicate.
+ * Map a Supabase Auth identity to this app's user row, creating it on first
+ * sight. Upserting on auth_user_id makes two concurrent first requests race
+ * safely instead of producing a duplicate account.
+ *
+ * `email` and `isAnonymous` are mirrored from the token so the app can show
+ * account state without a round trip to the Auth server. They change exactly
+ * once in a user's life — when an anonymous account is upgraded — so they are
+ * only written when they actually differ.
  */
-export async function findOrCreateByLocalId(localId) {
-  const inserted = unwrap(
-    await supabase
-      .from('users')
-      .upsert({ local_id: localId }, { onConflict: 'local_id', ignoreDuplicates: true })
-      .select(COLUMNS)
-      .maybeSingle(),
-    'users.findOrCreateByLocalId'
+export async function findOrProvisionByAuthUser({ authUserId, email, isAnonymous }) {
+  const existing = unwrap(
+    await supabase.from('users').select(COLUMNS).eq('auth_user_id', authUserId).maybeSingle(),
+    'users.findOrProvisionByAuthUser'
   );
 
-  if (inserted) return toUser(inserted);
+  if (existing) {
+    if (existing.email === email && existing.is_anonymous === isAnonymous) {
+      return toUser(existing);
+    }
 
-  // ignoreDuplicates returns no row when the user already existed.
-  const existing = await findByLocalId(localId);
-
-  if (!existing) {
-    throw new Error(`users.findOrCreateByLocalId: no row for local_id after upsert`);
+    // The anonymous account just became a permanent one.
+    const updated = unwrap(
+      await supabase
+        .from('users')
+        .update({ email, is_anonymous: isAnonymous })
+        .eq('auth_user_id', authUserId)
+        .select(COLUMNS)
+        .single(),
+      'users.syncIdentity'
+    );
+    return toUser(updated);
   }
 
-  return existing;
-}
-
-export async function findByLocalId(localId) {
-  const row = unwrap(
-    await supabase.from('users').select(COLUMNS).eq('local_id', localId).maybeSingle(),
-    'users.findByLocalId'
+  const created = unwrap(
+    await supabase
+      .from('users')
+      .upsert(
+        { auth_user_id: authUserId, email, is_anonymous: isAnonymous },
+        { onConflict: 'auth_user_id', ignoreDuplicates: true }
+      )
+      .select(COLUMNS)
+      .maybeSingle(),
+    'users.provision'
   );
-  return toUser(row);
-}
 
-export async function findById(id) {
-  const row = unwrap(
-    await supabase.from('users').select(COLUMNS).eq('id', id).maybeSingle(),
-    'users.findById'
+  if (created) return toUser(created);
+
+  // Lost the race with a concurrent first request; the row exists now.
+  const raced = unwrap(
+    await supabase.from('users').select(COLUMNS).eq('auth_user_id', authUserId).maybeSingle(),
+    'users.provisionRace'
   );
-  return toUser(row);
+
+  if (!raced) throw new Error('users.findOrProvisionByAuthUser: no row after upsert');
+
+  return toUser(raced);
 }
 
 export async function saveOnboarding(id, { intents, permissions }) {
