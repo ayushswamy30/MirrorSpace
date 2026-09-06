@@ -3,8 +3,8 @@ import cors from 'cors';
 
 import { config, isProduction } from './config/env.js';
 import { verifyConnection } from './config/health.js';
+import { apiLimiter } from './middleware/rateLimit.js';
 
-import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import sleepRoutes from './routes/sleep.js';
 import journalRoutes from './routes/journal.js';
@@ -31,8 +31,11 @@ app.use(cors({
 
 app.use(express.json({ limit: '1mb' }));
 
+// Blanket abuse ceiling, keyed by IP because it runs before authentication.
+// The tighter, per-user limits live on the individual routes, after auth.
+app.use('/api', apiLimiter);
+
 // Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/sleep', sleepRoutes);
 app.use('/api/journal', journalRoutes);

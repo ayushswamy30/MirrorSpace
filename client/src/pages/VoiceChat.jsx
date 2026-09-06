@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import './VoiceChat.css';
 
 const STATES = {
@@ -60,7 +60,7 @@ export default function VoiceChat() {
       setSessionId(data.sessionId);
       setResponse(data.response);
       speak(data.response);
-    } catch (error) {
+    } catch {
       const fallback = "I'm here. Sometimes silence speaks louder than words.";
       setResponse(fallback);
       speak(fallback);

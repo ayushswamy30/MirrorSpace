@@ -1,5 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { predictionLimiter } from '../middleware/rateLimit.js';
 import * as moodPatterns from '../db/moodPatterns.js';
 import { getUserContext } from '../services/patternEngine.js';
 import { generateAIResponse } from '../services/insightGenerator.js';
@@ -24,7 +25,7 @@ router.get('/', auth, async (req, res, next) => {
 });
 
 // POST /api/patterns/predict — Generate prediction based on all data
-router.post('/predict', auth, async (req, res, next) => {
+router.post('/predict', auth, predictionLimiter, async (req, res, next) => {
   try {
     const context = await getUserContext(req.userId);
 

@@ -1,11 +1,17 @@
 // End-to-end API tests. Point them at a running MirrorSpace server backed by
 // a Supabase project you don't mind writing to — every run creates real rows.
 //
-//   API_BASE_URL=http://localhost:5000/api npm run test:e2e
+//   API_BASE_URL=http://localhost:5000/api \
+//   SUPABASE_URL=... SUPABASE_ANON_KEY=... npm run test:e2e
+//
+// Sessions come from Supabase anonymous sign-in; see ./session.mjs for the
+// local-stack alternative.
 //
 // AI keys are optional: with none configured the reflection endpoints fall
 // through to their built-in fallbacks, which is exactly what these assertions
 // check for (a response exists, of the right shape).
+import { newSession } from './session.mjs';
+
 const BASE = process.env.API_BASE_URL || 'http://localhost:5000/api';
 let pass = 0, fail = 0;
 
@@ -28,20 +34,18 @@ async function call(method, path, { token, body } = {}) {
   return { status: res.status, json };
 }
 
-const localId = crypto.randomUUID();
+console.log('\n== session ==');
+const token = await newSession();
 
-console.log('\n== auth ==');
-const init = await call('POST', '/auth/init', { body: { localId } });
-check('POST /auth/init creates user', init.status === 200 && !!init.json.token, JSON.stringify(init.json));
-const token = init.json.token;
-const userId = init.json.user.id;
+const init = await call('GET', '/user/profile', { token });
+check('a Supabase session provisions an app user', init.status === 200 && !!init.json.id,
+  JSON.stringify(init.json));
+const userId = init.json.id;
 
-const reinit = await call('POST', '/auth/init', { body: { localId } });
-check('POST /auth/init is idempotent on localId', reinit.json.user?.id === userId,
-  `${reinit.json.user?.id} vs ${userId}`);
-
-const badId = await call('POST', '/auth/init', { body: { localId: 'not-a-uuid' } });
-check('POST /auth/init rejects non-UUID localId', badId.json.user?.localId !== 'not-a-uuid');
+const reinit = await call('GET', '/user/profile', { token });
+check('the same session maps to the same app user', reinit.json.id === userId,
+  `${reinit.json.id} vs ${userId}`);
+check('new users start anonymous', init.json.isAnonymous === true);
 
 check('auth required', (await call('GET', '/user/profile')).status === 401);
 check('bad token rejected', (await call('GET', '/user/profile', { token: 'garbage' })).status === 401);
@@ -58,6 +62,7 @@ check('permissions persisted', onboard.json.permissions?.sleepTracking === true)
 
 const profile = await call('GET', '/user/profile', { token });
 check('GET /user/profile round-trips', profile.json.id === userId && profile.json.onboardingComplete === true);
+check('profile exposes account state', 'email' in profile.json && 'isAnonymous' in profile.json);
 
 console.log('\n== sleep ==');
 const mkNight = (daysAgo, hours) => {
@@ -129,8 +134,7 @@ check('GET /chat/history holds 4 messages in order', histChat.json[0]?.messages?
   JSON.stringify(histChat.json[0]?.messages?.map(m => m.role)));
 
 console.log('\n== cross-user isolation ==');
-const other = await call('POST', '/auth/init', { body: { localId: crypto.randomUUID() } });
-const otherToken = other.json.token;
+const otherToken = await newSession();
 const stolen = await call('POST', '/chat/message', { token: otherToken, body: { message: 'hi', sessionId } });
 check("another user's sessionId does not attach to their session", stolen.json.sessionId !== sessionId,
   `${stolen.json.sessionId} vs ${sessionId}`);

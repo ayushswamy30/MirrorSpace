@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
 export default function Home() {
-  const { api } = useUser();
+  const { api, isAnonymous, email } = useUser();
   const navigate = useNavigate();
   const [insight, setInsight] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ export default function Home() {
       try {
         const { data } = await api.get('/insights/today');
         setInsight(data);
-      } catch (error) {
+      } catch {
         setInsight({
           headline: "Be still for a moment.\nNot every day needs a reflection.",
           subtext: null
@@ -116,18 +116,17 @@ export default function Home() {
           ))}
         </div>
         
-        {/* Development Helper: Reset Onboarding */}
-        <div style={{ textAlign: 'center', marginTop: '60px' }}>
-          <button 
-            className="btn-ghost mono" 
-            style={{ fontSize: '0.65rem', opacity: 0.5 }}
-            onClick={() => {
-              localStorage.clear();
-              window.location.reload();
-            }}
-          >
-            reset journey
-          </button>
+        {/* Account: anonymous by default, claimable whenever they want */}
+        <div className="home-account">
+          {isAnonymous ? (
+            <button className="home-account-link mono" onClick={() => navigate('/account')}>
+              this space lives only in this browser — save it
+            </button>
+          ) : (
+            <button className="home-account-link mono" onClick={() => navigate('/account')}>
+              signed in as {email}
+            </button>
+          )}
         </div>
       </motion.section>
     </div>

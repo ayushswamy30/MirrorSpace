@@ -1,5 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { writeLimiter } from '../middleware/rateLimit.js';
 import * as sleepLogs from '../db/sleepLogs.js';
 
 const router = express.Router();
@@ -16,7 +17,7 @@ function startOfRange(range) {
 }
 
 // POST /api/sleep — Log sleep entry
-router.post('/', auth, async (req, res, next) => {
+router.post('/', auth, writeLimiter, async (req, res, next) => {
   try {
     const { date, sleepTime, wakeTime } = req.body ?? {};
 

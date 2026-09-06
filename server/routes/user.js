@@ -13,7 +13,8 @@ router.put('/onboarding', auth, async (req, res, next) => {
 
     res.json({
       id: user.id,
-      localId: user.localId,
+      email: user.email,
+      isAnonymous: user.isAnonymous,
       intents: user.intents,
       permissions: user.permissions,
       onboardingComplete: user.onboardingComplete
@@ -28,7 +29,8 @@ router.get('/profile', auth, async (req, res, next) => {
   try {
     res.json({
       id: req.user.id,
-      localId: req.user.localId,
+      email: req.user.email,
+      isAnonymous: req.user.isAnonymous,
       intents: req.user.intents,
       permissions: req.user.permissions,
       onboardingComplete: req.user.onboardingComplete,

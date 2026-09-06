@@ -1,5 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { chatLimiter } from '../middleware/rateLimit.js';
 import * as chat from '../db/chat.js';
 import { generateChatResponse } from '../services/reflectionEngine.js';
 import { getUserContext } from '../services/patternEngine.js';
@@ -12,7 +13,7 @@ const MAX_MESSAGE_LENGTH = 4000;
 const CONTEXT_WINDOW = 20;
 
 // POST /api/chat/message — Send message to reflective chatbot
-router.post('/message', auth, async (req, res, next) => {
+router.post('/message', auth, chatLimiter, async (req, res, next) => {
   try {
     const { message, sessionId } = req.body ?? {};
 

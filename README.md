@@ -8,32 +8,78 @@ diagnoses.
 - `server/` — Express 5 API
 - `supabase/migrations/` — Postgres schema
 
+## Accounts
+
+MirrorSpace is **anonymous-first**. Opening the app signs you in
+anonymously through Supabase Auth — no email, no password, no signup wall —
+and every feature works from that first second.
+
+Attaching an identity later is optional and lives at `/account`. Because
+Supabase keeps the same user id through the upgrade, nothing is migrated and
+nothing is lost: the journals, sleep logs and conversations written
+anonymously simply belong to a permanent account afterwards.
+
+- **Magic link** — enter an email, click the link. No password to store, reset
+  or leak.
+- **Google** — one tap.
+
+Both are offered in two shapes, which are not the same operation:
+
+| | What it does |
+| --- | --- |
+| *Save your space* | Attaches an identity to the account you're already using (`updateUser` / `linkIdentity`). Your data comes with you. |
+| *Find your space* | Signs in to an account that already exists, on a new device (`signInWithOtp` / `signInWithOAuth`). Replaces the current anonymous session. |
+
+Signing out returns you to a fresh anonymous space rather than a locked door.
+
 ## Data layer
 
-The API stores everything in **Supabase Postgres**. It reaches the database
-with `@supabase/supabase-js` using the **service role** key, so the app's own
-authorisation happens in the API layer: every query filters on `user_id`, and
-every table has Row Level Security enabled with **no permissive policies**, so
-the public `anon` key cannot read or write anything.
+The API stores everything in **Supabase Postgres**, reached with
+`@supabase/supabase-js`.
 
 Tables: `users`, `sleep_logs`, `journal_entries`, `insights`,
 `chat_sessions`, `chat_messages`, `mood_patterns`, `calm_triggers`.
-Deleting a user cascades to all of their rows.
+Deleting a user cascades to all of their rows, and `public.users.auth_user_id`
+cascades from `auth.users` — so deleting the auth identity erases everything.
+
+### How authorisation works
+
+Three layers, deliberately:
+
+1. **The API verifies every token itself.** Supabase Auth signs access tokens;
+   the API verifies them locally against the project's JWKS (asymmetric keys)
+   or the legacy HMAC secret, checking issuer, audience, expiry and role. No
+   round trip to the Auth server on a request.
+2. **Every query is scoped by user.** The API holds the `service_role` key,
+   which bypasses RLS, so each repository query filters on `user_id`
+   explicitly. Chat sessions are looked up by `(id, user_id)`, never by id
+   alone.
+3. **The database enforces it too.** Every table has RLS on, with per-user
+   policies keyed to `auth.uid()`. The public `anon` key is granted nothing at
+   all, so it cannot read or write anything even with a valid session absent.
+
+The `service_role` key never leaves the server. The `anon` key is in the
+browser bundle by design — it is useless without a session, and a session only
+ever sees its own rows.
 
 ## Setup
 
 ### 1. Create the Supabase project and schema
 
 Create a project at [supabase.com](https://supabase.com), then apply the
-migration — either with the CLI:
+migrations in order — either with the CLI:
 
 ```bash
 supabase link --project-ref YOUR-PROJECT-REF
 supabase db push
 ```
 
-or by pasting `supabase/migrations/0001_init.sql` into the SQL editor in
-Supabase Studio. The migration is idempotent, so re-running it is safe.
+or by pasting `supabase/migrations/0001_init.sql` and then `0002_auth.sql`
+into the SQL editor in Supabase Studio. Both are idempotent, so re-running
+them is safe.
+
+Do **not** run anything from `supabase/tests/` against a real project — that
+directory recreates parts of the hosted `auth` schema for local testing.
 
 ### 2. Configure the API
 
@@ -49,7 +95,7 @@ Fill in `.env`:
 | --- | --- |
 | `SUPABASE_URL` | Project Settings → Data API → Project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys → `service_role` |
-| `JWT_SECRET` | Your own; `openssl rand -base64 48`. Min 32 chars |
+| `SUPABASE_JWT_SECRET` | Only if the project still uses the legacy shared HMAC secret. Projects on JWT signing keys need nothing |
 | `CORS_ORIGINS` | Comma-separated browser origins, e.g. the Vite dev URL |
 | `GROQ_API_KEY` / `OPENAI_API_KEY` | Optional — see below |
 
@@ -59,7 +105,22 @@ one is missing, rather than failing later one request at a time.
 The `service_role` key bypasses RLS. Keep it on the server; it must never
 reach the browser bundle.
 
-### 3. Configure the client
+### 3. Turn on the auth providers
+
+In the Supabase dashboard:
+
+- **Authentication → Providers → Anonymous sign-ins**: enable. Without this
+  the app cannot open at all, since every visitor starts anonymous.
+- **Authentication → Providers → Email**: enable, and leave "Confirm email" on
+  — that is what makes the magic link a magic link.
+- **Authentication → Providers → Google**: enable and paste in a Google Cloud
+  OAuth client id and secret.
+- **Authentication → Manual linking**: enable. `linkIdentity` needs it, and
+  without it upgrading an anonymous account with Google fails.
+- **Authentication → URL Configuration → Redirect URLs**: add
+  `http://localhost:5173/auth/callback` and the deployed equivalent.
+
+### 4. Configure the client
 
 ```bash
 cd client
@@ -67,7 +128,11 @@ cp .env.example .env.local
 npm install
 ```
 
-### 4. Run
+Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Project Settings →
+API Keys → `anon` / publishable). This key is public by design; the
+`service_role` key must never go here.
+
+### 5. Run
 
 ```bash
 cd server && npm run dev    # http://localhost:5000
@@ -88,19 +153,29 @@ fallback text — the app is fully usable without an AI key.
 
 ```bash
 cd server
-API_BASE_URL=http://localhost:5000/api npm run test:e2e
+API_BASE_URL=http://localhost:5000/api \
+SUPABASE_URL=... SUPABASE_ANON_KEY=... npm run test:e2e
 ```
 
-Exercises every endpoint against a running server: auth, validation,
-pagination, and cross-user isolation. It writes real rows, so point it at a
-development project rather than production.
+Exercises every endpoint against a running server — validation, pagination,
+and cross-user isolation — signing in anonymously for its sessions. It writes
+real rows, so point it at a development project rather than production.
+
+`npm run test:auth` covers token verification, key rotation, provisioning and
+the anonymous-to-permanent upgrade. `client`'s `npm run test:flow` drives a
+real Chromium through first run, onboarding, the account page and a reload,
+checking what actually reached the database — the kind of thing that catches a
+bundle which builds but renders nothing.
+
+Both need to mint tokens, so they run against a local stand-in rather than a
+real project; [`supabase/tests/README.md`](supabase/tests/README.md) has the
+setup.
 
 ## API
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `POST` | `/api/auth/init` | Anonymous sign-in; returns a session JWT |
-| `GET` | `/api/user/profile` | |
+| `GET` | `/api/user/profile` | Provisions the app user on first call |
 | `PUT` | `/api/user/onboarding` | Intents + permissions |
 | `POST` | `/api/sleep` | One log per night; re-posting a date corrects it |
 | `GET` | `/api/sleep?range=week\|month\|year\|all` | Oldest first, for the chart |
@@ -116,15 +191,19 @@ development project rather than production.
 | `POST` | `/api/calm/trigger` | Records a calm-mode opening |
 | `GET` | `/api/health` | |
 
-All routes except `/api/auth/init` and `/api/health` need
-`Authorization: Bearer <token>`.
+Every route except `/api/health` needs `Authorization: Bearer <token>`,
+where the token is a Supabase Auth access token. There is no sign-in endpoint
+here — Supabase Auth issues sessions, and this API only verifies them.
+
+Rate limits: 300 requests / 15 min per IP across the API, then per-user
+ceilings on the paths that cost money — 60 chat messages / 15 min, 10
+predictions / hour, 120 writes / 15 min.
 
 ## Where this is going
 
-Done: Supabase Postgres, schema + RLS, validated config, CORS allowlist,
-per-user query scoping.
+Done: Supabase Postgres, schema and migrations, Supabase Auth with
+anonymous-first accounts, local JWT verification with key rotation, per-user
+RLS policies, per-user rate limiting, validated config, CORS allowlist.
 
-Next: Supabase Auth so an anonymous account can be claimed with a real
-identity (`users.auth_user_id` is already reserved for it), per-user RLS
-policies so the service role stops being the only way in, rate limiting and
-security headers, an export/delete-my-data flow, and deployment.
+Next: security headers and a CSP, an export-my-data and delete-my-account
+flow (the cascade is already in place for it), and deployment.
