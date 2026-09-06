@@ -227,6 +227,52 @@ ceilings on the paths that cost money or cannot be undone — 60 chat messages /
 15 min, 10 predictions / hour, 120 writes / 15 min, 5 export-or-delete /
 hour.
 
+## Deployment (Vercel)
+
+The whole app deploys as **one origin**: the Vite build is served statically
+and the Express API runs as a serverless function at `/api/*`. Same origin
+means the browser never makes a cross-origin request, so CORS stops being
+part of the production picture entirely.
+
+```
+vercel.json      routing, SPA fallback, and the front end's CSP
+package.json     root: the API's runtime deps + the client build command
+api/index.js     the serverless entrypoint — an Express app is already a handler
+server/app.js    the app, with no listener attached
+server/server.js binds a port; used for local dev, not on Vercel
+```
+
+`server/app.js` and `server/server.js` are split precisely because a
+serverless handler is given a request, not a port to bind.
+
+### Environment variables to set in Vercel
+
+The build bakes in the two public values; the rest are read at runtime by the
+function. Set these under Project → Settings → Environment Variables:
+
+| Variable | Why |
+| --- | --- |
+| `SUPABASE_URL` | Runtime, for the function |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret.** Bypasses RLS — server only, never in the client |
+| `VITE_SUPABASE_URL` | Build-time, baked into the bundle |
+| `VITE_SUPABASE_ANON_KEY` | Build-time, public by design |
+| `VITE_API_URL` | `/api` — same origin |
+| `CORS_ORIGINS` | Only needed if the front end is ever served from another origin |
+| `GROQ_API_KEY` / `OPENAI_API_KEY` | Optional |
+
+Then add the deployment's URL to Supabase → Authentication → URL
+Configuration → Redirect URLs as `https://<your-domain>/auth/callback`, or
+magic links and Google will bounce.
+
+### A caveat worth knowing
+
+Rate limiting uses an in-memory store, which on serverless is **per instance**
+rather than global. Limits still apply and still bound abuse, but a determined
+caller spread across cold starts gets more than the nominal ceiling. Two ways
+to make them exact: run the API on a single long-lived host instead, or back
+`express-rate-limit` with a shared store. This does not affect authorisation —
+tokens, per-user query scoping, and RLS are unaffected.
+
 ## Where this is going
 
 Done: Supabase Postgres, schema and migrations, Supabase Auth with
@@ -234,6 +280,5 @@ anonymous-first accounts, local JWT verification with key rotation, per-user
 RLS policies, per-user rate limiting, security headers, data export and
 account erasure, validated config, CORS allowlist.
 
-Next: deployment — the front end as a static build with its own CSP, the API
-wherever it can hold a service-role key, and the production origins added to
-`CORS_ORIGINS` and Supabase's redirect allowlist.
+Next: a shared rate-limit store so the ceilings are exact on serverless, and
+connecting the GitHub repo to Vercel so pushes deploy themselves.

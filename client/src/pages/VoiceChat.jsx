@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../context/useUser';
 import './VoiceChat.css';
 
+// Resolved once: these are browser globals that never change for the life of
+// the page, so they do not belong in a hook dependency list.
+const SpeechRecognition =
+  typeof window === 'undefined'
+    ? null
+    : window.SpeechRecognition || window.webkitSpeechRecognition;
+
 const STATES = {
   IDLE: 'idle',
   LISTENING: 'listening',
@@ -20,7 +27,6 @@ export default function VoiceChat() {
   const synthRef = useRef(window.speechSynthesis);
 
   // Check for browser support
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const supported = !!SpeechRecognition;
 
   const stopSpeaking = useCallback(() => {
@@ -130,9 +136,14 @@ export default function VoiceChat() {
 
   // Cleanup
   useEffect(() => {
+    // Captured now rather than read in the cleanup: by then the ref could point
+    // somewhere else. recognitionRef is deliberately read late, because the
+    // recognition instance is replaced on every listen and we want the current
+    // one aborted.
+    const synth = synthRef.current;
     return () => {
       recognitionRef.current?.abort();
-      synthRef.current.cancel();
+      synth.cancel();
     };
   }, []);
 
