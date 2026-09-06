@@ -1,60 +1,65 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import JournalEntry from '../models/JournalEntry.js';
+import { writeLimiter } from '../middleware/rateLimit.js';
+import * as journalEntries from '../db/journalEntries.js';
 import { analyzeText } from '../services/patternEngine.js';
 
 const router = express.Router();
 
-// POST /api/journal — Create journal/vent entry
-router.post('/', auth, async (req, res) => {
-  try {
-    const { content, type = 'text' } = req.body;
+const MAX_CONTENT_LENGTH = 20000;
+const VALID_TYPES = ['text', 'chaos'];
 
-    if (!content || content.trim().length === 0) {
+// POST /api/journal — Create journal/vent entry
+router.post('/', auth, writeLimiter, async (req, res, next) => {
+  try {
+    const { content, type = 'text' } = req.body ?? {};
+
+    if (typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ message: 'Content is required' });
     }
 
-    // Analyze text patterns (runs silently, user doesn't see this)
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return res.status(413).json({ message: 'That entry is longer than we can hold' });
+    }
+
+    if (!VALID_TYPES.includes(type)) {
+      return res.status(400).json({ message: `type must be one of: ${VALID_TYPES.join(', ')}` });
+    }
+
+    // Analysis runs silently — the user never sees it come back.
     const analysis = analyzeText(content);
 
-    const entry = await JournalEntry.create({
-      userId: req.userId,
+    const entry = await journalEntries.create(req.userId, {
       type,
       content,
       sentiment: analysis.sentiment,
       patterns: analysis.patterns
     });
 
-    // Return minimal response — no analysis shown to user
     res.status(201).json({
-      id: entry._id,
+      id: entry.id,
       type: entry.type,
       createdAt: entry.createdAt
     });
   } catch (error) {
-    console.error('Journal error:', error);
-    res.status(500).json({ message: 'Could not save entry' });
+    next(error);
   }
 });
 
 // GET /api/journal — Get journal entries
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
 
-    const entries = await JournalEntry.find({ userId: req.userId })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .select('type content reflection createdAt');
-
-    const total = await JournalEntry.countDocuments({ userId: req.userId });
+    const { entries, total } = await journalEntries.listForUser(req.userId, {
+      limit,
+      offset: (page - 1) * limit
+    });
 
     res.json({ entries, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error('Journal fetch error:', error);
-    res.status(500).json({ message: 'Could not fetch entries' });
+    next(error);
   }
 });
 

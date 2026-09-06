@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import { useNavigate } from 'react-router-dom';
 import './VentItOut.css';
 

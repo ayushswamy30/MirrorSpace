@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import './Sleep.css';
 
 const FILTERS = ['week', 'month', 'year', 'all'];
@@ -100,7 +100,6 @@ export default function Sleep() {
     });
 
     const maxHours = Math.max(12, ...durations);
-    const minHours = 0;
 
     // Grid lines
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';

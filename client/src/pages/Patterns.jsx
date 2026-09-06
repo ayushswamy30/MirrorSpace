@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 import './Patterns.css';
 
 export default function Patterns() {
@@ -9,7 +9,11 @@ export default function Patterns() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  const fetchLatestPattern = async () => {
+  // Stable across renders so the effect below can depend on it honestly. With
+  // the function redefined every render, an accurate dependency list would
+  // have looped forever, which is why it was omitted — and why the fetch would
+  // silently not re-run if `api` were ever swapped.
+  const fetchLatestPattern = useCallback(async () => {
     try {
       const { data } = await api.get('/patterns');
       if (data && data.length > 0) {
@@ -20,11 +24,11 @@ export default function Patterns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
     fetchLatestPattern();
-  }, []);
+  }, [fetchLatestPattern]);
 
   const generatePrediction = async () => {
     setGenerating(true);
