@@ -57,9 +57,6 @@ export function UserProvider({ children }) {
   }, [api]);
 
   useEffect(() => {
-    if (bootstrapped.current) return;
-    bootstrapped.current = true;
-
     // Everyone gets a session immediately — anonymous if they have none yet.
     // There is no sign-in wall; an account is something you add later.
     const bootstrap = async () => {
@@ -76,25 +73,42 @@ export function UserProvider({ children }) {
       }
     };
 
-    bootstrap();
+    // Only the sign-in is guarded. The listener below must be subscribed on
+    // every run: StrictMode unsubscribes it in the first cleanup, and skipping
+    // the resubscribe leaves the app waiting on an event nobody hears.
+    if (!bootstrapped.current) {
+      bootstrapped.current = true;
+      bootstrap();
+    }
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+    // supabase-js runs this callback while holding its auth lock, so any
+    // Supabase call awaited inside it — including the getSession in the API
+    // interceptor that loadProfile goes through — waits on that lock forever
+    // and the app never leaves the loading screen. The callback stays
+    // synchronous and defers the follow-up work until the lock is released.
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
 
       if (!nextSession) {
         // Signing out drops you back into a fresh anonymous space rather than
         // a locked door.
         setUser(null);
-        if (event === 'SIGNED_OUT') await supabase.auth.signInAnonymously();
+        if (event === 'SIGNED_OUT') {
+          setTimeout(() => supabase.auth.signInAnonymously(), 0);
+        }
         return;
       }
 
       // TOKEN_REFRESHED fires often and changes nothing about who you are.
-      if (event !== 'TOKEN_REFRESHED') {
-        await loadProfile();
+      if (event === 'TOKEN_REFRESHED') {
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      setTimeout(async () => {
+        await loadProfile();
+        setLoading(false);
+      }, 0);
     });
 
     return () => listener.subscription.unsubscribe();
