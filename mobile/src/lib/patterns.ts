@@ -1,4 +1,5 @@
 import type { CheckIn } from './checkIns';
+import { formatDuration, type SleepLog } from './sleep';
 import type { Weather } from '@/theme/tokens';
 
 /**
@@ -7,7 +8,7 @@ import type { Weather } from '@/theme/tokens';
  * evidence and needs a minimum amount of it; nothing here predicts, diagnoses
  * or claims a cause — "tended to", never "because".
  *
- * Only check-ins feed it for now. Sleep joins when health data does.
+ * Check-ins and hand-logged sleep feed it; health data joins later.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -141,6 +142,56 @@ export function facts(checkIns: readonly CheckIn[], now: Date = new Date()): Fac
 }
 
 // ---------------------------------------------------------------------------
+// Sleep
+
+const SHORT_NIGHT_MIN = 6 * 60;
+const MIN_NIGHTS_FOR_AVERAGE = 3;
+const MIN_PAIRS = 2;
+const SLEEP_GAP = 1.5;
+
+function sleepSince(logs: readonly SleepLog[], now: Date, days: number): SleepLog[] {
+  const from = now.getTime() - days * DAY_MS;
+  return logs.filter(l => {
+    const t = new Date(l.wakeAt).getTime();
+    return t >= from && t <= now.getTime();
+  });
+}
+
+export function sleepFacts(logs: readonly SleepLog[], checkIns: readonly CheckIn[], now: Date = new Date()): Fact[] {
+  const out: Fact[] = [];
+
+  const week = sleepSince(logs, now, 7);
+  if (week.length >= MIN_NIGHTS_FOR_AVERAGE) {
+    const avg = Math.round(mean(week.map(l => l.minutes)));
+    out.push({
+      key: 'sleep-average',
+      text: `You slept ${formatDuration(avg)} a night on average this week.`,
+      receipt: `avg ${formatDuration(avg)} · ${week.length} nights`,
+      weight: avg < SHORT_NIGHT_MIN ? 0.8 : 0.3
+    });
+  }
+
+  // Each check-in paired with the night that ended its day.
+  const byMorning = new Map(sleepSince(logs, now, 30).map(l => [l.wakeDate, l]));
+  const after = within(checkIns, now, 30).filter(c => byMorning.has(c.localDate));
+  const short = after.filter(c => byMorning.get(c.localDate)!.minutes < SHORT_NIGHT_MIN);
+  const rest = after.filter(c => byMorning.get(c.localDate)!.minutes >= SHORT_NIGHT_MIN);
+  if (short.length >= MIN_PAIRS && rest.length >= MIN_PAIRS) {
+    const gap = mean(short.map(c => c.pleasantness)) - mean(rest.map(c => c.pleasantness));
+    if (gap <= -SLEEP_GAP) {
+      out.push({
+        key: 'short-sleep',
+        text: 'After nights under 6 hours, your check-ins tended to be heavier.',
+        receipt: `${short.length} check-ins after short nights · ${gap.toFixed(1)} vs others · 30 days`,
+        weight: Math.min(1.4, 0.7 + Math.abs(gap) / 8)
+      });
+    }
+  }
+
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // The reading
 
 export type Reading = {
@@ -207,21 +258,27 @@ export type Today = {
   reading: Reading;
   facts: Fact[];
   checkedInToday: boolean;
+  /** The night that ended this morning, if it has been logged. */
+  lastNight: SleepLog | null;
 };
 
 /**
  * Everything the Today screen shows. With readings consent off, the reading
  * is the general one and there is no weather — as the consent screen says.
+ * Last night's log is shown either way: it is the person's own entry, not a
+ * reading.
  */
 export function today(
   checkIns: readonly CheckIn[],
-  opts: { personal: boolean; todayDate: string; now?: Date }
+  opts: { personal: boolean; todayDate: string; now?: Date; sleep?: readonly SleepLog[] }
 ): Today {
   const now = opts.now ?? new Date();
+  const sleep = opts.sleep ?? [];
   const checkedInToday = checkIns.some(c => c.localDate === opts.todayDate);
-  if (!opts.personal) return { weather: null, reading: GENERAL_READING, facts: [], checkedInToday };
+  const lastNight = sleep.find(l => l.wakeDate === opts.todayDate) ?? null;
+  if (!opts.personal) return { weather: null, reading: GENERAL_READING, facts: [], checkedInToday, lastNight };
 
   const weather = innerWeather(checkIns, now);
-  const found = facts(checkIns, now);
-  return { weather, reading: buildReading(weather, found[0]), facts: found, checkedInToday };
+  const found = [...facts(checkIns, now), ...sleepFacts(sleep, checkIns, now)].sort((a, b) => b.weight - a.weight);
+  return { weather, reading: buildReading(weather, found[0]), facts: found, checkedInToday, lastNight };
 }

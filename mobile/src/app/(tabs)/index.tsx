@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { AppHeader, shortDate } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import { clockOf, formatClock, formatDuration } from '@/lib/sleep';
 import { useToday } from '@/lib/useToday';
 import { useEntering } from '@/theme/motion';
 import { radius, space } from '@/theme/tokens';
@@ -25,7 +26,7 @@ export default function Today() {
 
   if (!data) return <Screen header={<AppHeader />}>{null}</Screen>;
 
-  const { reading, facts, weather, checkedInToday } = data;
+  const { reading, facts, weather, checkedInToday, lastNight } = data;
   const receipts = facts.slice(0, 3);
 
   return (
@@ -42,6 +43,20 @@ export default function Today() {
           <Button label="check in" arrow onPress={() => router.navigate('/check-in')} style={styles.cta} />
         )}
       </Animated.View>
+
+      <View>
+        <SectionLabel title="last night" />
+        {lastNight ? (
+          <Row
+            title={formatDuration(lastNight.minutes)}
+            subtitle={`${formatClock(clockOf(lastNight.bedAt))} – ${formatClock(clockOf(lastNight.wakeAt))}`}
+            onPress={() => router.push('/sleep')}
+            accessibilityHint="Change last night"
+          />
+        ) : (
+          <Row title="How did you sleep?" subtitle="two times, by hand" onPress={() => router.push('/sleep')} />
+        )}
+      </View>
 
       {receipts.length > 0 && (
         <View>

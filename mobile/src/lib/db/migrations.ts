@@ -45,7 +45,17 @@ export const migrations: readonly string[] = [
      local_date TEXT NOT NULL,
      body       TEXT NOT NULL
    );
-   CREATE INDEX vents_created_at_idx ON vents (created_at);`
+   CREATE INDEX vents_created_at_idx ON vents (created_at);`,
+
+  // 5 — sleep logged by hand, one row per night. wake_date (the morning, in
+  // local time) names the night, so logging it twice replaces it.
+  `CREATE TABLE sleep_logs (
+     wake_date  TEXT PRIMARY KEY NOT NULL,
+     bed_at     TEXT NOT NULL,
+     wake_at    TEXT NOT NULL,
+     minutes    INTEGER NOT NULL CHECK (minutes > 0 AND minutes <= 1440),
+     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
