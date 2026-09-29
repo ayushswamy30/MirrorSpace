@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -6,7 +5,8 @@ import Animated from 'react-native-reanimated';
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
-import { SectionLabel } from '@/components/Blocks';
+import { Vent } from '@/components/Vent';
+import { SectionLabel, Segmented } from '@/components/Blocks';
 import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -24,8 +24,8 @@ import {
   type ContextTag
 } from '@/lib/checkIns';
 import { QUADRANTS, quadrantLabel, wordsNearestFirst, type Emotion } from '@/lib/emotions';
-import { recordSafetyEvent } from '@/lib/safety/log';
-import { atLeast, higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
+import { answerConcern } from '@/lib/safety/respond';
+import { higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useEntering } from '@/theme/motion';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -48,6 +48,13 @@ type Stage =
 
 const defaultTagOrder = CONTEXT_TAGS.map(t => t.key);
 
+/** Naming a feeling is the default; vent is the page beside it. */
+type Mode = 'name' | 'vent';
+const MODES = [
+  { key: 'name', label: 'check in' },
+  { key: 'vent', label: 'vent' }
+] as const;
+
 function lastLine(checkIn: CheckInRecord, now: Date): string {
   const at = new Date(checkIn.createdAt);
   const daysAgo = (now.getTime() - at.getTime()) / (24 * 60 * 60 * 1000);
@@ -60,6 +67,7 @@ function lastLine(checkIn: CheckInRecord, now: Date): string {
 
 export default function CheckIn() {
   const [stage, setStage] = useState<Stage>({ kind: 'choose', replacing: null });
+  const [mode, setMode] = useState<Mode>('name');
   const [latest, setLatest] = useState<CheckInRecord | null>(null);
   const [tagOrder, setTagOrder] = useState<ContextTag[]>(defaultTagOrder);
   const [error, setError] = useState<string | null>(null);
@@ -77,9 +85,7 @@ export default function CheckIn() {
     if (tier === before || higher(tier, before) !== tier) return;
 
     answered.current.set(checkIn.id, tier);
-    if (tier === 'none') return;
-    recordSafetyEvent(tier, 'check_in').catch(err => console.warn('Safety event not logged:', err));
-    if (atLeast(tier, 'elevated')) router.push(`/crisis?tier=${tier}`);
+    answerConcern(tier, 'check_in');
   };
 
   useEffect(() => {
@@ -142,8 +148,18 @@ export default function CheckIn() {
 
   const replacing = stage.replacing;
 
+  if (mode === 'vent' && !replacing) {
+    return (
+      <Screen header={<AppHeader />}>
+        <Segmented options={MODES} value={mode} onChange={setMode} />
+        <Vent />
+      </Screen>
+    );
+  }
+
   return (
     <Screen header={<AppHeader />}>
+      {!replacing && <Segmented options={MODES} value={mode} onChange={setMode} />}
       <View style={styles.block}>
         <SectionLabel title={replacing ? 'change the word' : 'name it'} rule={false} />
         <Text variant="reading">{replacing ? 'Which word fits better?' : 'Where are you, right now?'}</Text>
