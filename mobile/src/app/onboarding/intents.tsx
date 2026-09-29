@@ -6,12 +6,12 @@ import { OnboardingStep } from '@/components/OnboardingStep';
 import { Text } from '@/components/Text';
 import { onboardingPurposes } from '@/lib/consent';
 import { INTENTS, useOnboarding } from '@/lib/onboarding';
-import { hitTarget, radius, space } from '@/theme/tokens';
+import { hitTarget, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function Intents() {
   const { draft, toggleIntent } = useOnboarding();
-  const { colors, signal } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <OnboardingStep
@@ -24,7 +24,7 @@ export default function Intents() {
     >
       <Text variant="title">What brings you here?</Text>
       <Text tone="soft">Choose any, or none. You can change this later.</Text>
-      <View style={styles.list}>
+      <View style={[styles.list, { borderTopColor: colors.hairline }]}>
         {INTENTS.map(intent => {
           const selected = draft.intents.includes(intent.key);
           return (
@@ -34,14 +34,14 @@ export default function Intents() {
               accessibilityState={{ checked: selected }}
               accessibilityLabel={intent.label}
               onPress={() => toggleIntent(intent.key)}
-              style={[
-                styles.option,
-                { borderColor: selected ? signal : colors.hairline, backgroundColor: colors.paperRaised }
-              ]}
+              style={[styles.option, { borderBottomColor: colors.hairline }]}
             >
-              <View style={[styles.dot, { borderColor: selected ? signal : colors.inkSoft }]}>
-                {selected && <View style={[styles.dotFill, { backgroundColor: signal }]} />}
-              </View>
+              <View
+                style={[
+                  styles.box,
+                  { borderColor: colors.ink, backgroundColor: selected ? colors.ink : 'transparent' }
+                ]}
+              />
               <Text style={styles.label}>{intent.label}</Text>
             </Pressable>
           );
@@ -52,18 +52,17 @@ export default function Intents() {
 }
 
 const styles = StyleSheet.create({
-  list: { gap: space.sm },
+  // A ruled list, like a printed form: a rule above, one under each line.
+  list: { borderTopWidth: StyleSheet.hairlineWidth },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
     minHeight: hitTarget + 8,
-    paddingHorizontal: space.md,
     paddingVertical: space.sm,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth * 2
+    borderBottomWidth: StyleSheet.hairlineWidth
   },
-  dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  dotFill: { width: 8, height: 8, borderRadius: 4 },
+  // Filled when chosen: the same inversion as a selected word.
+  box: { width: 16, height: 16, borderWidth: 1 },
   label: { flex: 1 }
 });

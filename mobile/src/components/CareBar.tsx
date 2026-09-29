@@ -21,20 +21,21 @@ export function CareBar() {
         accessibilityLabel="Calm tools"
         accessibilityHint="Breathing, grounding and sounds"
         onPress={() => router.push('/calm')}
-        style={[styles.pill, { backgroundColor: colors.paperRaised, borderColor: colors.hairline }]}
+        style={[styles.box, { borderColor: colors.hairline }]}
       >
         <Icon name="calm" color={colors.ink} size={18} />
-        <Text variant="caption">calm</Text>
+        <Text variant="action">calm</Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Need help now"
         accessibilityHint="Crisis lines you can call or text"
         onPress={() => router.push('/help')}
-        style={[styles.pill, { backgroundColor: colors.paperRaised, borderColor: colors.ink }]}
+        // A heavier rule than calm: this is the one that must never be missed.
+        style={[styles.box, styles.urgent, { borderColor: colors.ink }]}
       >
         <Icon name="help" color={colors.ink} size={18} />
-        <Text variant="caption">need help now</Text>
+        <Text variant="action">need help now</Text>
       </Pressable>
     </View>
   );
@@ -47,13 +48,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: space.sm
   },
-  pill: {
+  box: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs + 2,
     minHeight: hitTarget,
     paddingHorizontal: space.md,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth * 2
-  }
+    borderRadius: radius.none,
+    borderWidth: 1
+  },
+  urgent: { borderWidth: 2 }
 });

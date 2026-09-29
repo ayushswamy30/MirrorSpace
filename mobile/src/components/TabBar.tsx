@@ -1,7 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { hitTarget, space } from '@/theme/tokens';
+import { hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CareBar } from './CareBar';
@@ -32,7 +32,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
           const { options } = descriptors[route.key];
           const focused = state.index === index;
           const label = options.title ?? route.name;
-          const color = focused ? signal : colors.inkSoft;
+          const color = focused ? colors.ink : colors.inkSoft;
 
           const onPress = () => {
             const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -52,6 +52,9 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
               <Text variant="label" style={{ color }}>
                 {label}
               </Text>
+              {/* The current tab is marked in the weather's colour — small,
+                  and never the only cue: the label darkens to ink as well. */}
+              <View style={[styles.mark, { backgroundColor: focused ? signal : 'transparent' }]} />
             </Pressable>
           );
         })}
@@ -72,6 +75,7 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2
-  }
+    gap: 3
+  },
+  mark: { width: 4, height: 4, borderRadius: radius.dot }
 });

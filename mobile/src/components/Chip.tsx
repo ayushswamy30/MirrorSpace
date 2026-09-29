@@ -14,9 +14,9 @@ type Props = {
   onPress: () => void;
 };
 
-/** A word or tag in a wrapping row. The selected one takes the signal colour. */
+/** A word or tag in a wrapping row: a ruled box, inverted when selected. */
 export function Chip({ label, selected = false, role = 'button', disabled, onPress }: Props) {
-  const { colors, signal } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Pressable
@@ -28,13 +28,13 @@ export function Chip({ label, selected = false, role = 'button', disabled, onPre
       style={state => [
         styles.chip,
         {
-          borderColor: selected ? signal : colors.hairline,
-          backgroundColor: colors.paperRaised,
+          borderColor: colors.hairline,
+          backgroundColor: selected ? colors.ink : colors.paper,
           opacity: state.pressed ? 0.6 : 1
         }
       ]}
     >
-      <Text variant="caption" tone={selected ? 'signal' : 'ink'}>
+      <Text variant="caption" style={{ color: selected ? colors.paper : colors.ink }}>
         {label}
       </Text>
     </Pressable>
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     paddingHorizontal: space.md,
     justifyContent: 'center',
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth * 2
+    borderRadius: radius.none,
+    borderWidth: 1
   }
 });

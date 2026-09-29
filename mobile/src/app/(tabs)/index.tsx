@@ -1,5 +1,6 @@
 import Animated from 'react-native-reanimated';
 
+import { Masthead } from '@/components/Masthead';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { useEntering } from '@/theme/motion';
@@ -15,12 +16,12 @@ export default function Today() {
   return (
     <Screen>
       <Animated.View entering={first}>
-        <Text variant="label" tone="soft">
-          today
-        </Text>
+        <Masthead title="today" />
       </Animated.View>
       <Animated.View entering={second}>
-        <Text variant="reading">Your first reading comes tomorrow morning, once there is a night to read.</Text>
+        <Text variant="reading" style={{ textAlign: 'center' }}>
+          Your first reading comes tomorrow morning, once there is a night to read.
+        </Text>
       </Animated.View>
     </Screen>
   );

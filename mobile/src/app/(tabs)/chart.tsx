@@ -1,6 +1,6 @@
 import { Locked } from '@/components/Locked';
+import { Masthead } from '@/components/Masthead';
 import { Screen } from '@/components/Screen';
-import { Text } from '@/components/Text';
 
 /**
  * Chart — patterns from day 7; the Mind Chart (day 14), Year in Weather and
@@ -8,11 +8,9 @@ import { Text } from '@/components/Text';
  */
 export default function Chart() {
   return (
-    <Locked feature="patterns" promise="Your patterns, once there are enough days to see them.">
+    <Locked title="chart" feature="patterns" promise="Your patterns, once there are enough days to see them.">
       <Screen>
-        <Text variant="label" tone="soft">
-          chart
-        </Text>
+        <Masthead title="chart" />
       </Screen>
     </Locked>
   );

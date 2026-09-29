@@ -7,7 +7,7 @@ import { Text } from '@/components/Text';
 export default function Welcome() {
   return (
     <OnboardingStep actions={<Button label="begin" onPress={() => router.push('/onboarding/age')} />}>
-      <Text variant="label" tone="soft">
+      <Text variant="label" style={{ letterSpacing: 4 }}>
         mirrorspace
       </Text>
       <Text variant="reading">A quiet room, not a clinic.</Text>
