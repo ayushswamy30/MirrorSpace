@@ -49,7 +49,9 @@ export default function Today() {
         {lastNight ? (
           <Row
             title={formatDuration(lastNight.minutes)}
-            subtitle={`${formatClock(clockOf(lastNight.bedAt))} – ${formatClock(clockOf(lastNight.wakeAt))}`}
+            subtitle={`${formatClock(clockOf(lastNight.bedAt))} – ${formatClock(clockOf(lastNight.wakeAt))}${
+              lastNight.source === 'health' ? ' · from Health Connect' : ''
+            }`}
             onPress={() => router.push('/sleep')}
             accessibilityHint="Change last night"
           />

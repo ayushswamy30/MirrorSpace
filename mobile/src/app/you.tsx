@@ -10,6 +10,7 @@ import { Text } from '@/components/Text';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import type { ConsentPurpose } from '@/lib/consent';
+import { healthConnected, healthPlatform } from '@/lib/health';
 import { disableReminders, enableReminders, remindersEnabled, remindersSupported } from '@/lib/reminders';
 import { useSession } from '@/lib/session';
 import { dayNumber } from '@/lib/unlocks';
@@ -31,10 +32,14 @@ export default function You() {
   const [erase, setErase] = useState<Erase>('idle');
   const [pending, setPending] = useState<Partial<Record<ConsentPurpose, boolean>>>({});
   const [reminder, setReminder] = useState(false);
+  const [health, setHealth] = useState(false);
 
   useEffect(() => {
     remindersEnabled()
       .then(setReminder)
+      .catch(() => undefined);
+    healthConnected()
+      .then(setHealth)
       .catch(() => undefined);
   }, []);
 
@@ -152,6 +157,21 @@ export default function You() {
           value={reminder}
           onValueChange={toggleReminder}
           disabled={!remindersSupported}
+        />
+      </View>
+
+      <View>
+        <SectionLabel title="sleep" />
+        <Row
+          title="Sleep from Health Connect"
+          subtitle={
+            healthPlatform() === 'not-android'
+              ? 'Apple Health comes later — log sleep by hand on Today'
+              : health
+                ? 'On — your nights fill in by themselves'
+                : 'Off — read your nights instead of logging them'
+          }
+          onPress={() => router.push('/health')}
         />
       </View>
 
