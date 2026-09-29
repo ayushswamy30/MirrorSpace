@@ -1,7 +1,8 @@
 import Sentiment from 'sentiment';
-import SleepLog from '../models/SleepLog.js';
-import JournalEntry from '../models/JournalEntry.js';
-import ChatHistory from '../models/ChatHistory.js';
+import * as sleepLogs from '../db/sleepLogs.js';
+import * as journalEntries from '../db/journalEntries.js';
+import * as chat from '../db/chat.js';
+import * as calmTriggers from '../db/calmTriggers.js';
 
 const sentiment = new Sentiment();
 
@@ -50,30 +51,20 @@ export async function getUserContext(userId) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  // Gather sleep data
-  const sleepLogs = await SleepLog.find({
-    userId,
-    date: { $gte: sevenDaysAgo }
-  }).sort({ date: -1 });
-
-  // Gather journal data
-  const journals = await JournalEntry.find({
-    userId,
-    createdAt: { $gte: sevenDaysAgo }
-  }).sort({ createdAt: -1 });
-
-  // Gather chat activity
-  const chatSessions = await ChatHistory.find({
-    userId,
-    createdAt: { $gte: sevenDaysAgo }
-  });
+  // One round trip per source, in parallel.
+  const [logs, journals, chatSessionCount, calmTriggerCount] = await Promise.all([
+    sleepLogs.listForUser(userId, sevenDaysAgo, 'desc'),
+    journalEntries.listSince(userId, sevenDaysAgo),
+    chat.countSessionsSince(userId, sevenDaysAgo),
+    calmTriggers.countSince(userId, sevenDaysAgo)
+  ]);
 
   // Process sleep trends
-  const avgSleep = sleepLogs.length
-    ? Math.round(sleepLogs.reduce((s, l) => s + l.duration, 0) / sleepLogs.length)
+  const avgSleep = logs.length
+    ? Math.round(logs.reduce((s, l) => s + l.duration, 0) / logs.length)
     : null;
-  
-  const sleepDebtDays = sleepLogs.filter(l => l.duration < 420).length;
+
+  const sleepDebtDays = logs.filter(l => l.duration < 420).length;
 
   // Process journal trends
   const avgSentiment = journals.length
@@ -104,15 +95,16 @@ export async function getUserContext(userId) {
 
   return {
     sleepTrend: avgSleep 
-      ? `Average ${Math.round(avgSleep / 60)}h ${avgSleep % 60}m sleep over ${sleepLogs.length} nights. ${sleepDebtDays} nights below 7 hours.`
+      ? `Average ${Math.round(avgSleep / 60)}h ${avgSleep % 60}m sleep over ${logs.length} nights. ${sleepDebtDays} nights below 7 hours.`
       : 'No sleep data available yet.',
     journalSentiment: avgSentiment !== null
       ? `Sentiment is ${sentimentTrend} (avg score: ${avgSentiment.toFixed(1)}). Average entry length: ${avgWordCount} words.`
       : 'No journal entries yet.',
     recentPatterns: {
-      sleepLogs: sleepLogs.length,
+      sleepLogs: logs.length,
       journalEntries: journals.length,
-      chatSessions: chatSessions.length,
+      chatSessions: chatSessionCount,
+      calmTriggers: calmTriggerCount,
       daysSinceJournal,
       sentimentTrend,
       avgSleep,
