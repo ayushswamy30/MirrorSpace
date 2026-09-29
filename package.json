@@ -1,0 +1,24 @@
+{
+  "name": "mirrorspace",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MirrorSpace \u2014 deployed as one origin: a static front end with the API as a serverless function",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm --prefix client install --no-audit --no-fund && npm --prefix client run build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "jose": "^6.2.12",
+    "openai": "^6.27.0",
+    "sentiment": "^5.0.2"
+  }
+}

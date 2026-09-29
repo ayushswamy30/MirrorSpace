@@ -138,3 +138,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Account affordance — quiet, at the bottom, never a wall */
+.home-account {
+  text-align: center;
+  margin-top: 60px;
+}
+
+.home-account-link {
+  background: none;
+  border: none;
+  padding: var(--space-sm);
+  font-size: 0.65rem;
+  color: var(--text-ghost);
+  cursor: pointer;
+  transition: color var(--duration-medium) var(--ease-gentle);
+}
+
+.home-account-link:hover {
+  color: var(--text-muted);
+}

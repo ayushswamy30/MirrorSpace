@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion} from 'framer-motion';
-import { useUser } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/useUser';
 import './Chat.css';
 
 export default function Chat() {
   const { api } = useUser();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,7 +35,7 @@ export default function Chat() {
 
       setSessionId(data.sessionId);
       setMessages(prev => [...prev, { role: 'mirror', content: data.response }]);
-    } catch (error) {
+    } catch {
       setMessages(prev => [...prev, { 
         role: 'mirror', 
         content: "I'm here. Sometimes presence is enough." 

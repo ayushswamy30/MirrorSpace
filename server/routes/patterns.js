@@ -1,31 +1,37 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import MoodPattern from '../models/MoodPattern.js';
+import { predictionLimiter } from '../middleware/rateLimit.js';
+import * as moodPatterns from '../db/moodPatterns.js';
 import { getUserContext } from '../services/patternEngine.js';
 import { generateAIResponse } from '../services/insightGenerator.js';
 import { PERSONALITY_PROMPT } from '../prompts/personality.js';
 
 const router = express.Router();
 
-// GET /api/patterns — Get detected patterns
-router.get('/', auth, async (req, res) => {
-  try {
-    const patterns = await MoodPattern.find({ userId: req.userId })
-      .sort({ 'period.end': -1 })
-      .limit(4);
+const clampScore = (value, fallback = 0) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(100, Math.max(0, Math.round(n)));
+};
 
+// GET /api/patterns — Get detected patterns
+router.get('/', auth, async (req, res, next) => {
+  try {
+    const patterns = await moodPatterns.listForUser(req.userId, 4);
     res.json(patterns);
   } catch (error) {
-    res.status(500).json({ message: 'Could not fetch patterns' });
+    next(error);
   }
 });
 
 // POST /api/patterns/predict — Generate prediction based on all data
-router.post('/predict', auth, async (req, res) => {
+router.post('/predict', auth, predictionLimiter, async (req, res, next) => {
   try {
     const context = await getUserContext(req.userId);
 
-    const systemPrompt = `${PERSONALITY_PROMPT}\n\nYou are the Prediction Engine of MirrorSpace. Analyze the user's recent data (Sleep Logs, Journal Entries, Chat Sessions) and predict their current burnout, anxiety, and emotional drift risks. 
+    const systemPrompt = `${PERSONALITY_PROMPT}
+
+You are the Prediction Engine of MirrorSpace. Analyze the user's recent data (Sleep Logs, Journal Entries, Chat Sessions) and predict their current burnout, anxiety, and emotional drift risks.
 Return ONLY a valid JSON object with the following schema:
 {
   "burnoutIndicators": <number 0-100>,
@@ -35,36 +41,43 @@ Return ONLY a valid JSON object with the following schema:
   "summary": "<1-2 sentences of gentle reflection on their state>"
 }`;
 
-    const userPrompt = `User Context:\n- Sleep: ${context.sleepTrend}\n- Journal: ${context.journalSentiment}\n- Activity: ${context.recentPatterns.chatSessions} chats, ${context.recentPatterns.journalEntries} journals.\n- Days since last journal: ${context.recentPatterns.daysSinceJournal ?? 'unknown'}`;
+    const userPrompt = [
+      'User Context:',
+      `- Sleep: ${context.sleepTrend}`,
+      `- Journal: ${context.journalSentiment}`,
+      `- Activity: ${context.recentPatterns.chatSessions} chats, ${context.recentPatterns.journalEntries} journals.`,
+      `- Calm mode opened ${context.recentPatterns.calmTriggers} times in the past week.`,
+      `- Days since last journal: ${context.recentPatterns.daysSinceJournal ?? 'unknown'}`
+    ].join('\n');
 
     const response = await generateAIResponse(systemPrompt, userPrompt);
-    let parsedText = {
+
+    let prediction = {
       burnoutIndicators: 30,
       anxietyBuildUp: 30,
       emotionalDrift: 30,
-      headline: "The system is quiet.",
+      headline: 'The system is quiet.',
       summary: "We don't have enough data yet, but what we see is calm."
     };
 
     if (response) {
       try {
         const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        parsedText = JSON.parse(cleaned);
+        prediction = { ...prediction, ...JSON.parse(cleaned) };
       } catch (e) {
-        console.error('Failed to parse prediction json:', e);
+        console.error('Failed to parse prediction json:', e.message);
       }
     }
 
-    const pattern = await MoodPattern.create({
-      userId: req.userId,
-      period: {
-        start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
-        end: new Date()
-      },
+    const pattern = await moodPatterns.create(req.userId, {
+      periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      periodEnd: new Date().toISOString(),
       patterns: {
-        emotionalDrift: parsedText.emotionalDrift || 0,
-        burnoutIndicators: parsedText.burnoutIndicators || 0,
-        anxietyBuildUp: parsedText.anxietyBuildUp || 0,
+        // The Patterns page renders these straight into percentage-width bars,
+        // so a model that answers "high" or 300 must not break the layout.
+        emotionalDrift: clampScore(prediction.emotionalDrift),
+        burnoutIndicators: clampScore(prediction.burnoutIndicators),
+        anxietyBuildUp: clampScore(prediction.anxietyBuildUp),
         sleepDebt: 0,
         socialWithdrawal: 0,
         languageComplexity: 0
@@ -75,15 +88,14 @@ Return ONLY a valid JSON object with the following schema:
         chatSessions: context.recentPatterns.chatSessions
       },
       aiInsight: {
-        headline: parsedText.headline,
-        summary: parsedText.summary
+        headline: String(prediction.headline ?? ''),
+        summary: String(prediction.summary ?? '')
       }
     });
 
     res.json(pattern);
   } catch (error) {
-    console.error('Prediction generation error:', error);
-    res.status(500).json({ message: 'Could not generate prediction' });
+    next(error);
   }
 });
 

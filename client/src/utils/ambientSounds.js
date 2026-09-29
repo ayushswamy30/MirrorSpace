@@ -60,8 +60,9 @@ class AmbientSoundEngine {
       }
       setTimeout(() => {
         this.activeNodes.forEach(node => {
-          try { node.stop?.(); } catch {}
-          try { node.disconnect?.(); } catch {}
+          // A node already stopped or disconnected throws; either way it is done with.
+          try { node.stop?.(); } catch { /* already stopped */ }
+          try { node.disconnect?.(); } catch { /* already disconnected */ }
         });
         this.activeNodes = [];
         this.isPlaying = false;
