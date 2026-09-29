@@ -119,6 +119,52 @@ export function Row({ title, subtitle, leading, onPress, accessibilityHint, arro
   );
 }
 
+/** Two columns, a small grey mono heading over serif items. */
+export function DoDont({ dos, donts }: { dos: readonly string[]; donts: readonly string[] }) {
+  return (
+    <View style={styles.doDont}>
+      {[
+        { title: 'Do', items: dos },
+        { title: 'Don’t', items: donts }
+      ].map(col => (
+        <View key={col.title} style={styles.column} accessible accessibilityLabel={`${col.title}: ${col.items.join(', ')}`}>
+          <Text variant="mono" tone="soft">
+            {col.title}
+          </Text>
+          {col.items.map(item => (
+            <Text key={item} variant="heading">
+              {item}
+            </Text>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * The bottom of a feed: an ink block that says it's over. The page ends; it
+ * does not keep offering more.
+ */
+export function EndMark({ link, onPress }: { link?: string; onPress?: () => void }) {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.end, { backgroundColor: colors.ink }]}>
+      <Text variant="title" style={{ color: colors.paper }}>
+        The end
+      </Text>
+      {link && onPress && (
+        <Pressable accessibilityRole="button" accessibilityLabel={link} onPress={onPress} hitSlop={8}>
+          <Text variant="action" style={[styles.endLink, { color: colors.paper }]}>
+            {link}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 type SettingProps = {
   title: string;
   subtitle?: string;
@@ -204,6 +250,17 @@ const styles = StyleSheet.create({
   },
   rowLeading: { width: 36, alignItems: 'center' },
   rowText: { flex: 1, gap: 2 },
+  doDont: { flexDirection: 'row', gap: space.lg },
+  column: { flex: 1, gap: 2 },
+  end: {
+    marginHorizontal: -gutter,
+    marginBottom: -space.xxl,
+    paddingTop: space.xxl,
+    paddingBottom: space.xxl + space.lg,
+    alignItems: 'center',
+    gap: space.md
+  },
+  endLink: { textDecorationLine: 'underline' },
   box: { borderWidth: 1, borderRadius: radius.none },
   boxTitle: { paddingVertical: space.sm + 2, paddingHorizontal: space.md, borderBottomWidth: 1 },
   boxBody: { padding: space.md, gap: space.xs },

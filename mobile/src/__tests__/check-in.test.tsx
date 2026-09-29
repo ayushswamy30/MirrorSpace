@@ -20,8 +20,17 @@ jest.mock('@/lib/checkIns', () => {
 });
 
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
+let mockParams: Record<string, string> = {};
+jest.mock('expo-router', () => ({
+  router: { push: (...args: unknown[]) => mockPush(...args) },
+  useLocalSearchParams: () => mockParams
+}));
 jest.mock('@/lib/safety/log', () => ({ recordSafetyEvent: jest.fn() }));
+jest.mock('@/lib/vents', () => ({
+  ...jest.requireActual('@/lib/vents'),
+  listVents: jest.fn(() => Promise.resolve([])),
+  draft: { get: jest.fn(() => Promise.resolve(null)), set: jest.fn(() => Promise.resolve()), clear: jest.fn() }
+}));
 
 const mocked = jest.mocked(checkIns);
 const logged = jest.mocked(recordSafetyEvent);
@@ -51,6 +60,7 @@ async function renderCheckIn() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockParams = {};
   mocked.latestCheckIn.mockResolvedValue(null);
   mocked.recentTags.mockResolvedValue([]);
   mocked.recordCheckIn.mockImplementation(async emotion => saved(emotion.word));
@@ -185,4 +195,19 @@ test('a note that goes from low to elevated is answered at the higher tier', asy
     ['low', 'check_in'],
     ['elevated', 'check_in']
   ]);
+});
+
+test('vent is one tap beside naming a feeling, and Today can open it directly', async () => {
+  await renderCheckIn();
+  fireEvent.press(screen.getByRole('tab', { name: 'vent' }));
+  expect(await screen.findByText('Put it down here.')).toBeTruthy();
+
+  fireEvent.press(screen.getByRole('tab', { name: 'check in' }));
+  expect(screen.getByText('Where are you, right now?')).toBeTruthy();
+});
+
+test('?mode=vent opens straight onto the page', async () => {
+  mockParams = { mode: 'vent' };
+  await renderCheckIn();
+  expect(screen.getByText('Put it down here.')).toBeTruthy();
 });

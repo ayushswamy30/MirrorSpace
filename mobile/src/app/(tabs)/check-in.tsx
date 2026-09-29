@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -66,8 +67,16 @@ function lastLine(checkIn: CheckInRecord, now: Date): string {
 }
 
 export default function CheckIn() {
+  // Today's "write something down" arrives with ?mode=vent.
+  const params = useLocalSearchParams<{ mode?: string }>();
   const [stage, setStage] = useState<Stage>({ kind: 'choose', replacing: null });
-  const [mode, setMode] = useState<Mode>('name');
+  const [mode, setMode] = useState<Mode>(params.mode === 'vent' ? 'vent' : 'name');
+  // A new ?mode= (the tab is already mounted) switches to it once.
+  const [seenMode, setSeenMode] = useState(params.mode);
+  if (params.mode !== seenMode) {
+    setSeenMode(params.mode);
+    if (params.mode === 'vent' || params.mode === 'name') setMode(params.mode);
+  }
   const [latest, setLatest] = useState<CheckInRecord | null>(null);
   const [tagOrder, setTagOrder] = useState<ContextTag[]>(defaultTagOrder);
   const [error, setError] = useState<string | null>(null);
