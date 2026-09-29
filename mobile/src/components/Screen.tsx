@@ -23,6 +23,8 @@ export function Screen({ children, scroll = true, edges = ['top'], contentStyle 
         <ScrollView
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          // Keeps a focused text field (the check-in note) above the keyboard.
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
         >
           {children}
