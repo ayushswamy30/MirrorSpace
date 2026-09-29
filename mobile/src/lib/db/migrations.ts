@@ -36,7 +36,16 @@ export const migrations: readonly string[] = [
      tier       TEXT NOT NULL CHECK (tier IN ('low', 'elevated', 'acute')),
      source     TEXT NOT NULL CHECK (source IN ('check_in', 'vent', 'chat')),
      created_at TEXT NOT NULL
-   );`
+   );`,
+
+  // 4 — vent pages that were kept. Pages that were let go are never written.
+  `CREATE TABLE vents (
+     id         TEXT PRIMARY KEY NOT NULL,
+     created_at TEXT NOT NULL,
+     local_date TEXT NOT NULL,
+     body       TEXT NOT NULL
+   );
+   CREATE INDEX vents_created_at_idx ON vents (created_at);`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
