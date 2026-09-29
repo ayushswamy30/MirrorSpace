@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -14,6 +14,11 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams
 }));
 jest.mock('expo-localization', () => ({ getLocales: () => [{ regionCode: 'IN' }] }));
+const mockLoadPlan = jest.fn();
+jest.mock('@/lib/safetyPlan', () => {
+  const actual = jest.requireActual('@/lib/safetyPlan');
+  return { ...actual, loadPlan: () => mockLoadPlan() };
+});
 
 function renderCrisis(tier?: string) {
   mockParams = tier ? { tier } : {};
@@ -24,7 +29,10 @@ function renderCrisis(tier?: string) {
   );
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockLoadPlan.mockResolvedValue(jest.requireActual('@/lib/safetyPlan').emptyPlan());
+});
 
 test('acute puts the local line first, one tap to call', () => {
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
@@ -52,4 +60,19 @@ test('elevated interrupts with a breath and the lines, and can be closed', () =>
 test('a missing or unknown tier still shows help, as elevated', () => {
   renderCrisis('whatever');
   expect(screen.getByText('That sounds like a lot to carry.')).toBeTruthy();
+});
+
+test('a written safety plan is one tap from the crisis card', async () => {
+  const { addItem, emptyPlan } = jest.requireActual('@/lib/safetyPlan');
+  mockLoadPlan.mockResolvedValue(addItem(emptyPlan(), 'reasons', { text: 'my dog' }));
+  renderCrisis('acute');
+  expect(await screen.findByRole('button', { name: 'your safety plan' })).toBeTruthy();
+});
+
+test('no plan, no link — and a failed read changes nothing else', async () => {
+  mockLoadPlan.mockRejectedValue(new Error('locked'));
+  renderCrisis('acute');
+  await act(async () => {});
+  expect(screen.queryByRole('button', { name: 'your safety plan' })).toBeNull();
+  expect(screen.getByText('Please talk to someone right now.')).toBeTruthy();
 });
