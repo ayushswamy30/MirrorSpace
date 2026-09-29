@@ -1,5 +1,6 @@
 import { getLocales } from 'expo-localization';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -8,6 +9,7 @@ import { SubHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { helplinesFor } from '@/lib/helplines';
+import { isEmpty, loadPlan } from '@/lib/safetyPlan';
 import { space } from '@/theme/tokens';
 
 /**
@@ -16,10 +18,11 @@ import { space } from '@/theme/tokens';
  * elevated — an interruption: a breath, one grounding step, the lines.
  * acute    — a crisis card: the local line first, one tap to call or text.
  *
- * Like help, this touches no session, network or database, and is plain on
- * purpose: no animation, nothing to scroll past before the numbers. It never
- * closes itself, and closing it is always allowed — it is an offer, not a
- * lock.
+ * Like help, this touches no session or network, and is plain on purpose:
+ * no animation, nothing to scroll past before the numbers. It reads the
+ * device's database only to offer the person's own safety plan, and shows
+ * everything else if that read fails. It never closes itself, and closing it
+ * is always allowed — it is an offer, not a lock.
  */
 export default function Crisis() {
   const { tier } = useLocalSearchParams<{ tier?: string }>();
@@ -28,6 +31,29 @@ export default function Crisis() {
   const acute = tier === 'acute';
 
   return acute ? <Acute /> : <Elevated />;
+}
+
+/** True once a written safety plan is found on the device. */
+function useHasPlan(): boolean {
+  const [has, setHas] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    loadPlan()
+      .then(plan => {
+        if (!cancelled) setHas(!isEmpty(plan));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return has;
+}
+
+function PlanLink() {
+  const has = useHasPlan();
+  if (!has) return null;
+  return <Button kind="outline" arrow label="your safety plan" onPress={() => router.push('/plan')} />;
 }
 
 function Acute() {
@@ -63,6 +89,7 @@ function Acute() {
         </View>
       )}
 
+      <PlanLink />
       <HelplineList />
       <Button kind="link" label="back to mirrorspace" onPress={() => router.back()} />
     </Screen>
@@ -79,6 +106,7 @@ function Elevated() {
       </Text>
 
       <Button arrow label="breathe for a minute" onPress={() => router.replace('/calm')} />
+      <PlanLink />
 
       <Text tone="soft">If it’s more than a moment, these lines are free, confidential and open now:</Text>
       <HelplineList />
