@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Band, Row, SectionLabel, SettingRow } from '@/components/Blocks';
@@ -10,6 +10,7 @@ import { Text } from '@/components/Text';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import type { ConsentPurpose } from '@/lib/consent';
+import { disableReminders, enableReminders, remindersEnabled } from '@/lib/reminders';
 import { useSession } from '@/lib/session';
 import { dayNumber } from '@/lib/unlocks';
 import { space } from '@/theme/tokens';
@@ -29,6 +30,13 @@ export default function You() {
   const [exporting, setExporting] = useState(false);
   const [erase, setErase] = useState<Erase>('idle');
   const [pending, setPending] = useState<Partial<Record<ConsentPurpose, boolean>>>({});
+  const [reminder, setReminder] = useState(false);
+
+  useEffect(() => {
+    remindersEnabled()
+      .then(setReminder)
+      .catch(() => undefined);
+  }, []);
 
   if (session.status !== 'ready') {
     return (
@@ -50,6 +58,23 @@ export default function You() {
     // Both ways need the owner: nobody else should turn the lock off.
     if (!(await authenticate())) return;
     await lock.setEnabled(on);
+  };
+
+  const toggleReminder = async (on: boolean) => {
+    setNote(null);
+    try {
+      if (on) {
+        const allowed = await enableReminders();
+        setReminder(allowed);
+        if (!allowed) setNote('Notifications are off for MirrorSpace in your phone’s settings.');
+      } else {
+        await disableReminders();
+        setReminder(false);
+      }
+    } catch (err) {
+      console.error('Reminder change failed:', err);
+      setNote('That didn’t work. Nothing changed.');
+    }
   };
 
   const toggleConsent = async (purpose: ConsentPurpose, granted: boolean) => {
@@ -114,6 +139,16 @@ export default function You() {
           {note}
         </Text>
       )}
+
+      <View>
+        <SectionLabel title="reminder" />
+        <SettingRow
+          title="Daily reminder"
+          subtitle="Once a day at most, around when you usually check in — never after you have"
+          value={reminder}
+          onValueChange={toggleReminder}
+        />
+      </View>
 
       <View>
         <SectionLabel title="privacy" />

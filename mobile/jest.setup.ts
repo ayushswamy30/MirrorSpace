@@ -11,6 +11,17 @@ jest.mock('expo-audio', () => ({
   setAudioModeAsync: jest.fn(() => Promise.resolve())
 }));
 
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: false })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: false })),
+  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('id')),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
+  AndroidImportance: { DEFAULT: 3 },
+  SchedulableTriggerInputTypes: { DATE: 'date' }
+}));
+
 // Reanimated 4 runs animations on a worklets runtime that doesn't exist in
 // Jest; both libraries ship mocks for exactly this.
 jest.mock('react-native-worklets', () => require('react-native-worklets/lib/module/mock'));
