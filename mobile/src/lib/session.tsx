@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { api, ApiError } from './api';
+import type { ConsentPurpose } from './consent';
 import { kv } from './db/kv';
 import { supabase } from './supabase';
 
@@ -13,6 +14,8 @@ import { supabase } from './supabase';
  * tools keep working. Only the very first launch needs a connection.
  */
 
+export type ConsentState = { granted: boolean; at: string | null; policyVersion: string | null };
+
 export type Profile = {
   id: string;
   email: string | null;
@@ -20,8 +23,19 @@ export type Profile = {
   intents: string[];
   permissions: Record<string, boolean>;
   onboardingComplete: boolean;
+  ageConfirmedAt: string | null;
+  aiDisclosureSeenAt: string | null;
+  consents: Record<ConsentPurpose, ConsentState>;
   createdAt: string;
 };
+
+/**
+ * Accounts that onboarded on the web app never saw the age gate or the AI
+ * disclosure, so the phone asks for both before it opens.
+ */
+export function needsOnboarding(profile: Profile): boolean {
+  return !profile.onboardingComplete || !profile.ageConfirmedAt || !profile.aiDisclosureSeenAt;
+}
 
 type SessionState =
   | { status: 'loading' }

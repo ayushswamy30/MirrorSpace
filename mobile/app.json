@@ -33,6 +33,12 @@
       "expo-localization",
       "expo-secure-store",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MirrorSpace uses Face ID to keep what you write private."
+        }
+      ],
+      [
         "expo-sqlite",
         {
           "useSQLCipher": true,
