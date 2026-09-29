@@ -4,6 +4,8 @@ import { config } from '@/lib/config';
 import { useProfile } from '@/lib/session';
 import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 
+import { SectionLabel } from './Blocks';
+import { AppHeader } from './Header';
 import { Screen } from './Screen';
 import { Text } from './Text';
 
@@ -28,7 +30,8 @@ export function Locked({ feature, promise, children }: Props) {
   const days = daysUntil(feature, createdAt);
 
   return (
-    <Screen>
+    <Screen header={<AppHeader />}>
+      <SectionLabel title={days === 1 ? 'opens tomorrow' : `opens in ${days} days`} />
       <Text variant="title">{promise}</Text>
       <Text tone="soft">
         {days === 1 ? 'This opens tomorrow.' : `This opens in ${days} days.`} It needs a little of your rhythm first.

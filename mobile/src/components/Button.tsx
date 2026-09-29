@@ -1,19 +1,27 @@
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { Icon } from './icons';
 import { Text } from './Text';
 
 type Props = Omit<PressableProps, 'children'> & {
   label: string;
-  /** 'quiet' is a text-only action for secondary choices. */
-  kind?: 'primary' | 'quiet';
+  /**
+   * primary — a solid ink block, the one thing to do next.
+   * outline — a ruled box, for a secondary action that still needs weight.
+   * link    — underlined mono text, for everything else.
+   */
+  kind?: 'primary' | 'outline' | 'link';
+  /** Ends the label with → (the reference's "DIVE DEEPER →"). */
+  arrow?: boolean;
 };
 
-export function Button({ label, kind = 'primary', disabled, style, ...rest }: Props) {
+export function Button({ label, kind = 'primary', arrow = false, disabled, style, ...rest }: Props) {
   const { colors } = useTheme();
-  const primary = kind === 'primary';
+  const variant = kind;
+  const color = variant === 'primary' ? colors.paper : colors.ink;
 
   return (
     <Pressable
@@ -23,15 +31,20 @@ export function Button({ label, kind = 'primary', disabled, style, ...rest }: Pr
       disabled={disabled}
       style={state => [
         styles.base,
-        primary && { borderColor: colors.ink, borderWidth: StyleSheet.hairlineWidth * 2 },
+        variant === 'primary' && [styles.box, { backgroundColor: colors.ink }],
+        variant === 'outline' && [styles.box, styles.outline, { borderColor: colors.ink }],
+        variant === 'link' && styles.link,
         { opacity: disabled ? 0.4 : state.pressed ? 0.6 : 1 },
         typeof style === 'function' ? style(state) : style
       ]}
       {...rest}
     >
-      <Text variant={primary ? 'body' : 'caption'} tone={primary ? 'ink' : 'soft'}>
-        {label}
-      </Text>
+      <View style={styles.row}>
+        <Text variant="action" style={[{ color }, variant === 'link' && styles.underline]}>
+          {label}
+        </Text>
+        {arrow && <Icon name="arrow" color={color} size={14} />}
+      </View>
     </Pressable>
   );
 }
@@ -39,11 +52,16 @@ export function Button({ label, kind = 'primary', disabled, style, ...rest }: Pr
 const styles = StyleSheet.create({
   base: {
     minHeight: hitTarget,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.sm + 2,
-    borderRadius: radius.pill,
-    alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start'
-  }
+  },
+  box: {
+    paddingHorizontal: space.lg + 4,
+    paddingVertical: space.md,
+    borderRadius: radius.none
+  },
+  outline: { borderWidth: 1 },
+  link: { paddingVertical: space.xs },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  underline: { textDecorationLine: 'underline' }
 });
