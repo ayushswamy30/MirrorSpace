@@ -4,7 +4,9 @@ A quiet, local-first mental-health companion. Log sleep, vent into a journal,
 talk to the Mirror, and get pattern-based reflections — no scores, no
 diagnoses.
 
-- `client/` — React 19 + Vite front end
+- `mobile/` — the iOS and Android app (Expo, TypeScript), per
+  *MirrorSpace New Direction Report.docx*; see [`mobile/README.md`](mobile/README.md)
+- `client/` — React 19 + Vite web front end, now the design reference for `mobile/`
 - `server/` — Express 5 API
 - `supabase/migrations/` — Postgres schema
 
