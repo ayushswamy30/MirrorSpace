@@ -83,10 +83,13 @@ type RowProps = {
   leading?: ReactNode;
   onPress?: () => void;
   accessibilityHint?: string;
+  /** The → at the end; off for rows that act in place rather than open something. */
+  arrow?: boolean;
+  selected?: boolean;
 };
 
 /** A list row: serif title, soft subtitle, → at the end, a rule under it. */
-export function Row({ title, subtitle, leading, onPress, accessibilityHint }: RowProps) {
+export function Row({ title, subtitle, leading, onPress, accessibilityHint, arrow = true, selected }: RowProps) {
   const { colors } = useTheme();
 
   return (
@@ -94,6 +97,7 @@ export function Row({ title, subtitle, leading, onPress, accessibilityHint }: Ro
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
       accessibilityHint={accessibilityHint}
+      accessibilityState={selected === undefined ? undefined : { selected }}
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [
@@ -110,7 +114,7 @@ export function Row({ title, subtitle, leading, onPress, accessibilityHint }: Ro
           </Text>
         )}
       </View>
-      {onPress && <Icon name="arrow" color={colors.ink} size={16} />}
+      {onPress && arrow && <Icon name="arrow" color={colors.ink} size={16} />}
     </Pressable>
   );
 }
