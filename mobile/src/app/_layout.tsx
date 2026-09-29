@@ -1,10 +1,6 @@
-import {
-  Fraunces_300Light,
-  Fraunces_400Regular,
-  Fraunces_400Regular_Italic,
-  Fraunces_500Medium
-} from '@expo-google-fonts/fraunces';
-import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+import { DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono';
+import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
+import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -33,6 +29,12 @@ function Navigator() {
             even when the account could not be reached. */}
         <Stack.Screen name="calm" options={{ presentation: 'modal' }} />
         <Stack.Screen name="help" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="plan" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="you" />
+        <Stack.Screen name="sleep" options={{ presentation: 'modal' }} />
+        {/* Full screen and no swipe-to-dismiss, so it can't be flicked away
+            by accident; its own buttons always close it. */}
+        <Stack.Screen name="crisis" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack>
       <LockScreen />
     </>
@@ -41,11 +43,12 @@ function Navigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Fraunces_300Light,
-    Fraunces_400Regular,
-    Fraunces_400Regular_Italic,
-    Fraunces_500Medium,
-    JetBrainsMono_400Regular
+    InstrumentSerif_400Regular,
+    InstrumentSerif_400Regular_Italic,
+    Inter_400Regular,
+    Inter_500Medium,
+    DMMono_400Regular,
+    DMMono_500Medium
   });
 
   // A font that fails to load falls back to the system face; that is better

@@ -1,3 +1,5 @@
+import { SectionLabel } from '@/components/Blocks';
+import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 
@@ -8,10 +10,8 @@ import { Text } from '@/components/Text';
  */
 export default function Circle() {
   return (
-    <Screen>
-      <Text variant="label" tone="soft">
-        circle
-      </Text>
+    <Screen header={<AppHeader />}>
+      <SectionLabel title="your circle" />
       <Text variant="title">A few people who can see your weather, and nothing else.</Text>
       <Text tone="soft">Circles arrive in a later version.</Text>
     </Screen>

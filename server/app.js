@@ -19,6 +19,7 @@ import insightRoutes from './routes/insights.js';
 import chatRoutes from './routes/chat.js';
 import calmRoutes from './routes/calm.js';
 import patternRoutes from './routes/patterns.js';
+import mirrorRoutes from './routes/mirror.js';
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use('/api/insights', insightRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/calm', calmRoutes);
 app.use('/api/patterns', patternRoutes);
+app.use('/api/mirror', mirrorRoutes);
 
 // Health check — reports whether Supabase is actually reachable.
 app.get('/api/health', async (req, res) => {

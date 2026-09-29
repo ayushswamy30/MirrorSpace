@@ -1,16 +1,249 @@
+import { router } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+
+import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import {
+  addMessage,
+  askMirror,
+  clearConversation,
+  listMessages,
+  mirrorStatus,
+  MirrorUnavailable,
+  SUGGESTIONS,
+  type MirrorMessage,
+  type MirrorStatus
+} from '@/lib/mirror';
+import { reflectionsPaused } from '@/lib/safety/log';
+import { answerConcern } from '@/lib/safety/respond';
+import { atLeast, screenText } from '@/lib/safety/screen';
+import { dark, gutter, hitTarget, space } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
+import { fonts } from '@/theme/typography';
 
-/** Mirror — reflective chat. Opens on day 3; built in the Mirror chat step. */
+/**
+ * Mirror — from day 3 (DESIGN.md: the reference's Void). A dark room:
+ * suggested questions, then a conversation. It lives on this phone; each turn
+ * is screened here first, and anything elevated or acute is never sent — the
+ * crisis screen opens instead, as the protocol says the AI stops reflecting.
+ */
+
+const LIGHT = dark.ink;
+const SOFT = dark.inkSoft;
+
+type Note = { kind: 'care' | 'withheld' | 'quiet' | 'error'; text: string } | null;
+
 export default function Mirror() {
   return (
     <Locked feature="mirror" promise="A place to think out loud, with something that has been paying attention.">
-      <Screen>
-        <Text variant="label" tone="soft">
-          mirror
-        </Text>
-      </Screen>
+      <Room />
     </Locked>
   );
 }
+
+function Room() {
+  const { colors } = useTheme();
+  const [status, setStatus] = useState<MirrorStatus | null>(null);
+  const [messages, setMessages] = useState<MirrorMessage[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+  const scroll = useRef<ScrollView>(null);
+
+  const refresh = useCallback(() => {
+    mirrorStatus()
+      .then(setStatus)
+      .catch(() => setStatus({ kind: 'offline' }));
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    listMessages()
+      .then(setMessages)
+      .catch(err => console.warn('Mirror history unavailable:', err));
+  }, [refresh]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body || sending) return;
+    setNote(null);
+
+    const tier = screenText(body);
+    if (atLeast(tier, 'elevated')) {
+      // Not sent: the crisis screen answers this, not the AI.
+      setText('');
+      setNote({ kind: 'withheld', text: 'Mirror won’t reflect on this one. You deserve a person right now — help is open.' });
+      answerConcern(tier, 'chat');
+      return;
+    }
+    if (await reflectionsPaused().catch(() => false)) {
+      setNote({ kind: 'quiet', text: 'Mirror is quiet for today. Calm, and help, are one tap away.' });
+      return;
+    }
+
+    setSending(true);
+    setText('');
+    try {
+      const mine = await addMessage('user', body);
+      const history = [...messages, mine];
+      setMessages(history);
+      answerConcern(tier, 'chat');
+      if (tier === 'low') setNote({ kind: 'care', text: 'That sounds heavy. If it gets heavier, help is under calm.' });
+
+      const reply = await askMirror(history);
+      const theirs = await addMessage('mirror', reply);
+      setMessages(m => [...m, theirs]);
+    } catch (error) {
+      if (error instanceof MirrorUnavailable) setStatus(error.status);
+      else setNote({ kind: 'error', text: 'Mirror couldn’t answer just now. Your words are still here.' });
+    } finally {
+      setSending(false);
+      requestAnimationFrame(() => scroll.current?.scrollToEnd({ animated: true }));
+    }
+  };
+
+  const open = status?.kind === 'open';
+
+  return (
+    <Screen
+      header={<AppHeader onVoid />}
+      scroll={false}
+      background={colors.void}
+      contentStyle={styles.page}
+    >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
+        <ScrollView ref={scroll} contentContainerStyle={styles.feed} keyboardShouldPersistTaps="handled">
+          <Text variant="label" style={[styles.centre, { color: LIGHT }]} accessibilityRole="header">
+            welcome to the mirror
+          </Text>
+          <Text variant="mono" style={[styles.centre, { color: SOFT }]}>
+            software, not a person · not a therapist
+          </Text>
+
+          {status && !open && <Closed status={status} onRetry={refresh} />}
+
+          {open && messages.length === 0 && (
+            <View style={styles.suggestions}>
+              {SUGGESTIONS.map(s => (
+                <VoidLink key={s} label={s} onPress={() => setText(s)} />
+              ))}
+            </View>
+          )}
+
+          {messages.map(m => (
+            <Text
+              key={m.id}
+              variant={m.role === 'user' ? 'mono' : 'heading'}
+              style={[{ color: m.role === 'user' ? SOFT : LIGHT }, m.role === 'user' && styles.mine]}
+            >
+              {m.content}
+            </Text>
+          ))}
+
+          {sending && (
+            <Text variant="mono" style={{ color: SOFT }} accessibilityLabel="Mirror is answering">
+              …
+            </Text>
+          )}
+
+          {note && (
+            <Text variant="bodyItalic" style={{ color: LIGHT }} accessibilityRole="alert">
+              {note.text}
+            </Text>
+          )}
+
+          {messages.length > 0 && !sending && (
+            <VoidLink
+              label="start over"
+              onPress={async () => {
+                await clearConversation().catch(() => undefined);
+                setMessages([]);
+                setNote(null);
+              }}
+            />
+          )}
+        </ScrollView>
+
+        {open && (
+          <View style={[styles.inputBar, { borderTopColor: dark.inkFaint }]}>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="ASK ANYTHING…"
+              placeholderTextColor={SOFT}
+              accessibilityLabel="Ask Mirror"
+              multiline
+              maxLength={4000}
+              maxFontSizeMultiplier={2}
+              style={[styles.input, { color: LIGHT }]}
+            />
+            <VoidLink label="send" onPress={send} disabled={!text.trim() || sending} />
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </Screen>
+  );
+}
+
+function Closed({ status, onRetry }: { status: MirrorStatus; onRetry: () => void }) {
+  const line: Record<Exclude<MirrorStatus['kind'], 'open'>, string> = {
+    'no-consent': 'Mirror reflects on what you write, using an AI. That needs AI reflections turned on.',
+    unavailable:
+      'Mirror is resting for now. It opens once reflections are switched on for MirrorSpace — nothing you type here is sent until then.',
+    offline: 'Mirror needs a connection. Anything already said is still here.'
+  };
+  if (status.kind === 'open') return null;
+
+  return (
+    <View style={styles.closed}>
+      <Text variant="title" style={[styles.centre, { color: LIGHT }]}>
+        {line[status.kind]}
+      </Text>
+      {status.kind === 'no-consent' && <VoidLink label="turn it on in you" onPress={() => router.push('/you')} />}
+      {status.kind === 'offline' && <VoidLink label="try again" onPress={onRetry} />}
+    </View>
+  );
+}
+
+/** Underlined mono capitals in light ink — the room's only kind of control. */
+function VoidLink({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => [styles.link, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }]}
+    >
+      <Text variant="action" style={[styles.centre, styles.underline, { color: LIGHT }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: { flex: 1, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0, gap: 0 },
+  fill: { flex: 1 },
+  feed: { paddingHorizontal: gutter, paddingVertical: space.lg, gap: space.lg },
+  centre: { textAlign: 'center' },
+  suggestions: { gap: space.sm, marginTop: space.md },
+  closed: { gap: space.lg, marginTop: space.xl },
+  mine: { textAlign: 'right' },
+  link: { minHeight: hitTarget, justifyContent: 'center', alignSelf: 'center' },
+  underline: { textDecorationLine: 'underline' },
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    paddingHorizontal: gutter,
+    paddingVertical: space.sm,
+    borderTopWidth: StyleSheet.hairlineWidth
+  },
+  input: { flex: 1, fontFamily: fonts.mono, fontSize: 13, maxHeight: 120, minHeight: hitTarget }
+});

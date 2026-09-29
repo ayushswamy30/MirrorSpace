@@ -21,7 +21,6 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@/lib/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
 jest.mock('@/lib/db/kv', () => ({ kv: { get: jest.fn(), set: jest.fn(), remove: jest.fn() } }));
-jest.mock('@/components/CareBar', () => ({ CareBar: () => null }));
 
 /** Renders the draft so tests can read what the screen recorded. */
 function Spy() {

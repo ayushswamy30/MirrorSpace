@@ -20,7 +20,9 @@ export default function Disclosure() {
       <Text>
         It notices patterns in what you share with it and says what it sees. That’s all it claims to do.
       </Text>
-      <Text tone="soft">If you are ever in danger, “need help now” is at the bottom of every screen.</Text>
+      <Text tone="soft">
+        If you are ever in danger, crisis lines are under “calm”, at the top of every screen — tap calm, then help.
+      </Text>
     </OnboardingStep>
   );
 }

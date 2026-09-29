@@ -5,7 +5,17 @@ import Svg, { Circle, Ellipse, Line, Path } from 'react-native-svg';
  * glyphs. Drawn on a 24-unit grid with one stroke weight so they read as a set.
  */
 
-export type IconName = 'today' | 'checkIn' | 'mirror' | 'chart' | 'circle' | 'calm' | 'help';
+export type IconName =
+  | 'today'
+  | 'checkIn'
+  | 'mirror'
+  | 'chart'
+  | 'circle'
+  | 'calm'
+  | 'help'
+  | 'back'
+  | 'close'
+  | 'arrow';
 
 type Props = { name: IconName; color: string; size?: number };
 
@@ -63,6 +73,9 @@ export function Icon({ name, color, size = 24 }: Props) {
           <Line x1="8" y1="12" x2="16" y2="12" {...common} />
         </>
       )}
+      {name === 'back' && <Path d="M20 12H4.5M10 6l-6 6 6 6" {...common} />}
+      {name === 'arrow' && <Path d="M4 12h15.5M14 6l6 6-6 6" {...common} />}
+      {name === 'close' && <Path d="M5 5l14 14M19 5L5 19" {...common} />}
     </Svg>
   );
 }
