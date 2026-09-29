@@ -16,9 +16,9 @@ export default function Today() {
   const second = useEntering(150);
 
   return (
-    <Screen header={<AppHeader context={shortDate()} />}>
+    <Screen header={<AppHeader />}>
       <Animated.View entering={first}>
-        <SectionLabel title="your day at a glance" rule={false} />
+        <SectionLabel title={`your day at a glance · ${shortDate()}`} rule={false} />
       </Animated.View>
       <Animated.View entering={second}>
         <Text variant="reading">Your first reading comes tomorrow morning.</Text>

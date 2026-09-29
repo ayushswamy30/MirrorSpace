@@ -4,22 +4,18 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { CareBar } from './CareBar';
 import { Text } from './Text';
 
 /**
  * Five tab names in mono capitals — text only, no icons (DESIGN.md). The
  * current tab is ink with a small weather-coloured dot; the rest are soft ink.
- *
- * Calm tools and "Need help now" sit above the tabs (report §7), part of the
- * bar so they are on every tab screen without each screen remembering them.
+ * Calm lives in the header above, not here.
  */
 export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { colors, signal } = useTheme();
 
   return (
     <View style={{ backgroundColor: colors.paper, paddingBottom: Math.max(insets.bottom, space.xs) }}>
-      <CareBar />
       <View style={[styles.tabs, { borderTopColor: colors.hairline }]} accessibilityRole="tablist">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];

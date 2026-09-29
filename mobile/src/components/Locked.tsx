@@ -10,8 +10,6 @@ import { Screen } from './Screen';
 import { Text } from './Text';
 
 type Props = {
-  /** The tab's name, for the header. */
-  title: string;
   feature: Feature;
   /** What the space will hold, in one line. */
   promise: string;
@@ -23,7 +21,7 @@ type Props = {
  * quiet line about when. Not a paywall and not a streak — the day count is
  * calendar days since the account began, whether or not the app was opened.
  */
-export function Locked({ title, feature, promise, children }: Props) {
+export function Locked({ feature, promise, children }: Props) {
   const profile = useProfile();
   const createdAt = new Date(profile.createdAt);
 
@@ -32,7 +30,7 @@ export function Locked({ title, feature, promise, children }: Props) {
   const days = daysUntil(feature, createdAt);
 
   return (
-    <Screen header={<AppHeader context={title} />}>
+    <Screen header={<AppHeader />}>
       <SectionLabel title={days === 1 ? 'opens tomorrow' : `opens in ${days} days`} />
       <Text variant="title">{promise}</Text>
       <Text tone="soft">

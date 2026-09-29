@@ -8,8 +8,8 @@ import { Screen } from '@/components/Screen';
  */
 export default function Chart() {
   return (
-    <Locked title="chart" feature="patterns" promise="Your patterns, once there are enough days to see them.">
-      <Screen header={<AppHeader context="chart" />}>{null}</Screen>
+    <Locked feature="patterns" promise="Your patterns, once there are enough days to see them.">
+      <Screen header={<AppHeader />}>{null}</Screen>
     </Locked>
   );
 }

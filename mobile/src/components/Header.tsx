@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { gutter, hitTarget, radius, space } from '@/theme/tokens';
@@ -12,28 +13,49 @@ export function shortDate(now: Date = new Date()): string {
 }
 
 /**
- * The bar on every tab: the wordmark on the left, the screen's context on the
- * right, a rule underneath. The weather dot sits beside the context — the one
- * place colour appears on the page, and small on purpose.
+ * Calm tools, one tap from every screen (report §7): a small link at the top
+ * right, where the reference keeps its date control. Crisis lines are one
+ * tap further, in calm's own header.
  */
-export function AppHeader({ context }: { context?: string }) {
+export function CalmLink() {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Calm tools"
+      accessibilityHint="Breathing, grounding, sounds, and crisis lines"
+      onPress={() => router.push('/calm')}
+      hitSlop={8}
+      style={({ pressed }) => [styles.calm, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Icon name="calm" color={colors.ink} size={16} />
+      <Text variant="label">calm</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * The bar on every tab: the wordmark with the weather dot beside it — the one
+ * place colour appears on the page, and small on purpose — calm on the
+ * right, a rule underneath.
+ */
+export function AppHeader() {
   const { colors, signal } = useTheme();
 
   return (
     <View style={[styles.bar, { borderBottomColor: colors.hairline }]}>
-      <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace">
-        mirror – space
-      </Text>
-      {context && (
-        <View style={styles.context}>
-          <View
-            style={[styles.dot, { backgroundColor: signal }]}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          />
-          <Text variant="label">{context}</Text>
-        </View>
-      )}
+      <View style={styles.brand}>
+        <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace">
+          mirror – space
+        </Text>
+        <View
+          style={[styles.dot, { backgroundColor: signal }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+      </View>
+      <CalmLink />
     </View>
   );
 }
@@ -43,10 +65,12 @@ type SubHeaderProps = {
   /** 'back' pops the stack; 'close' is for full-screen sheets. */
   leading?: 'back' | 'close';
   onLeading?: () => void;
+  /** An action on the right, such as calm's link to crisis lines. */
+  trailing?: ReactNode;
 };
 
 /** A pushed screen: a back or close control, the title centred in mono. */
-export function SubHeader({ title, leading = 'back', onLeading }: SubHeaderProps) {
+export function SubHeader({ title, leading = 'back', onLeading, trailing }: SubHeaderProps) {
   const { colors } = useTheme();
 
   return (
@@ -56,15 +80,15 @@ export function SubHeader({ title, leading = 'back', onLeading }: SubHeaderProps
         accessibilityLabel={leading === 'close' ? 'close' : 'back'}
         onPress={onLeading ?? (() => router.back())}
         hitSlop={8}
-        style={styles.leading}
+        style={styles.side}
       >
         <Icon name={leading} color={colors.ink} size={22} />
       </Pressable>
       <Text variant="label" accessibilityRole="header" style={styles.centred}>
         {title}
       </Text>
-      {/* Balances the leading control so the title stays centred. */}
-      <View style={styles.leading} />
+      {/* Also balances the leading control so the title stays centred. */}
+      <View style={[styles.side, styles.trailing]}>{trailing}</View>
     </View>
   );
 }
@@ -78,8 +102,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth
   },
-  context: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
-  leading: { width: hitTarget, height: hitTarget, justifyContent: 'center' },
+  calm: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },
+  side: { minWidth: hitTarget, height: hitTarget, justifyContent: 'center' },
+  trailing: { alignItems: 'flex-end' },
   centred: { flex: 1, textAlign: 'center' }
 });
