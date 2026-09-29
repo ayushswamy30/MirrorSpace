@@ -14,7 +14,7 @@ type Props = {
   onPress: () => void;
 };
 
-/** A word or tag in a wrapping row: a ruled box, inverted when selected. */
+/** A word or tag in a wrapping row: a ruled box, serif word, inverted when selected. */
 export function Chip({ label, selected = false, role = 'button', disabled, onPress }: Props) {
   const { colors } = useTheme();
 
@@ -34,7 +34,7 @@ export function Chip({ label, selected = false, role = 'button', disabled, onPre
         }
       ]}
     >
-      <Text variant="caption" style={{ color: selected ? colors.paper : colors.ink }}>
+      <Text variant="heading" style={[styles.word, { color: selected ? colors.paper : colors.ink }]}>
         {label}
       </Text>
     </Pressable>
@@ -48,5 +48,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.none,
     borderWidth: 1
-  }
+  },
+  word: { fontSize: 19, lineHeight: 23 }
 });

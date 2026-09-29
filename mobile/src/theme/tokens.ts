@@ -1,11 +1,11 @@
 /**
- * MirrorSpace design tokens.
+ * MirrorSpace design tokens — see DESIGN.md.
  *
- * Black and white, like a printed page: ink on paper, inverted at night.
- * Surfaces are separated by hairline rules rather than fills, and a selected
+ * A printed almanac: near-white paper and black ink, inverted at night.
+ * Surfaces are separated by rules and space rather than fills, and a selected
  * thing is shown by inverting it. The one colour is the Inner Weather signal,
- * kept to small marks — the weather dot in the masthead and the current tab —
- * so it reads as a note in the margin, never as decoration.
+ * kept to small marks — the weather dot and the current tab — so it reads as
+ * a note in the margin, never as decoration.
  *
  * Every text/background pair used here is checked against WCAG 2.2 AA in
  * __tests__/contrast.test.ts, in both themes. Add a pair there whenever a new
@@ -25,19 +25,28 @@ export type Palette = {
   inkSoft: string;
   /** Decorative only — never for text a user has to read. */
   inkFaint: string;
-  /** Rules and outlines — drawn at hairline width, so they can be full ink. */
+  /** Rules and outlines — drawn thin, so they can be full ink. */
   hairline: string;
+  /** Thick section breaks, pressed rows, the search field. */
+  band: string;
+  /** The rare soft surface: a writing prompt, a sheet. */
+  tint: string;
+  /** Full-dark rooms (Mirror) keep this in both themes, with light text. */
+  void: string;
   /** The one colour, keyed by Inner Weather. Small marks only. */
   signal: Record<Weather, string>;
 };
 
 export const light: Palette = {
-  paper: '#FFFFFF',
-  paperRaised: '#FFFFFF',
-  ink: '#000000',
-  inkSoft: '#5E5E5E',
-  inkFaint: '#B3B3B3',
-  hairline: '#000000',
+  paper: '#F6F6F3',
+  paperRaised: '#F6F6F3',
+  ink: '#111111',
+  inkSoft: '#6A6A66',
+  inkFaint: '#B8B8B3',
+  hairline: '#111111',
+  band: '#ECECE8',
+  tint: '#F7EEF4',
+  void: '#0A0A0A',
   signal: {
     clear: '#9A5B1E',
     mild: '#6F6A2A',
@@ -48,12 +57,15 @@ export const light: Palette = {
 };
 
 export const dark: Palette = {
-  paper: '#000000',
-  paperRaised: '#000000',
-  ink: '#FFFFFF',
-  inkSoft: '#A3A3A3',
-  inkFaint: '#4D4D4D',
-  hairline: '#FFFFFF',
+  paper: '#0E0E0E',
+  paperRaised: '#0E0E0E',
+  ink: '#F2F2EF',
+  inkSoft: '#A09F9A',
+  inkFaint: '#4A4A47',
+  hairline: '#F2F2EF',
+  band: '#1A1A1A',
+  tint: '#1C1519',
+  void: '#0A0A0A',
   signal: {
     clear: '#E0A868',
     mild: '#C9C27A',
@@ -71,6 +83,9 @@ export const space = {
   xl: 40,
   xxl: 64
 } as const;
+
+/** The page's side margin. */
+export const gutter = 20;
 
 /** Square, like print. Only the weather dot is round. */
 export const radius = {

@@ -6,7 +6,8 @@ import Animated from 'react-native-reanimated';
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
-import { Masthead, SectionHead } from '@/components/Masthead';
+import { SectionLabel } from '@/components/Blocks';
+import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import {
@@ -26,7 +27,7 @@ import { QUADRANTS, quadrantLabel, wordsNearestFirst, type Emotion } from '@/lib
 import { recordSafetyEvent } from '@/lib/safety/log';
 import { atLeast, higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useEntering } from '@/theme/motion';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -142,32 +143,30 @@ export default function CheckIn() {
   const replacing = stage.replacing;
 
   return (
-    <Screen>
-      <Masthead title="check-in" />
-      <Text variant="reading" style={styles.center}>
-        {replacing ? 'Which word fits better?' : 'Where are you, right now?'}
-      </Text>
+    <Screen header={<AppHeader context="check-in" />}>
+      <View style={styles.block}>
+        <SectionLabel title={replacing ? 'change the word' : 'name it'} rule={false} />
+        <Text variant="reading">{replacing ? 'Which word fits better?' : 'Where are you, right now?'}</Text>
+      </View>
       {error ? (
-        <Text variant="bodyItalic" style={styles.center} accessibilityRole="alert">
+        <Text variant="bodyItalic" accessibilityRole="alert">
           {error}
         </Text>
       ) : care ? (
         <CareLine />
       ) : replacing ? (
-        <Button kind="quiet" label={`keep “${replacing.emotion}”`} onPress={() => setStage({ kind: 'after', checkIn: replacing })} />
+        <Button kind="link" label={`keep “${replacing.emotion}”`} onPress={() => setStage({ kind: 'after', checkIn: replacing })} />
       ) : latest ? (
-        <Text variant="receipt" tone="soft" style={styles.center}>
+        <Text variant="mono" tone="soft">
           {lastLine(latest, new Date())}
         </Text>
       ) : (
-        <Text tone="soft" style={styles.center}>
-          One word is enough.
-        </Text>
+        <Text tone="soft">One word is enough.</Text>
       )}
 
       {QUADRANTS.map(quadrant => (
         <View key={quadrant} style={styles.section}>
-          <SectionHead title={quadrantLabel[quadrant]} />
+          <SectionLabel title={quadrantLabel[quadrant]} />
           <View style={styles.wrap}>
             {wordsNearestFirst(quadrant).map(emotion => (
               <Chip
@@ -237,20 +236,16 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
   };
 
   return (
-    <Screen>
-      <Masthead title="checked in" />
+    <Screen header={<AppHeader context="check-in" />}>
       <Animated.View entering={first} style={styles.block}>
-        <Text variant="reading" style={styles.center}>
-          {checkIn.emotion}.
-        </Text>
-        <Text tone="soft" style={styles.center}>
-          That’s the check-in. Anything around it?
-        </Text>
+        <SectionLabel title="checked in" rule={false} />
+        <Text variant="reading">{checkIn.emotion}.</Text>
+        <Text tone="soft">That’s the check-in. Anything around it?</Text>
         {care && <CareLine />}
       </Animated.View>
 
       <Animated.View entering={second} style={styles.block}>
-        <SectionHead title="around it" />
+        <SectionLabel title="around it" />
         <View style={styles.wrap}>
           {tagOrder.map(tag => (
             <Chip
@@ -263,33 +258,38 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
           ))}
         </View>
 
-        <TextInput
-          value={note}
-          onChangeText={setNoteText}
-          onBlur={saveNote}
-          placeholder="a line, if you want"
-          placeholderTextColor={colors.inkSoft}
-          accessibilityLabel="note"
-          multiline
-          maxLength={500}
-          maxFontSizeMultiplier={2}
-          style={[styles.note, { color: colors.ink, borderColor: colors.hairline }]}
-        />
+        {/* A writing sheet: a soft tinted block with its prompt in italic serif. */}
+        <View style={[styles.sheet, { backgroundColor: colors.tint }]}>
+          <Text variant="bodyItalic">A line about it, if you want.</Text>
+          <TextInput
+            value={note}
+            onChangeText={setNoteText}
+            onBlur={saveNote}
+            placeholder="write here"
+            placeholderTextColor={colors.inkSoft}
+            accessibilityLabel="note"
+            multiline
+            maxLength={500}
+            maxFontSizeMultiplier={2}
+            style={[styles.note, { color: colors.ink }]}
+          />
+        </View>
 
         {error && (
-          <Text variant="bodyItalic" style={styles.center} accessibilityRole="alert">
+          <Text variant="bodyItalic" accessibilityRole="alert">
             {error}
           </Text>
         )}
 
         <Button
           label="done"
+          arrow
           onPress={async () => {
             if (await saveNote()) onDone(current.current);
           }}
         />
         <Button
-          kind="quiet"
+          kind="link"
           label="a different word"
           onPress={async () => {
             if (await saveNote()) onDifferentWord(current.current);
@@ -301,18 +301,16 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
 }
 
 const styles = StyleSheet.create({
-  center: { textAlign: 'center' },
   block: { gap: space.md },
   section: { gap: space.md },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  sheet: { padding: space.md, gap: space.sm },
   note: {
-    fontFamily: fonts.serif,
-    fontSize: 18,
-    lineHeight: 26,
-    minHeight: 88,
-    padding: space.md,
-    borderRadius: radius.none,
-    borderWidth: 1,
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    lineHeight: 23,
+    minHeight: 72,
+    padding: 0,
     textAlignVertical: 'top'
   }
 });

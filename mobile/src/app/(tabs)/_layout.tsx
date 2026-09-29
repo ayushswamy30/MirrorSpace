@@ -27,7 +27,7 @@ export default function TabsLayout() {
         <Text variant="title">{session.message}</Text>
         <Text tone="soft">Nothing you write is lost; it simply can’t open yet.</Text>
         <Button label="try again" onPress={session.retry} />
-        <Button kind="quiet" label="need help now" onPress={() => router.push('/help')} />
+        <Button kind="link" label="need help now" onPress={() => router.push('/help')} />
       </Screen>
     );
   }

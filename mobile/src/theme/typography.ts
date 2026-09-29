@@ -1,18 +1,20 @@
 import type { TextStyle } from 'react-native';
 
 /**
- * Editorial, like a printed almanac: a crisp serif for the sentences the app
- * speaks, small spaced capitals in a grotesk for labels and actions, and a
- * monospace for data receipts ("3 nights under 6h"). All three are
- * open-source (SIL OFL), loaded in the root layout.
+ * Three families, all SIL OFL, loaded in the root layout (see DESIGN.md):
+ *
+ *   Instrument Serif — what the app says: headlines, row titles, Do/Don't.
+ *   Inter            — body paragraphs and subtitles.
+ *   DM Mono          — the interface's own voice: labels, tabs, buttons,
+ *                      links, data lines and long reads.
  */
 export const fonts = {
-  serifLight: 'Newsreader_300Light',
-  serif: 'Newsreader_400Regular',
-  serifItalic: 'Newsreader_400Regular_Italic',
-  serifMedium: 'Newsreader_500Medium',
-  sans: 'Inter_500Medium',
-  mono: 'JetBrainsMono_400Regular'
+  serif: 'InstrumentSerif_400Regular',
+  serifItalic: 'InstrumentSerif_400Regular_Italic',
+  sans: 'Inter_400Regular',
+  sansMedium: 'Inter_500Medium',
+  mono: 'DMMono_400Regular',
+  monoMedium: 'DMMono_500Medium'
 } as const;
 
 /**
@@ -24,24 +26,39 @@ export const maxFontScale = 2;
 export type TextVariant =
   | 'reading'
   | 'title'
+  | 'heading'
   | 'body'
   | 'bodyItalic'
   | 'caption'
   | 'receipt'
+  | 'mono'
   | 'label'
   | 'action';
 
 export const textVariants: Record<TextVariant, TextStyle> = {
-  // The daily reading: the largest thing in the app, and usually the only one.
-  reading: { fontFamily: fonts.serifLight, fontSize: 36, lineHeight: 42, letterSpacing: -0.6 },
-  title: { fontFamily: fonts.serif, fontSize: 26, lineHeight: 32, letterSpacing: -0.3 },
-  body: { fontFamily: fonts.serif, fontSize: 18, lineHeight: 26 },
-  bodyItalic: { fontFamily: fonts.serifItalic, fontSize: 18, lineHeight: 26 },
-  caption: { fontFamily: fonts.serif, fontSize: 16, lineHeight: 22 },
-  receipt: { fontFamily: fonts.mono, fontSize: 13, lineHeight: 19, letterSpacing: 0.2 },
-  // Section heads, the masthead, tab names. Capitals are a style only: screen
-  // readers still get the words, not spelled-out letters.
-  label: { fontFamily: fonts.sans, fontSize: 11, lineHeight: 16, letterSpacing: 1.8, textTransform: 'uppercase' },
-  // What a button says.
-  action: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 18, letterSpacing: 1.6, textTransform: 'uppercase' }
+  // The day's headline ("Be patient."): the largest thing in the app.
+  reading: { fontFamily: fonts.serif, fontSize: 40, lineHeight: 44, letterSpacing: -0.4 },
+  title: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 34, letterSpacing: -0.2 },
+  // Row titles, Do/Don't items, chosen words.
+  heading: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 27 },
+  body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23 },
+  // Prompts: the question a writing sheet asks.
+  bodyItalic: { fontFamily: fonts.serifItalic, fontSize: 20, lineHeight: 26 },
+  // Subtitles under a row title ("through tonight").
+  caption: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19 },
+  // Long reads and data lines.
+  receipt: { fontFamily: fonts.mono, fontSize: 13, lineHeight: 21 },
+  // The small grey sentence-case mono of "Do" / "Don't".
+  mono: { fontFamily: fonts.mono, fontSize: 12, lineHeight: 17 },
+  // Section labels, the wordmark, tab names. Capitals are a style only:
+  // screen readers still get the words, not spelled-out letters.
+  label: { fontFamily: fonts.mono, fontSize: 11, lineHeight: 16, letterSpacing: 1.3, textTransform: 'uppercase' },
+  // What a button or link says.
+  action: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 12,
+    lineHeight: 17,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase'
+  }
 };

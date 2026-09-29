@@ -1,5 +1,5 @@
 import { Locked } from '@/components/Locked';
-import { Masthead } from '@/components/Masthead';
+import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 
 /**
@@ -9,9 +9,7 @@ import { Screen } from '@/components/Screen';
 export default function Chart() {
   return (
     <Locked title="chart" feature="patterns" promise="Your patterns, once there are enough days to see them.">
-      <Screen>
-        <Masthead title="chart" />
-      </Screen>
+      <Screen header={<AppHeader context="chart" />}>{null}</Screen>
     </Locked>
   );
 }
