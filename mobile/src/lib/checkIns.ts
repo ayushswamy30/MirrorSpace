@@ -56,6 +56,21 @@ export type ContextTag = (typeof CONTEXT_TAGS)[number]['key'];
 
 const TOUCH = `updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`;
 
+// Whoever shows something derived from check-ins (the weather, Today) hears
+// when a new one lands or a word changes.
+const listeners = new Set<() => void>();
+
+export function onCheckInsChanged(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function changed(): void {
+  for (const listener of listeners) listener();
+}
+
 /** YYYY-MM-DD in the device's current timezone. */
 export function localDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -98,6 +113,7 @@ export async function recordCheckIn(emotion: Emotion, now: Date = new Date()): P
     checkIn.energy,
     checkIn.pleasantness
   );
+  changed();
   return checkIn;
 }
 
@@ -111,11 +127,13 @@ export async function changeEmotion(id: string, emotion: Emotion): Promise<void>
     emotion.pleasantness,
     id
   );
+  changed();
 }
 
 export async function setTags(id: string, tags: readonly string[]): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(`UPDATE check_ins SET tags = ?, ${TOUCH} WHERE id = ?`, JSON.stringify(tags), id);
+  changed();
 }
 
 /** A blank note is stored as no note. */
