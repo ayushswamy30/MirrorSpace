@@ -6,6 +6,7 @@ import { Segmented, Row } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { Breather } from '@/components/calm/Breather';
 import { Grounding } from '@/components/calm/Grounding';
+import { Sounds } from '@/components/calm/Sounds';
 import { SubHeader } from '@/components/Header';
 import { Icon } from '@/components/icons';
 import { Screen } from '@/components/Screen';
@@ -15,16 +16,18 @@ import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /**
- * Calm tools — breathing and 5-4-3-2-1 grounding. Like help, this must never
- * depend on the session, the network or the database: it opens in every
- * state the app can be in, and it records nothing.
+ * Calm tools — breathing, 5-4-3-2-1 grounding and sounds. Like help, this
+ * must never depend on the session, the network or the database: it opens in
+ * every state the app can be in, and it records nothing. The sounds are
+ * bundled, so they play offline too.
  */
 
-type Tool = 'breathe' | 'ground';
+type Tool = 'breathe' | 'ground' | 'sounds';
 
 const TOOLS = [
   { key: 'breathe', label: 'breathe' },
-  { key: 'ground', label: 'ground' }
+  { key: 'ground', label: 'ground' },
+  { key: 'sounds', label: 'sounds' }
 ] as const;
 
 function minutes(pattern: Pattern): string {
@@ -70,6 +73,8 @@ export default function Calm() {
         ))}
 
       {tool === 'ground' && <Grounding />}
+
+      {tool === 'sounds' && <Sounds />}
 
       <Button kind="link" label="need help now" onPress={() => router.replace('/help')} />
     </Screen>
