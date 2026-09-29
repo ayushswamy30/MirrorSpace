@@ -37,18 +37,20 @@ type SegmentedProps<K extends string> = {
   options: readonly { key: K; label: string }[];
   value: K;
   onChange: (key: K) => void;
+  /** Runs edge to edge by default; false keeps it inside a box. */
+  bleed?: boolean;
 };
 
 /** Mono tabs with a ○ bullet, ● and an underline on the current one. */
-export function Segmented<K extends string>({ options, value, onChange }: SegmentedProps<K>) {
+export function Segmented<K extends string>({ options, value, onChange, bleed = true }: SegmentedProps<K>) {
   const { colors } = useTheme();
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={[styles.segmentedWrap, { borderBottomColor: colors.hairline }]}
-      contentContainerStyle={styles.segmented}
+      style={[styles.segmentedWrap, bleed && styles.bleed, { borderBottomColor: colors.hairline }]}
+      contentContainerStyle={[styles.segmented, !bleed && styles.inset]}
       accessibilityRole="tablist"
     >
       {options.map(option => {
@@ -141,8 +143,10 @@ export function Box({ title, children, centred = false }: BoxProps) {
 const styles = StyleSheet.create({
   section: { paddingBottom: space.sm },
   band: { height: space.md, marginHorizontal: -gutter },
-  segmentedWrap: { flexGrow: 0, marginHorizontal: -gutter, borderBottomWidth: StyleSheet.hairlineWidth },
+  segmentedWrap: { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  bleed: { marginHorizontal: -gutter },
   segmented: { paddingHorizontal: gutter, gap: space.lg },
+  inset: { paddingHorizontal: 0 },
   segment: {
     flexDirection: 'row',
     alignItems: 'center',
