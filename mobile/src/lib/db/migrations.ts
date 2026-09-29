@@ -11,7 +11,23 @@ export const migrations: readonly string[] = [
      key        TEXT PRIMARY KEY NOT NULL,
      value      TEXT NOT NULL,
      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-   );`
+   );`,
+
+  // 2 — check-ins. The word's coordinates are copied in so later edits to the
+  // vocabulary never rewrite history. local_date is the calendar day in the
+  // timezone the person was in at the time, which is the day patterns count.
+  `CREATE TABLE check_ins (
+     id           TEXT PRIMARY KEY NOT NULL,
+     created_at   TEXT NOT NULL,
+     local_date   TEXT NOT NULL,
+     emotion      TEXT NOT NULL,
+     energy       INTEGER NOT NULL CHECK (energy BETWEEN -5 AND 5 AND energy <> 0),
+     pleasantness INTEGER NOT NULL CHECK (pleasantness BETWEEN -5 AND 5 AND pleasantness <> 0),
+     tags         TEXT NOT NULL DEFAULT '[]',
+     note         TEXT,
+     updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );
+   CREATE INDEX check_ins_created_at_idx ON check_ins (created_at);`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
