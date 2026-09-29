@@ -40,11 +40,11 @@ test('a tap plays the sound on a loop; a second tap pauses it', () => {
   expect(mockPlayer.replace).toHaveBeenCalledTimes(1);
   expect(mockPlayer.loop).toBe(true);
   expect(mockPlayer.play).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('now playing')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Gentle Rain. playing' })).toBeTruthy();
 
   fireEvent.press(screen.getByRole('button', { name: /^Gentle Rain/ }));
   expect(mockPlayer.pause).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('paused')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Gentle Rain. paused' })).toBeTruthy();
 });
 
 test('categories switch the list', () => {
@@ -57,8 +57,8 @@ test('categories switch the list', () => {
 test('the sleep timer fades out and stops', () => {
   renderSounds();
   fireEvent.press(screen.getByRole('button', { name: /^Gentle Rain/ }));
-  fireEvent.press(screen.getByRole('tab', { name: '15 min' }));
-  expect(screen.getByText('stops in 15 min')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Sleep timer off' }));
+  expect(screen.getByRole('button', { name: 'Sleep timer, 15 minutes left' })).toBeTruthy();
 
   // Five seconds before the end: part-way through the fade.
   act(() => jest.advanceTimersByTime(15 * 60_000 - 5_000));
@@ -69,13 +69,23 @@ test('the sleep timer fades out and stops', () => {
   act(() => jest.advanceTimersByTime(6_000));
   expect(mockPlayer.pause).toHaveBeenCalledTimes(1);
   expect(mockPlayer.volume).toBe(1);
-  expect(screen.getByText('paused')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Sleep timer off' })).toBeTruthy();
 });
 
-test('stop clears the player', () => {
+test('the player line pauses and resumes, and the timer cycles back to off', () => {
   renderSounds();
+  expect(screen.queryByRole('button', { name: 'pause' })).toBeNull();
+
   fireEvent.press(screen.getByRole('button', { name: /^Gentle Rain/ }));
-  fireEvent.press(screen.getByRole('button', { name: 'stop' }));
-  expect(mockPlayer.pause).toHaveBeenCalled();
-  expect(screen.getByText('Something to listen to while you settle.')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'pause' }));
+  expect(mockPlayer.pause).toHaveBeenCalledTimes(1);
+  fireEvent.press(screen.getByRole('button', { name: 'play' }));
+  expect(mockPlayer.play).toHaveBeenCalledTimes(2);
+
+  for (const next of ['15', '30', '60']) {
+    fireEvent.press(screen.getByRole('button', { name: /^Sleep timer/ }));
+    expect(screen.getByRole('button', { name: `Sleep timer, ${next} minutes left` })).toBeTruthy();
+  }
+  fireEvent.press(screen.getByRole('button', { name: /^Sleep timer/ }));
+  expect(screen.getByRole('button', { name: 'Sleep timer off' })).toBeTruthy();
 });

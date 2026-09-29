@@ -2,9 +2,8 @@ import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Box, Row, Segmented } from '@/components/Blocks';
+import { Row, Segmented } from '@/components/Blocks';
 import { Button } from '@/components/Button';
-import { Icon } from '@/components/icons';
 import { Text } from '@/components/Text';
 import { configure, FADE_MS, fadeVolume, SOUND_CATEGORIES, timerEndsAt, TIMER_CHOICES, type Sound, type TimerChoice } from '@/lib/calm/sounds';
 import { radius, space } from '@/theme/tokens';
@@ -12,16 +11,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 const TICK_MS = 500;
 
-const timerOptions = TIMER_CHOICES.map(m => ({ key: m === null ? 'off' : String(m), label: m === null ? 'off' : `${m} min` }));
-
-function toChoice(key: string): TimerChoice {
-  return key === 'off' ? null : (Number(key) as TimerChoice);
-}
-
 /**
- * Looping sounds with a sleep timer. Plays with the ringer off and keeps
- * playing with the screen locked, so it can last the night; the timer fades
- * out over ten seconds rather than cutting off.
+ * Looping sounds with a sleep timer, kept as spare as the reference: a list
+ * of rows, the playing one marked ●, and a single line of text controls under
+ * it. Plays with the ringer off and with the screen locked, so it can last
+ * the night; the timer fades out over ten seconds rather than cutting off.
  */
 export function Sounds() {
   const { colors } = useTheme();
@@ -97,12 +91,9 @@ export function Sounds() {
     }
   };
 
-  const stop = () => {
-    player.pause();
-    configure(player, { volume: 1 });
-    setEndsAt(null);
-    setPlaying(false);
-    setCurrent(null);
+  const cycleTimer = () => {
+    const next = TIMER_CHOICES[(TIMER_CHOICES.indexOf(timer) + 1) % TIMER_CHOICES.length];
+    startTimer(next);
   };
 
   const minutesLeft = endsAt === null ? null : Math.max(1, Math.ceil((endsAt - now) / 60_000));
@@ -110,30 +101,6 @@ export function Sounds() {
 
   return (
     <View style={styles.wrap}>
-      {current ? (
-        <Box title={playing ? 'now playing' : 'paused'}>
-          <Text variant="title">{current.name}</Text>
-          <Text variant="mono" tone="soft">
-            {minutesLeft === null ? current.note : `stops in ${minutesLeft} min`}
-          </Text>
-          <View style={styles.controls}>
-            <Button kind="outline" label={playing ? 'pause' : 'play'} onPress={toggle} />
-            <Button kind="link" label="stop" onPress={stop} />
-          </View>
-          <Text variant="label" tone="soft" style={styles.timerLabel}>
-            sleep timer
-          </Text>
-          <Segmented
-            bleed={false}
-            options={timerOptions}
-            value={timer === null ? 'off' : String(timer)}
-            onChange={k => startTimer(toChoice(k))}
-          />
-        </Box>
-      ) : (
-        <Text variant="title">Something to listen to while you settle.</Text>
-      )}
-
       <Segmented options={SOUND_CATEGORIES} value={category} onChange={setCategory} />
 
       <View>
@@ -143,26 +110,48 @@ export function Sounds() {
             <Row
               key={sound.key}
               title={sound.name}
-              subtitle={active ? (playing ? 'playing — tap to pause' : 'paused — tap to play') : sound.note}
+              subtitle={active ? (playing ? 'playing' : 'paused') : sound.note}
               leading={
-                active ? (
-                  <Icon name="calm" color={colors.ink} size={22} />
-                ) : (
-                  <View style={[styles.bullet, { borderColor: colors.inkSoft }]} />
-                )
+                <View
+                  style={[
+                    styles.bullet,
+                    { borderColor: active ? colors.ink : colors.inkSoft },
+                    active && playing && { backgroundColor: colors.ink }
+                  ]}
+                />
               }
+              arrow={false}
+              selected={active}
               onPress={() => choose(sound)}
+              accessibilityHint={active ? (playing ? 'Pauses it' : 'Plays it') : 'Plays it on a loop'}
             />
           );
         })}
       </View>
+
+      {/* The whole player: one line under the list, text only. */}
+      {current && (
+        <View style={styles.player}>
+          <Text variant="label" numberOfLines={1} style={styles.name}>
+            {current.name}
+          </Text>
+          <Button
+            kind="link"
+            label={minutesLeft === null ? 'timer off' : `${minutesLeft} min`}
+            accessibilityLabel={minutesLeft === null ? 'Sleep timer off' : `Sleep timer, ${minutesLeft} minutes left`}
+            accessibilityHint="Cycles off, 15, 30 and 60 minutes"
+            onPress={cycleTimer}
+          />
+          <Button kind="link" label={playing ? 'pause' : 'play'} onPress={toggle} />
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.lg },
-  controls: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginTop: space.sm },
-  timerLabel: { marginTop: space.md },
+  wrap: { gap: space.md },
+  player: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  name: { flex: 1 },
   bullet: { width: 8, height: 8, borderRadius: radius.dot, borderWidth: 1 }
 });
