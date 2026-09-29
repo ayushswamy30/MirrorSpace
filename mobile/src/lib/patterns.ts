@@ -34,11 +34,15 @@ function mean(values: readonly number[]): number {
  * unpleasant). Null until there is a check-in in that window.
  */
 export function innerWeather(checkIns: readonly CheckIn[], now: Date = new Date()): Weather | null {
-  const recent = within(checkIns, now, 3);
-  if (recent.length === 0) return null;
+  return weatherOf(within(checkIns, now, 3));
+}
 
-  const p = mean(recent.map(c => c.pleasantness));
-  const e = mean(recent.map(c => c.energy));
+/** Any set of check-ins as weather — the last three days, or a single day. */
+export function weatherOf(checkIns: readonly CheckIn[]): Weather | null {
+  if (checkIns.length === 0) return null;
+
+  const p = mean(checkIns.map(c => c.pleasantness));
+  const e = mean(checkIns.map(c => c.energy));
 
   if (p >= 2) return 'clear';
   if (p > 0) return 'mild';
