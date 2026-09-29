@@ -1,55 +1,15 @@
 import { getUserContext } from './patternEngine.js';
 import { PERSONALITY_PROMPT, DAILY_INSIGHT_PROMPT } from '../prompts/personality.js';
 import * as insights from '../db/insights.js';
-import { config } from '../config/env.js';
-import OpenAI from 'openai';
+import { generateText } from './ai.js';
 
 /**
- * Generate AI response using Groq (primary) or OpenAI (fallback)
+ * Insights and predictions are written from derived summaries — sleep
+ * trends, sentiment labels, counts — never from anyone's own words, so they
+ * may use any configured provider.
  */
 export async function generateAIResponse(systemPrompt, userPrompt) {
-  // Try Groq first (free, fastest)
-  if (config.ai.groqApiKey) {
-    try {
-      const groq = new OpenAI({
-        apiKey: config.ai.groqApiKey,
-        baseURL: 'https://api.groq.com/openai/v1'
-      });
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.8,
-        max_tokens: 200
-      });
-      return completion.choices[0].message.content;
-    } catch (error) {
-      console.error('Groq insight error:', error.message);
-    }
-  }
-
-  // Try OpenAI
-  if (config.ai.openaiApiKey) {
-    try {
-      const openai = new OpenAI({ apiKey: config.ai.openaiApiKey });
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.8,
-        max_tokens: 200
-      });
-      return completion.choices[0].message.content;
-    } catch (error) {
-      console.error('OpenAI insight error:', error.message);
-    }
-  }
-
-  return null;
+  return generateText({ system: systemPrompt, prompt: userPrompt, personal: false, temperature: 0.8 });
 }
 
 /**
