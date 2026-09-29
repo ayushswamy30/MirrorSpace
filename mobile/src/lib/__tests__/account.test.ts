@@ -12,6 +12,8 @@ jest.mock('../checkIns', () => ({ allCheckIns: jest.fn(async () => [{ id: 'c1', 
 jest.mock('../vents', () => ({ listVents: jest.fn(async () => [{ id: 'v1', body: 'a page' }]) }));
 jest.mock('../safetyPlan', () => ({ loadPlan: jest.fn(async () => ({ reasons: [{ text: 'my dog' }] })) }));
 jest.mock('../safety/log', () => ({ listSafetyEvents: jest.fn(async () => [{ tier: 'low', source: 'vent' }]) }));
+jest.mock('../sleep', () => ({ allSleep: jest.fn(async () => [{ wakeDate: '2026-09-29', minutes: 420 }]) }));
+jest.mock('../mirror', () => ({ listMessages: jest.fn(async () => [{ id: 1, role: 'user', content: 'hi' }]) }));
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -24,6 +26,8 @@ test('the export holds what is on the phone and what the server holds', async ()
   expect(data.onThisPhone.checkIns).toEqual([{ id: 'c1', emotion: 'calm' }]);
   expect(data.onThisPhone.ventPages).toEqual([{ id: 'v1', body: 'a page' }]);
   expect(data.onThisPhone.safetyPlan).toEqual({ reasons: [{ text: 'my dog' }] });
+  expect(data.onThisPhone.sleep).toEqual([{ wakeDate: '2026-09-29', minutes: 420 }]);
+  expect(data.onThisPhone.mirrorConversation).toEqual([{ id: 1, role: 'user', content: 'hi' }]);
   expect(data.server).toEqual({ account: { id: 'u1' } });
   expect(data.serverError).toBeUndefined();
 });

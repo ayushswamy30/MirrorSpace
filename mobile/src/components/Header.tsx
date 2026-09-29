@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { gutter, hitTarget, radius, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Icon } from './icons';
@@ -17,8 +17,9 @@ export function shortDate(now: Date = new Date()): string {
  * right, where the reference keeps its date control. Crisis lines are one
  * tap further, in calm's own header.
  */
-export function CalmLink() {
+export function CalmLink({ ink }: { ink?: string }) {
   const { colors } = useTheme();
+  const color = ink ?? colors.ink;
 
   return (
     <Pressable
@@ -29,14 +30,16 @@ export function CalmLink() {
       hitSlop={8}
       style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
     >
-      <Icon name="calm" color={colors.ink} size={16} />
-      <Text variant="label">calm</Text>
+      <Icon name="calm" color={color} size={16} />
+      <Text variant="label" style={{ color }}>
+        calm
+      </Text>
     </Pressable>
   );
 }
 
 /** The person's own page: settings, the lock, their data. */
-function YouLink() {
+function YouLink({ ink }: { ink: string }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -46,7 +49,9 @@ function YouLink() {
       hitSlop={8}
       style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
     >
-      <Text variant="label">you</Text>
+      <Text variant="label" style={{ color: ink }}>
+        you
+      </Text>
     </Pressable>
   );
 }
@@ -54,26 +59,30 @@ function YouLink() {
 /**
  * The bar on every tab: the wordmark with the weather dot beside it — the one
  * place colour appears on the page, and small on purpose — then "you" and
- * calm on the right, a rule underneath.
+ * calm on the right, a rule underneath. `onVoid` sets it light on the dark
+ * Mirror room, whatever the system theme.
  */
-export function AppHeader() {
-  const { colors, signal } = useTheme();
+export function AppHeader({ onVoid = false }: { onVoid?: boolean }) {
+  const { colors, signal, weather } = useTheme();
+  const ink = onVoid ? dark.ink : colors.ink;
+  const rule = onVoid ? dark.inkFaint : colors.hairline;
+  const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
 
   return (
-    <View style={[styles.bar, { borderBottomColor: colors.hairline }]}>
+    <View style={[styles.bar, { borderBottomColor: rule }, onVoid && { backgroundColor: colors.void }]}>
       <View style={styles.brand}>
-        <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace">
+        <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace" style={{ color: ink }}>
           mirror – space
         </Text>
         <View
-          style={[styles.dot, { backgroundColor: signal }]}
+          style={[styles.dot, { backgroundColor: dot }]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         />
       </View>
       <View style={styles.links}>
-        <YouLink />
-        <CalmLink />
+        <YouLink ink={ink} />
+        <CalmLink ink={ink} />
       </View>
     </View>
   );

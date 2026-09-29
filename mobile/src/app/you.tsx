@@ -178,7 +178,7 @@ export default function You() {
         <SectionLabel title="your data" />
         <Row
           title={exporting ? 'Gathering…' : 'Download everything'}
-          subtitle="Check-ins, pages, your plan and your account, as one file"
+          subtitle="Check-ins, pages, nights, Mirror, your plan and your account — one file"
           onPress={exporting ? undefined : runExport}
         />
       </View>

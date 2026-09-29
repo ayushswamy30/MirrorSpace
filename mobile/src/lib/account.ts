@@ -5,8 +5,10 @@ import { api } from './api';
 import { allCheckIns } from './checkIns';
 import { CONSENT_POLICY_VERSION, type ConsentPurpose } from './consent';
 import { destroyLocalData } from './db/database';
+import { listMessages } from './mirror';
 import { listSafetyEvents } from './safety/log';
 import { loadPlan } from './safetyPlan';
+import { allSleep } from './sleep';
 import { supabase } from './supabase';
 import { listVents } from './vents';
 
@@ -22,6 +24,8 @@ export type ExportFile = {
   onThisPhone: {
     checkIns: unknown[];
     ventPages: unknown[];
+    sleep: unknown[];
+    mirrorConversation: unknown[];
     safetyPlan: unknown;
     /** Tier, source and time only — the same as was ever recorded. */
     safetyEvents: unknown[];
@@ -32,9 +36,11 @@ export type ExportFile = {
 };
 
 export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
-  const [checkIns, ventPages, safetyPlan, safetyEvents] = await Promise.all([
+  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents] = await Promise.all([
     allCheckIns(),
     listVents(100_000),
+    allSleep(),
+    listMessages(100_000),
     loadPlan(),
     listSafetyEvents()
   ]);
@@ -49,7 +55,7 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 
   return {
     exportedAt: now.toISOString(),
-    onThisPhone: { checkIns, ventPages, safetyPlan, safetyEvents },
+    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents },
     server,
     ...(serverError ? { serverError } : {})
   };
