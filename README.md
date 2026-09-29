@@ -98,9 +98,9 @@ supabase link --project-ref YOUR-PROJECT-REF
 supabase db push
 ```
 
-or by pasting `0001_init.sql`, `0002_auth.sql` and `0003_harden_functions.sql`
-from `supabase/migrations/` into the SQL editor in Supabase Studio, in that
-order. All three are idempotent, so re-running them is safe.
+or by pasting `0001_init.sql`, `0002_auth.sql`, `0003_harden_functions.sql` and
+`0004_consent.sql` from `supabase/migrations/` into the SQL editor in Supabase
+Studio, in that order. All of them are idempotent, so re-running them is safe.
 
 Afterwards, Supabase's own database linter (Advisors → Security in the
 dashboard) should report nothing; `0003` exists to keep it that way.
@@ -180,6 +180,16 @@ fallback text — the app is fully usable without an AI key.
 
 ```bash
 cd server
+npm run test:unit     # pure logic, no services needed
+npm run test:schema   # every migration applied to real Postgres (PGlite, in-process)
+```
+
+`test:schema` runs each migration twice to prove it is idempotent, then checks
+that RLS is on for every table, that `anon` has no grants, and the per-user
+policies — with no Supabase project, Docker or local Postgres.
+
+```bash
+cd server
 API_BASE_URL=http://localhost:5000/api \
 SUPABASE_URL=... SUPABASE_ANON_KEY=... npm run test:e2e
 ```
@@ -205,7 +215,8 @@ setup.
 | `GET` | `/api/user/profile` | Provisions the app user on first call |
 | `GET` | `/api/user/export` | Everything this account holds, as JSON |
 | `DELETE` | `/api/user` | Erases the account and all of it, permanently |
-| `PUT` | `/api/user/onboarding` | Intents + permissions |
+| `PUT` | `/api/user/onboarding` | Intents + permissions; optionally `ageConfirmed`, `aiDisclosureSeen`, `consents` + `policyVersion` |
+| `PUT` | `/api/user/consents` | Grant or withdraw one or more purposes; appends to the consent log |
 | `POST` | `/api/sleep` | One log per night; re-posting a date corrects it |
 | `GET` | `/api/sleep?range=week\|month\|year\|all` | Oldest first, for the chart |
 | `GET` | `/api/sleep/trends?days=7` | Averages, sleep debt, bedtime drift |

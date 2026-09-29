@@ -13,6 +13,8 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LockScreen } from '@/components/LockScreen';
+import { AppLockProvider } from '@/lib/appLock';
 import { SessionProvider } from '@/lib/session';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
@@ -26,11 +28,13 @@ function Navigator() {
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
         {/* Care screens sit outside the session gate in (tabs): they must open
             even when the account could not be reached. */}
         <Stack.Screen name="calm" options={{ presentation: 'modal' }} />
         <Stack.Screen name="help" options={{ presentation: 'modal' }} />
       </Stack>
+      <LockScreen />
     </>
   );
 }
@@ -59,7 +63,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <SessionProvider>
-            <Navigator />
+            <AppLockProvider>
+              <Navigator />
+            </AppLockProvider>
           </SessionProvider>
         </ThemeProvider>
       </SafeAreaProvider>

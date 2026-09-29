@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
 import { Text } from '@/components/Text';
-import { useSession } from '@/lib/session';
+import { needsOnboarding, useSession } from '@/lib/session';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export default function TabsLayout() {
@@ -30,6 +30,10 @@ export default function TabsLayout() {
         <Button kind="quiet" label="need help now" onPress={() => router.push('/help')} />
       </Screen>
     );
+  }
+
+  if (needsOnboarding(session.profile)) {
+    return <Redirect href="/onboarding" />;
   }
 
   return (

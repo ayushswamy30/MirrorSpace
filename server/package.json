@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test:e2e": "node test/api.e2e.mjs",
-    "test:auth": "node test/auth.e2e.mjs"
+    "test:auth": "node test/auth.e2e.mjs",
+    "test:unit": "node --test \"test/unit/*.test.mjs\"",
+    "test:schema": "node --test test/schema.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
@@ -22,6 +24,7 @@
     "sentiment": "^5.0.2"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "nodemon": "^3.1.14"
   },
   "engines": {

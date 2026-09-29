@@ -9,7 +9,7 @@ import { supabase, unwrap } from '../config/supabase.js';
  * know about me" than saying nothing.
  */
 export async function collectAllData(userId) {
-  const [sleep, journals, insights, sessions, patterns, calm] = await Promise.all([
+  const [sleep, journals, insights, sessions, patterns, calm, consentLog] = await Promise.all([
     supabase.from('sleep_logs')
       .select('id, date, sleep_time, wake_time, duration, created_at')
       .eq('user_id', userId).order('date', { ascending: true }),
@@ -27,6 +27,9 @@ export async function collectAllData(userId) {
       .eq('user_id', userId).order('created_at', { ascending: true }),
     supabase.from('calm_triggers')
       .select('id, source, created_at')
+      .eq('user_id', userId).order('created_at', { ascending: true }),
+    supabase.from('consent_events')
+      .select('id, purpose, granted, policy_version, created_at')
       .eq('user_id', userId).order('created_at', { ascending: true })
   ]);
 
@@ -45,7 +48,9 @@ export async function collectAllData(userId) {
         .map(m => ({ role: m.role, content: m.content, at: m.created_at }))
     })),
     moodPatterns: unwrap(patterns, 'export.moodPatterns'),
-    calmTriggers: unwrap(calm, 'export.calmTriggers')
+    calmTriggers: unwrap(calm, 'export.calmTriggers'),
+    // Every grant and withdrawal, in order — what was agreed to, and when.
+    consentEvents: unwrap(consentLog, 'export.consentEvents')
   };
 }
 
