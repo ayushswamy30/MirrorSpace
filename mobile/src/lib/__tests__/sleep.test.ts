@@ -1,10 +1,36 @@
 import type { CheckIn } from '../checkIns';
+import { getDatabase } from '../db/database';
 import { sleepFacts, today } from '../patterns';
-import { formatClock, formatDuration, night, step } from '../sleep';
+import { deleteHealthNights, formatClock, formatDuration, night, saveHealthNights, saveSleep, step } from '../sleep';
 
 jest.mock('../db/database', () => ({ getDatabase: jest.fn() }));
 
 const MORNING = new Date(2026, 8, 29, 9, 0); // 29 Sep, local
+
+describe('hand-logged nights win', () => {
+  const runAsync = jest.fn();
+  beforeEach(() => {
+    runAsync.mockReset();
+    jest.mocked(getDatabase).mockResolvedValue({ runAsync } as never);
+  });
+
+  test('a hand-logged night replaces whatever was there, and marks itself hand', async () => {
+    await saveSleep(night(23 * 60, 7 * 60, MORNING));
+    const sql: string = runAsync.mock.calls[0][0];
+    expect(sql).toMatch(/source = 'hand'/);
+    expect(sql).not.toMatch(/WHERE sleep_logs\.source/);
+  });
+
+  test('a Health Connect night only ever updates another Health Connect night', async () => {
+    await saveHealthNights([night(23 * 60, 7 * 60, MORNING)]);
+    expect(runAsync.mock.calls[0][0]).toMatch(/WHERE sleep_logs\.source = 'health'/);
+  });
+
+  test('disconnecting deletes only Health Connect nights', async () => {
+    await deleteHealthNights();
+    expect(runAsync.mock.calls[0][0]).toBe(`DELETE FROM sleep_logs WHERE source = 'health'`);
+  });
+});
 
 test('a bedtime before midnight belongs to the evening before', () => {
   const n = night(23 * 60 + 30, 7 * 60, MORNING);
