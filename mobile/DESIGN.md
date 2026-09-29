@@ -43,14 +43,16 @@ Dynamic Type up to 200% everywhere.
 
 ## Layout
 
-- **App header** (every tab): wordmark `MIRROR – SPACE` left, context right
-  (the date on Today), a hairline under it. Fixed; content scrolls beneath.
+- **App header** (every tab): wordmark `MIRROR – SPACE` with the weather dot
+  on the left, a small `CALM` link on the right, a hairline under it. Fixed;
+  content scrolls beneath. Onboarding shows the `CALM` link alone.
 - **Sub-screen header**: back arrow left, mono title centred (`Crush Report`
   style) — or a large serif title left-aligned for settings-like screens.
 - **Tab bar**: text only, no icons, five mono uppercase labels. Active is ink
   with a small signal dot; inactive is inkSoft. Hairline above.
-- **Care strip** (ours, not in the reference; required by the safety design):
-  a thin row above the tab bar with `CALM` and `NEED HELP NOW` links.
+- **Help**: crisis lines are a `HELP` link in calm's header — one tap from
+  calm, two from anywhere — and the crisis screens open by themselves when a
+  check-in screens elevated or acute. There is no care strip over the tabs.
 - Side margin 20. Sections separated by generous space, a hairline, or a
   thick `band`.
 

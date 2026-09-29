@@ -63,11 +63,11 @@ beforeEach(() => {
 test('one tap on a word is a whole check-in', async () => {
   await renderCheckIn();
 
-  fireEvent.press(screen.getByRole('button', { name: 'calm' }));
+  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
 
-  await screen.findByText('calm.');
+  await screen.findByText('peaceful.');
   expect(mocked.recordCheckIn).toHaveBeenCalledTimes(1);
-  expect(mocked.recordCheckIn.mock.calls[0][0]).toMatchObject({ word: 'calm', energy: -3, pleasantness: 3 });
+  expect(mocked.recordCheckIn.mock.calls[0][0]).toMatchObject({ word: 'peaceful', energy: -5, pleasantness: 2 });
   // Nothing else was needed to save it.
   expect(mocked.setTags).not.toHaveBeenCalled();
   expect(mocked.setNote).not.toHaveBeenCalled();
@@ -76,11 +76,11 @@ test('one tap on a word is a whole check-in', async () => {
 test('a double tap still makes one check-in', async () => {
   await renderCheckIn();
 
-  const calm = screen.getByRole('button', { name: 'calm' });
+  const calm = screen.getByRole('button', { name: 'peaceful' });
   fireEvent.press(calm);
   fireEvent.press(calm);
 
-  await screen.findByText('calm.');
+  await screen.findByText('peaceful.');
   expect(mocked.recordCheckIn).toHaveBeenCalledTimes(1);
 });
 
@@ -104,8 +104,8 @@ test('tags and a note are added to the same check-in', async () => {
 
 test('choosing a different word edits the check-in instead of adding one', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'calm' }));
-  await screen.findByText('calm.');
+  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  await screen.findByText('peaceful.');
 
   fireEvent.press(screen.getByRole('button', { name: 'a different word' }));
   await screen.findByText('Which word fits better?');
@@ -121,16 +121,16 @@ test('a failed save says so and records nothing', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
   await renderCheckIn();
 
-  fireEvent.press(screen.getByRole('button', { name: 'calm' }));
+  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
 
   expect(await screen.findByText('That didn’t save. Try the word once more.')).toBeTruthy();
-  expect(screen.queryByText('calm.')).toBeNull();
+  expect(screen.queryByText('peaceful.')).toBeNull();
 });
 
 test('an ordinary check-in logs nothing and interrupts nothing', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'calm' }));
-  await screen.findByText('calm.');
+  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  await screen.findByText('peaceful.');
 
   expect(logged).not.toHaveBeenCalled();
   expect(mockPush).not.toHaveBeenCalled();

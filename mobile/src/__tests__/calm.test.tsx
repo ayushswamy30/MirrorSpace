@@ -65,6 +65,6 @@ test('grounding goes one sense at a time, five to one', () => {
 
 test('crisis lines are one tap away from calm', () => {
   renderCalm();
-  fireEvent.press(screen.getByRole('button', { name: 'need help now' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Need help now' }));
   expect(mockReplace).toHaveBeenCalledWith('/help');
 });

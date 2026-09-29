@@ -143,7 +143,7 @@ export default function CheckIn() {
   const replacing = stage.replacing;
 
   return (
-    <Screen header={<AppHeader context="check-in" />}>
+    <Screen header={<AppHeader />}>
       <View style={styles.block}>
         <SectionLabel title={replacing ? 'change the word' : 'name it'} rule={false} />
         <Text variant="reading">{replacing ? 'Which word fits better?' : 'Where are you, right now?'}</Text>
@@ -236,7 +236,7 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
   };
 
   return (
-    <Screen header={<AppHeader context="check-in" />}>
+    <Screen header={<AppHeader />}>
       <Animated.View entering={first} style={styles.block}>
         <SectionLabel title="checked in" rule={false} />
         <Text variant="reading">{checkIn.emotion}.</Text>

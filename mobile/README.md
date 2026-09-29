@@ -29,7 +29,7 @@ src/app/            routes (Expo Router)
   (tabs)/           Today · Check-in · Mirror · Chart · Circle, behind the session gate
   calm.tsx          calm tools (modal, no session needed)
   help.tsx          crisis lines (modal, no session, no network)
-src/components/     Text, Screen, Button, TabBar + CareBar, line icons
+src/components/     Text, Screen, Header, Blocks, Button, TabBar, line icons
 src/lib/
   db/               encrypted SQLite: key management, migrations, kv
   supabase.ts       anonymous-first auth, session in the encrypted store

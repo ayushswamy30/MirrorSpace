@@ -10,7 +10,7 @@ import { Text } from '@/components/Text';
  */
 export default function Circle() {
   return (
-    <Screen header={<AppHeader context="circle" />}>
+    <Screen header={<AppHeader />}>
       <SectionLabel title="your circle" />
       <Text variant="title">A few people who can see your weather, and nothing else.</Text>
       <Text tone="soft">Circles arrive in a later version.</Text>

@@ -1,8 +1,8 @@
 import { dark, light, type Palette, type Weather } from '../tokens';
 
 /**
- * WCAG 2.2 AA, both themes (report §6). Body text needs 4.5:1; the care bar
- * outline and other non-text UI need 3:1.
+ * WCAG 2.2 AA, both themes (report §6). Body text needs 4.5:1; outlines
+ * and other non-text UI need 3:1.
  */
 
 function luminance(hex: string): number {

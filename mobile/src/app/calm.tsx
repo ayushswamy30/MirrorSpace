@@ -41,7 +41,25 @@ export default function Calm() {
   const [pattern, setPattern] = useState<Pattern | null>(null);
 
   return (
-    <Screen edges={['top', 'bottom']} header={<SubHeader title="calm" leading="close" />}>
+    <Screen
+      edges={['top', 'bottom']}
+      header={
+        <SubHeader
+          title="calm"
+          leading="close"
+          trailing={
+            // Crisis lines: one tap from calm, which is one tap from anywhere.
+            <Button
+              kind="link"
+              label="help"
+              accessibilityLabel="Need help now"
+              accessibilityHint="Crisis lines you can call or text"
+              onPress={() => router.replace('/help')}
+            />
+          }
+        />
+      }
+    >
       <Segmented
         options={TOOLS}
         value={tool}
@@ -76,7 +94,6 @@ export default function Calm() {
 
       {tool === 'sounds' && <Sounds />}
 
-      <Button kind="link" label="need help now" onPress={() => router.replace('/help')} />
     </Screen>
   );
 }
