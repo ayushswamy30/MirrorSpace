@@ -1,0 +1,25 @@
+import { router } from 'expo-router';
+
+import { Button } from '@/components/Button';
+import { HelplineList } from '@/components/HelplineList';
+import { Screen } from '@/components/Screen';
+import { Text } from '@/components/Text';
+
+/**
+ * Need help now. Deliberately plain: no animation, no poetry, no account
+ * required — this screen does not touch the session, the network or the
+ * database, so it opens in every state the app can be in.
+ */
+export default function Help() {
+  return (
+    <Screen edges={['top', 'bottom']}>
+      <Text variant="title">You don’t have to get through this moment alone.</Text>
+      <Text>
+        These are free, confidential lines staffed by trained people. MirrorSpace is not one of them — it can’t
+        call anyone for you.
+      </Text>
+      <HelplineList />
+      <Button kind="quiet" label="close" onPress={() => router.back()} />
+    </Screen>
+  );
+}

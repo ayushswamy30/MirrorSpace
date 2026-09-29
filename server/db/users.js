@@ -1,7 +1,7 @@
 import { supabase, unwrap } from '../config/supabase.js';
 import { AuthError } from '../lib/errors.js';
 
-const COLUMNS = 'id, local_id, auth_user_id, email, is_anonymous, intents, permissions, onboarding_complete, last_active_at, created_at, updated_at';
+const COLUMNS = 'id, local_id, auth_user_id, email, is_anonymous, intents, permissions, onboarding_complete, age_confirmed_at, ai_disclosure_seen_at, last_active_at, created_at, updated_at';
 
 const DEFAULT_PERMISSIONS = {
   sleepTracking: false,
@@ -27,6 +27,8 @@ function toUser(row) {
     intents: row.intents ?? [],
     permissions: { ...DEFAULT_PERMISSIONS, ...(row.permissions ?? {}) },
     onboardingComplete: row.onboarding_complete,
+    ageConfirmedAt: row.age_confirmed_at ?? null,
+    aiDisclosureSeenAt: row.ai_disclosure_seen_at ?? null,
     lastActiveAt: row.last_active_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -116,16 +118,27 @@ export async function findOrProvisionByAuthUser({ authUserId, email, isAnonymous
   return toUser(raced);
 }
 
-export async function saveOnboarding(id, { intents, permissions }) {
+/**
+ * `ageConfirmed` and `aiDisclosureSeen` are optional so the web client, which
+ * predates them, keeps working. When given they are stamped once: the record
+ * keeps the first time the person confirmed, not the latest.
+ */
+export async function saveOnboarding(user, { intents, permissions, ageConfirmed, aiDisclosureSeen }) {
+  const now = new Date().toISOString();
+  const update = {
+    intents: sanitizeIntents(intents),
+    permissions: sanitizePermissions(permissions),
+    onboarding_complete: true
+  };
+
+  if (ageConfirmed === true && !user.ageConfirmedAt) update.age_confirmed_at = now;
+  if (aiDisclosureSeen === true && !user.aiDisclosureSeenAt) update.ai_disclosure_seen_at = now;
+
   const row = unwrap(
     await supabase
       .from('users')
-      .update({
-        intents: sanitizeIntents(intents),
-        permissions: sanitizePermissions(permissions),
-        onboarding_complete: true
-      })
-      .eq('id', id)
+      .update(update)
+      .eq('id', user.id)
       .select(COLUMNS)
       .maybeSingle(),
     'users.saveOnboarding'
