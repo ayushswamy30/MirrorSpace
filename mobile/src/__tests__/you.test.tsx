@@ -114,7 +114,7 @@ test('an erase that cannot reach the server says nothing was deleted', async () 
 test('export reports when only the phone part could be gathered', async () => {
   mocked.shareExport.mockResolvedValue({
     exportedAt: 'x',
-    onThisPhone: { checkIns: [], ventPages: [], safetyPlan: null, safetyEvents: [] },
+    onThisPhone: { checkIns: [], ventPages: [], sleep: [], mirrorConversation: [], safetyPlan: null, safetyEvents: [] },
     server: null,
     serverError: 'offline'
   });

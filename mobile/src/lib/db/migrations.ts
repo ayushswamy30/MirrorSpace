@@ -55,6 +55,15 @@ export const migrations: readonly string[] = [
      wake_at    TEXT NOT NULL,
      minutes    INTEGER NOT NULL CHECK (minutes > 0 AND minutes <= 1440),
      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );`,
+
+  // 6 — the Mirror conversation. It lives here and nowhere else: the server
+  // answers each turn and keeps none of it.
+  `CREATE TABLE mirror_messages (
+     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+     role       TEXT NOT NULL CHECK (role IN ('user', 'mirror')),
+     content    TEXT NOT NULL,
+     created_at TEXT NOT NULL
    );`
 ];
 
