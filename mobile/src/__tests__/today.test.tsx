@@ -6,8 +6,15 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import Today from '@/app/(tabs)/index';
 
 const mockNavigate = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: jest.fn() }
+  router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: (...a: unknown[]) => mockPush(...a) }
+}));
+const mockAllSleep = jest.fn();
+jest.mock('@/lib/sleep', () => ({
+  ...jest.requireActual('@/lib/sleep'),
+  allSleep: () => mockAllSleep(),
+  onSleepChanged: () => () => undefined
 }));
 jest.mock('@/lib/checkIns', () => ({
   ...jest.requireActual('@/lib/checkIns'),
@@ -48,6 +55,20 @@ async function renderToday() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockReadings = true;
+  mockAllSleep.mockResolvedValue([]);
+});
+
+test('last night can be logged from Today, and shows once it is', async () => {
+  mocked.allCheckIns.mockResolvedValue([]);
+  await renderToday();
+  fireEvent.press(screen.getByRole('button', { name: /^How did you sleep\?/ }));
+  expect(mockPush).toHaveBeenCalledWith('/sleep');
+
+  const { night } = jest.requireActual('@/lib/sleep');
+  mockAllSleep.mockResolvedValue([night(23 * 60 + 30, 7 * 60, new Date())]);
+  await renderToday();
+  expect(screen.getByText('7h 30m')).toBeTruthy();
+  expect(screen.getByText('23:30 – 07:00')).toBeTruthy();
 });
 
 test('with no check-ins: a general reading and a way to start', async () => {
