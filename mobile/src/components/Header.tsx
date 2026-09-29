@@ -27,7 +27,7 @@ export function CalmLink() {
       accessibilityHint="Breathing, grounding, sounds, and crisis lines"
       onPress={() => router.push('/calm')}
       hitSlop={8}
-      style={({ pressed }) => [styles.calm, { opacity: pressed ? 0.6 : 1 }]}
+      style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
     >
       <Icon name="calm" color={colors.ink} size={16} />
       <Text variant="label">calm</Text>
@@ -35,10 +35,26 @@ export function CalmLink() {
   );
 }
 
+/** The person's own page: settings, the lock, their data. */
+function YouLink() {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="You"
+      accessibilityHint="Settings, app lock, and your data"
+      onPress={() => router.push('/you')}
+      hitSlop={8}
+      style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Text variant="label">you</Text>
+    </Pressable>
+  );
+}
+
 /**
  * The bar on every tab: the wordmark with the weather dot beside it — the one
- * place colour appears on the page, and small on purpose — calm on the
- * right, a rule underneath.
+ * place colour appears on the page, and small on purpose — then "you" and
+ * calm on the right, a rule underneath.
  */
 export function AppHeader() {
   const { colors, signal } = useTheme();
@@ -55,7 +71,10 @@ export function AppHeader() {
           importantForAccessibility="no-hide-descendants"
         />
       </View>
-      <CalmLink />
+      <View style={styles.links}>
+        <YouLink />
+        <CalmLink />
+      </View>
     </View>
   );
 }
@@ -103,8 +122,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  links: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
-  calm: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },
+  link: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },
   side: { minWidth: hitTarget, height: hitTarget, justifyContent: 'center' },
   trailing: { alignItems: 'flex-end' },
   centred: { flex: 1, textAlign: 'center' }

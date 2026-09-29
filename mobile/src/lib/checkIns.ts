@@ -131,6 +131,13 @@ export async function latestCheckIn(): Promise<CheckIn | null> {
   return row ? fromRow(row) : null;
 }
 
+/** Every check-in, oldest first — for export and for patterns. */
+export async function allCheckIns(): Promise<CheckIn[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<Row>('SELECT * FROM check_ins ORDER BY created_at ASC');
+  return rows.map(fromRow);
+}
+
 /** The tag lists of the most recent check-ins, newest first. */
 export async function recentTags(limit = 30): Promise<string[][]> {
   const db = await getDatabase();
