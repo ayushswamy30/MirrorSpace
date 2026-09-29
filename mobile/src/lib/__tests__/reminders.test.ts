@@ -5,6 +5,7 @@ import { kv } from '../db/kv';
 import { DEFAULT_TIME, nextReminder, syncReminder, usualTime } from '../reminders';
 
 jest.mock('../db/kv', () => ({ kv: { get: jest.fn(), set: jest.fn() } }));
+jest.mock('../runtime', () => ({ inExpoGo: false }));
 jest.mock('../checkIns', () => ({ ...jest.requireActual('../checkIns'), allCheckIns: jest.fn() }));
 
 const NOW = new Date(2026, 8, 29, 12, 0);

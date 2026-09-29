@@ -1,8 +1,9 @@
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { allCheckIns, localDate, type CheckIn } from './checkIns';
 import { kv } from './db/kv';
+import { inExpoGo } from './runtime';
 
 /**
  * The daily reminder (report §5: "timed to the user's rhythm, never more than
@@ -12,6 +13,9 @@ import { kv } from './db/kv';
  * on a day already checked in. It is rescheduled whenever the app opens or a
  * check-in lands, so a week away brings one gentle nudge, not seven — and
  * never a streak or a guilt line.
+ *
+ * expo-notifications throws as soon as it loads in Expo Go on Android (it was
+ * removed there in SDK 53), so it is loaded only in MirrorSpace's own build.
  */
 
 const ENABLED_KEY = 'reminder.enabled';
@@ -19,6 +23,15 @@ const CHANNEL = 'reminders';
 const STEP = 15;
 
 export const DEFAULT_TIME = 21 * 60;
+
+/** False in Expo Go: reminders need the app's own build. */
+export const remindersSupported = !inExpoGo;
+
+function notifications(): typeof NotificationsModule | null {
+  if (!remindersSupported) return null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('expo-notifications') as typeof NotificationsModule;
+}
 
 /** The median check-in time over the last two weeks, to the quarter hour. */
 export function usualTime(checkIns: readonly CheckIn[], now: Date = new Date()): number {
@@ -46,13 +59,15 @@ export function nextReminder(time: number, checkedInToday: boolean, now: Date = 
 }
 
 export async function remindersEnabled(): Promise<boolean> {
-  return (await kv.get(ENABLED_KEY)) === '1';
+  return remindersSupported && (await kv.get(ENABLED_KEY)) === '1';
 }
 
-/** Asks the system once; false if the person said no. */
+/** Asks the system once; false if the person said no, or in Expo Go. */
 export async function enableReminders(): Promise<boolean> {
-  const current = await Notifications.getPermissionsAsync();
-  const granted = current.granted || (await Notifications.requestPermissionsAsync()).granted;
+  const N = notifications();
+  if (!N) return false;
+  const current = await N.getPermissionsAsync();
+  const granted = current.granted || (await N.requestPermissionsAsync()).granted;
   if (!granted) return false;
   await kv.set(ENABLED_KEY, '1');
   await syncReminder();
@@ -61,27 +76,41 @@ export async function enableReminders(): Promise<boolean> {
 
 export async function disableReminders(): Promise<void> {
   await kv.set(ENABLED_KEY, '0');
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await notifications()?.cancelAllScheduledNotificationsAsync();
+}
+
+/** No banner while the app is already open. Called once, at start-up. */
+export function quietWhileOpen(): void {
+  notifications()?.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: false,
+      shouldShowList: false,
+      shouldPlaySound: false,
+      shouldSetBadge: false
+    })
+  });
 }
 
 /** Replaces whatever is pending with the one right reminder, or none. */
 export async function syncReminder(now: Date = new Date()): Promise<Date | null> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  const N = notifications();
+  if (!N) return null;
+  await N.cancelAllScheduledNotificationsAsync();
   if (!(await remindersEnabled())) return null;
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL, {
+    await N.setNotificationChannelAsync(CHANNEL, {
       name: 'Daily reminder',
-      importance: Notifications.AndroidImportance.DEFAULT
+      importance: N.AndroidImportance.DEFAULT
     });
   }
 
   const checkIns = await allCheckIns();
   const at = nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
-  await Notifications.scheduleNotificationAsync({
+  await N.scheduleNotificationAsync({
     // Nothing personal on a lock screen: no feeling, no count, no streak.
     content: { title: 'MirrorSpace', body: 'A word for today, if you have one.' },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL }
+    trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL }
   });
   return at;
 }
