@@ -1,27 +1,70 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import { accountLimiter } from '../middleware/rateLimit.js';
+import { accountLimiter, writeLimiter } from '../middleware/rateLimit.js';
 import * as users from '../db/users.js';
 import * as account from '../db/account.js';
+import * as consents from '../db/consents.js';
+import { parseConsentChanges, ConsentValidationError } from '../lib/consent.js';
 
 const router = express.Router();
 
+function toProfile(user, consentState) {
+  return {
+    id: user.id,
+    email: user.email,
+    isAnonymous: user.isAnonymous,
+    intents: user.intents,
+    permissions: user.permissions,
+    onboardingComplete: user.onboardingComplete,
+    ageConfirmedAt: user.ageConfirmedAt,
+    aiDisclosureSeenAt: user.aiDisclosureSeenAt,
+    consents: consentState,
+    createdAt: user.createdAt
+  };
+}
+
 // PUT /api/user/onboarding — Save onboarding choices
+//
+// Body: { intents, permissions, ageConfirmed?, aiDisclosureSeen?,
+//         consents?: { [purpose]: boolean }, policyVersion? }
 router.put('/onboarding', auth, async (req, res, next) => {
   try {
-    const { intents, permissions } = req.body ?? {};
+    const { intents, permissions, ageConfirmed, aiDisclosureSeen, consents: requested, policyVersion } = req.body ?? {};
 
-    const user = await users.saveOnboarding(req.userId, { intents, permissions });
+    // Validate before writing anything, so a bad consent payload cannot leave
+    // onboarding half-saved.
+    const changes = parseConsentChanges(requested, policyVersion);
 
-    res.json({
-      id: user.id,
-      email: user.email,
-      isAnonymous: user.isAnonymous,
-      intents: user.intents,
-      permissions: user.permissions,
-      onboardingComplete: user.onboardingComplete
-    });
+    const user = await users.saveOnboarding(req.user, { intents, permissions, ageConfirmed, aiDisclosureSeen });
+    await consents.record(user.id, changes);
+
+    res.json(toProfile(user, await consents.current(user.id)));
   } catch (error) {
+    if (error instanceof ConsentValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
+    next(error);
+  }
+});
+
+// PUT /api/user/consents — grant or withdraw, one purpose or several
+//
+// Withdrawing has to be as easy as granting, and it is the same call.
+router.put('/consents', auth, writeLimiter, async (req, res, next) => {
+  try {
+    const { consents: requested, policyVersion } = req.body ?? {};
+    const changes = parseConsentChanges(requested, policyVersion);
+
+    if (changes.length === 0) {
+      return res.status(400).json({ message: 'consents must name at least one purpose' });
+    }
+
+    await consents.record(req.userId, changes);
+    res.json({ consents: await consents.current(req.userId) });
+  } catch (error) {
+    if (error instanceof ConsentValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
     next(error);
   }
 });
@@ -29,15 +72,7 @@ router.put('/onboarding', auth, async (req, res, next) => {
 // GET /api/user/profile
 router.get('/profile', auth, async (req, res, next) => {
   try {
-    res.json({
-      id: req.user.id,
-      email: req.user.email,
-      isAnonymous: req.user.isAnonymous,
-      intents: req.user.intents,
-      permissions: req.user.permissions,
-      onboardingComplete: req.user.onboardingComplete,
-      createdAt: req.user.createdAt
-    });
+    res.json(toProfile(req.user, await consents.current(req.userId)));
   } catch (error) {
     next(error);
   }
@@ -57,6 +92,8 @@ router.get('/export', auth, accountLimiter, async (req, res, next) => {
         intents: req.user.intents,
         permissions: req.user.permissions,
         onboardingComplete: req.user.onboardingComplete,
+        ageConfirmedAt: req.user.ageConfirmedAt,
+        aiDisclosureSeenAt: req.user.aiDisclosureSeenAt,
         createdAt: req.user.createdAt
       },
       ...data
