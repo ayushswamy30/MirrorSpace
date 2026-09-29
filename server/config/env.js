@@ -75,6 +75,11 @@ export const config = {
   corsOrigins: list('CORS_ORIGINS', ['http://localhost:5173']),
 
   ai: {
+    geminiApiKey: optional('GEMINI_API_KEY'),
+    geminiModel: optional('GEMINI_MODEL', 'gemini-3.5-flash'),
+    // Only true once the key's Google project has billing enabled. Until then
+    // Gemini never sees anyone's own writing — see lib/aiProviders.js.
+    geminiPaidTier: optional('GEMINI_PAID_TIER') === 'true',
     groqApiKey: optional('GROQ_API_KEY'),
     openaiApiKey: optional('OPENAI_API_KEY')
   }
