@@ -1,11 +1,6 @@
-import { Inter_500Medium } from '@expo-google-fonts/inter';
-import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
-import {
-  Newsreader_300Light,
-  Newsreader_400Regular,
-  Newsreader_400Regular_Italic,
-  Newsreader_500Medium
-} from '@expo-google-fonts/newsreader';
+import { DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono';
+import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@expo-google-fonts/instrument-serif';
+import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -45,12 +40,12 @@ function Navigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Newsreader_300Light,
-    Newsreader_400Regular,
-    Newsreader_400Regular_Italic,
-    Newsreader_500Medium,
+    InstrumentSerif_400Regular,
+    InstrumentSerif_400Regular_Italic,
+    Inter_400Regular,
     Inter_500Medium,
-    JetBrainsMono_400Regular
+    DMMono_400Regular,
+    DMMono_500Medium
   });
 
   // A font that fails to load falls back to the system face; that is better

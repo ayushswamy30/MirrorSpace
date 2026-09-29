@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { HelplineList } from '@/components/HelplineList';
-import { Masthead } from '@/components/Masthead';
+import { SubHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { helplinesFor } from '@/lib/helplines';
@@ -35,8 +35,7 @@ function Acute() {
   const line = helplinesFor(region)[0];
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <Masthead title="right now" dateline={null} />
+    <Screen edges={['top', 'bottom']} header={<SubHeader title="right now" leading="close" />}>
       <Text variant="reading">Please talk to someone right now.</Text>
       <Text>
         You don’t have to act on what you’re feeling. The people on these lines are trained for exactly this moment,
@@ -47,6 +46,7 @@ function Acute() {
         <View style={styles.primary}>
           {line.call && (
             <Button
+              arrow
               label={`call ${line.name}`}
               accessibilityLabel={`Call ${line.name} on ${line.display}`}
               onPress={() => Linking.openURL(`tel:${line.call}`)}
@@ -54,7 +54,7 @@ function Acute() {
           )}
           {line.text && (
             <Button
-              kind="quiet"
+              kind="link"
               label={`text ${line.display}`}
               accessibilityLabel={`Text ${line.name} on ${line.display}`}
               onPress={() => Linking.openURL(`sms:${line.text}`)}
@@ -64,26 +64,25 @@ function Acute() {
       )}
 
       <HelplineList />
-      <Button kind="quiet" label="back to mirrorspace" onPress={() => router.back()} />
+      <Button kind="link" label="back to mirrorspace" onPress={() => router.back()} />
     </Screen>
   );
 }
 
 function Elevated() {
   return (
-    <Screen edges={['top', 'bottom']}>
-      <Masthead title="a moment" dateline={null} />
+    <Screen edges={['top', 'bottom']} header={<SubHeader title="a moment" leading="close" />}>
       <Text variant="reading">That sounds like a lot to carry.</Text>
       <Text>What you wrote is saved, and it stays on this phone. Before anything else:</Text>
       <Text variant="bodyItalic">
         Breathe out slowly, longer than you breathed in. Then name three things you can see from where you are.
       </Text>
 
-      <Button label="breathe for a minute" onPress={() => router.replace('/calm')} />
+      <Button arrow label="breathe for a minute" onPress={() => router.replace('/calm')} />
 
       <Text tone="soft">If it’s more than a moment, these lines are free, confidential and open now:</Text>
       <HelplineList />
-      <Button kind="quiet" label="i’m okay for now" onPress={() => router.back()} />
+      <Button kind="link" label="i’m okay for now" onPress={() => router.back()} />
     </Screen>
   );
 }

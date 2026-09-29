@@ -30,7 +30,12 @@ describe.each<[string, Palette]>([
     ['soft ink on paper', p.inkSoft, p.paper],
     ['soft ink on raised paper', p.inkSoft, p.paperRaised],
     // Selected words, tags and the primary button are inverted.
-    ['paper on ink', p.paper, p.ink]
+    ['paper on ink', p.paper, p.ink],
+    // Pressed rows and the search field sit on the band.
+    ['soft ink on band', p.inkSoft, p.band],
+    // The writing sheet: its prompt, its text and its placeholder.
+    ['ink on tint', p.ink, p.tint],
+    ['soft ink on tint', p.inkSoft, p.tint]
   ])('%s is AA for text', (_label, fg, bg) => {
     expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
   });
@@ -43,6 +48,11 @@ describe.each<[string, Palette]>([
 
   test('ink outline on raised paper is AA for non-text UI', () => {
     expect(contrast(p.ink, p.paperRaised)).toBeGreaterThanOrEqual(3);
+  });
+
+  test('light text in the void room is AA', () => {
+    expect(contrast(dark.ink, p.void)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(dark.inkSoft, p.void)).toBeGreaterThanOrEqual(4.5);
   });
 
   test('rules and outlines are AA for non-text UI', () => {

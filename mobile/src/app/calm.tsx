@@ -13,8 +13,8 @@ export default function Calm() {
   return (
     <Screen edges={['top', 'bottom']}>
       <Text variant="title">Breathe out, slowly, for longer than you breathed in.</Text>
-      <Button kind="quiet" label="need help now" onPress={() => router.replace('/help')} />
-      <Button kind="quiet" label="close" onPress={() => router.back()} />
+      <Button kind="link" label="need help now" onPress={() => router.replace('/help')} />
+      <Button kind="link" label="close" onPress={() => router.back()} />
     </Screen>
   );
 }

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 
 import { Button } from '@/components/Button';
+import { SubHeader } from '@/components/Header';
 import { HelplineList } from '@/components/HelplineList';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -12,14 +13,14 @@ import { Text } from '@/components/Text';
  */
 export default function Help() {
   return (
-    <Screen edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']} header={<SubHeader title="need help now" leading="close" />}>
       <Text variant="title">You don’t have to get through this moment alone.</Text>
       <Text>
         These are free, confidential lines staffed by trained people. MirrorSpace is not one of them — it can’t
         call anyone for you.
       </Text>
       <HelplineList />
-      <Button kind="quiet" label="close" onPress={() => router.back()} />
+      <Button kind="link" label="close" onPress={() => router.back()} />
     </Screen>
   );
 }

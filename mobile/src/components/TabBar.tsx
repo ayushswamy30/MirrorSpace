@@ -1,38 +1,30 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { hitTarget, radius, space } from '@/theme/tokens';
+import { gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CareBar } from './CareBar';
-import { Icon, type IconName } from './icons';
 import { Text } from './Text';
 
-const ICONS: Record<string, IconName> = {
-  index: 'today',
-  'check-in': 'checkIn',
-  mirror: 'mirror',
-  chart: 'chart',
-  circle: 'circle'
-};
-
 /**
- * Five tabs, with calm tools and "Need help now" sitting above all of them
- * (report §7) — the care bar is part of the tab bar so it is on every tab
- * screen without each screen having to remember it.
+ * Five tab names in mono capitals — text only, no icons (DESIGN.md). The
+ * current tab is ink with a small weather-coloured dot; the rest are soft ink.
+ *
+ * Calm tools and "Need help now" sit above the tabs (report §7), part of the
+ * bar so they are on every tab screen without each screen remembering them.
  */
 export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { colors, signal } = useTheme();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.paper, paddingBottom: Math.max(insets.bottom, space.sm) }]}>
+    <View style={{ backgroundColor: colors.paper, paddingBottom: Math.max(insets.bottom, space.xs) }}>
       <CareBar />
       <View style={[styles.tabs, { borderTopColor: colors.hairline }]} accessibilityRole="tablist">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const focused = state.index === index;
           const label = options.title ?? route.name;
-          const color = focused ? colors.ink : colors.inkSoft;
 
           const onPress = () => {
             const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -48,12 +40,9 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
               onPress={onPress}
               style={styles.tab}
             >
-              <Icon name={ICONS[route.name] ?? 'today'} color={color} size={22} />
-              <Text variant="label" style={{ color }}>
+              <Text variant="label" numberOfLines={1} style={{ color: focused ? colors.ink : colors.inkSoft }}>
                 {label}
               </Text>
-              {/* The current tab is marked in the weather's colour — small,
-                  and never the only cue: the label darkens to ink as well. */}
               <View style={[styles.mark, { backgroundColor: focused ? signal : 'transparent' }]} />
             </Pressable>
           );
@@ -64,10 +53,10 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: space.sm },
   tabs: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: gutter - space.sm,
     paddingTop: space.sm
   },
   tab: {
@@ -75,7 +64,7 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3
+    gap: space.xs
   },
   mark: { width: 4, height: 4, borderRadius: radius.dot }
 });

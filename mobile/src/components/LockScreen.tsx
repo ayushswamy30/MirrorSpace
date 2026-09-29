@@ -41,7 +41,7 @@ export function LockScreen() {
         {showHelp ? (
           <HelplineList />
         ) : (
-          <Button kind="quiet" label="need help now" onPress={() => setShowHelp(true)} />
+          <Button kind="link" label="need help now" onPress={() => setShowHelp(true)} />
         )}
       </Screen>
     </View>

@@ -12,7 +12,7 @@ export default function Age() {
         <>
           <Button label="yes, I’m 18 or older" onPress={() => router.push('/onboarding/disclosure')} />
           <Button
-            kind="quiet"
+            kind="link"
             label="no, I’m under 18"
             onPress={async () => {
               await ageGate.markUnder18().catch(() => undefined);

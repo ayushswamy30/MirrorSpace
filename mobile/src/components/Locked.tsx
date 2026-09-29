@@ -4,12 +4,13 @@ import { config } from '@/lib/config';
 import { useProfile } from '@/lib/session';
 import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 
-import { Masthead } from './Masthead';
+import { SectionLabel } from './Blocks';
+import { AppHeader } from './Header';
 import { Screen } from './Screen';
 import { Text } from './Text';
 
 type Props = {
-  /** The tab's name, for the masthead. */
+  /** The tab's name, for the header. */
   title: string;
   feature: Feature;
   /** What the space will hold, in one line. */
@@ -31,12 +32,10 @@ export function Locked({ title, feature, promise, children }: Props) {
   const days = daysUntil(feature, createdAt);
 
   return (
-    <Screen>
-      <Masthead title={title} />
-      <Text variant="reading" style={{ textAlign: 'center' }}>
-        {promise}
-      </Text>
-      <Text tone="soft" style={{ textAlign: 'center' }}>
+    <Screen header={<AppHeader context={title} />}>
+      <SectionLabel title={days === 1 ? 'opens tomorrow' : `opens in ${days} days`} />
+      <Text variant="title">{promise}</Text>
+      <Text tone="soft">
         {days === 1 ? 'This opens tomorrow.' : `This opens in ${days} days.`} It needs a little of your rhythm first.
       </Text>
     </Screen>

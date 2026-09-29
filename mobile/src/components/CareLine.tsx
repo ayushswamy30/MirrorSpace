@@ -13,15 +13,14 @@ import { Text } from './Text';
 export function CareLine() {
   return (
     <View style={styles.wrap} accessibilityRole="summary">
-      <Text variant="bodyItalic" style={styles.center}>
+      <Text variant="bodyItalic">
         That sounds heavy. If it gets heavier, help is one tap away.
       </Text>
-      <Button kind="quiet" label="need help now" onPress={() => router.push('/help')} />
+      <Button kind="link" label="need help now" onPress={() => router.push('/help')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.xs },
-  center: { textAlign: 'center' }
+  wrap: { gap: space.xs }
 });

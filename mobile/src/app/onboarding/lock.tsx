@@ -42,7 +42,7 @@ export default function Lock() {
       actions={
         <>
           <Button label="lock it" onPress={turnOn} />
-          <Button kind="quiet" label="not now" onPress={() => router.push('/onboarding/finish')} />
+          <Button kind="link" label="not now" onPress={() => router.push('/onboarding/finish')} />
         </>
       }
     >
