@@ -33,6 +33,17 @@ export async function recordSafetyEvent(
   }
 }
 
+export type SafetyEvent = { tier: Exclude<Tier, 'none'>; source: SafetySource; createdAt: string };
+
+/** Every event, oldest first — only for the person's own export. */
+export async function listSafetyEvents(): Promise<SafetyEvent[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{ tier: SafetyEvent['tier']; source: SafetySource; created_at: string }>(
+    'SELECT tier, source, created_at FROM safety_events ORDER BY created_at ASC'
+  );
+  return rows.map(r => ({ tier: r.tier, source: r.source, createdAt: r.created_at }));
+}
+
 /** Mirror chat and reflections check this before replying. */
 export async function reflectionsPaused(now: Date = new Date()): Promise<boolean> {
   const until = await kv.get(PAUSE_KEY);

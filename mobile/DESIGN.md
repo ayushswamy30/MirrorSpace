@@ -44,7 +44,7 @@ Dynamic Type up to 200% everywhere.
 ## Layout
 
 - **App header** (every tab): wordmark `MIRROR – SPACE` with the weather dot
-  on the left, a small `CALM` link on the right, a hairline under it. Fixed;
+  on the left, small `YOU` and `CALM` links on the right, a hairline under it. Fixed;
   content scrolls beneath. Onboarding shows the `CALM` link alone.
 - **Sub-screen header**: back arrow left, mono title centred (`Crush Report`
   style) — or a large serif title left-aligned for settings-like screens.

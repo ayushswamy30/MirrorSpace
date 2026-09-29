@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -116,6 +116,41 @@ export function Row({ title, subtitle, leading, onPress, accessibilityHint, arro
       </View>
       {onPress && arrow && <Icon name="arrow" color={colors.ink} size={16} />}
     </Pressable>
+  );
+}
+
+type SettingProps = {
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+};
+
+/** A settings line with a switch: grey when off, ink when on, no colour. */
+export function SettingRow({ title, subtitle, value, onValueChange, disabled }: SettingProps) {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
+      <View style={styles.rowText}>
+        <Text>{title}</Text>
+        {subtitle && (
+          <Text variant="caption" tone="soft">
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        accessibilityLabel={title}
+        trackColor={{ false: colors.inkSoft, true: colors.ink }}
+        thumbColor={colors.paper}
+        ios_backgroundColor={colors.inkSoft}
+      />
+    </View>
   );
 }
 
