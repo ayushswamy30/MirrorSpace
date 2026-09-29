@@ -3,8 +3,9 @@
   "main": "expo-router/entry",
   "version": "0.1.0",
   "dependencies": {
-    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@expo-google-fonts/newsreader": "^0.4.1",
     "@expo/ui": "~57.0.21",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.26",

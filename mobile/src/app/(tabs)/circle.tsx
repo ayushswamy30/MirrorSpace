@@ -1,3 +1,4 @@
+import { Masthead } from '@/components/Masthead';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 
@@ -9,11 +10,13 @@ import { Text } from '@/components/Text';
 export default function Circle() {
   return (
     <Screen>
-      <Text variant="label" tone="soft">
-        circle
+      <Masthead title="circle" />
+      <Text variant="reading" style={{ textAlign: 'center' }}>
+        A few people who can see your weather, and nothing else.
       </Text>
-      <Text variant="title">A few people who can see your weather, and nothing else.</Text>
-      <Text tone="soft">Circles arrive in a later version.</Text>
+      <Text tone="soft" style={{ textAlign: 'center' }}>
+        Circles arrive in a later version.
+      </Text>
     </Screen>
   );
 }

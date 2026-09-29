@@ -7,7 +7,10 @@ import { Text } from './Text';
 
 type Props = Omit<PressableProps, 'children'> & {
   label: string;
-  /** 'quiet' is a text-only action for secondary choices. */
+  /**
+   * 'primary' is a solid ink bar across the column — one per screen, the thing
+   * to do next. 'quiet' is an underlined text action for everything else.
+   */
   kind?: 'primary' | 'quiet';
 };
 
@@ -23,13 +26,17 @@ export function Button({ label, kind = 'primary', disabled, style, ...rest }: Pr
       disabled={disabled}
       style={state => [
         styles.base,
-        primary && { borderColor: colors.ink, borderWidth: StyleSheet.hairlineWidth * 2 },
+        primary ? [styles.primary, { backgroundColor: colors.ink }] : styles.quiet,
         { opacity: disabled ? 0.4 : state.pressed ? 0.6 : 1 },
         typeof style === 'function' ? style(state) : style
       ]}
       {...rest}
     >
-      <Text variant={primary ? 'body' : 'caption'} tone={primary ? 'ink' : 'soft'}>
+      <Text
+        variant="action"
+        tone={primary ? 'ink' : 'soft'}
+        style={primary ? { color: colors.paper } : styles.underline}
+      >
         {label}
       </Text>
     </Pressable>
@@ -39,11 +46,18 @@ export function Button({ label, kind = 'primary', disabled, style, ...rest }: Pr
 const styles = StyleSheet.create({
   base: {
     minHeight: hitTarget,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.sm + 2,
-    borderRadius: radius.pill,
     alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-start'
-  }
+    justifyContent: 'center'
+  },
+  primary: {
+    alignSelf: 'stretch',
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    borderRadius: radius.none
+  },
+  quiet: {
+    alignSelf: 'center',
+    paddingHorizontal: space.sm
+  },
+  underline: { textDecorationLine: 'underline' }
 });

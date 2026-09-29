@@ -36,7 +36,7 @@ function HelplineCard({ line }: { line: Helpline }) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.card, { borderColor: colors.hairline, backgroundColor: colors.paperRaised }]}>
+    <View style={[styles.card, { borderColor: colors.hairline }]}>
       <Text variant="label" tone="soft">
         {line.regionName}
       </Text>
@@ -66,7 +66,7 @@ function ActionPill({ label, a11y, url }: { label: string; a11y: string; url: st
       onPress={() => Linking.openURL(url)}
       style={({ pressed }) => [styles.pill, { borderColor: colors.ink, opacity: pressed ? 0.6 : 1 }]}
     >
-      <Text>{label}</Text>
+      <Text variant="action">{label}</Text>
     </Pressable>
   );
 }
@@ -74,8 +74,8 @@ function ActionPill({ label, a11y, url }: { label: string; a11y: string; url: st
 const styles = StyleSheet.create({
   list: { gap: space.md },
   card: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderRadius: radius.none,
     padding: space.md,
     gap: space.xs
   },
@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
   pill: {
     minHeight: hitTarget,
     paddingHorizontal: space.md,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: radius.none,
+    borderWidth: 1,
     justifyContent: 'center'
   },
   underline: { textDecorationLine: 'underline' }

@@ -3,7 +3,8 @@ import { Text as RNText, type TextProps } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { maxFontScale, textVariants, type TextVariant } from '@/theme/typography';
 
-type Tone = 'ink' | 'soft' | 'signal';
+// No signal tone: the weather colour is for small marks, never for words.
+type Tone = 'ink' | 'soft';
 
 type Props = TextProps & {
   variant?: TextVariant;
@@ -11,8 +12,8 @@ type Props = TextProps & {
 };
 
 export function Text({ variant = 'body', tone = 'ink', style, ...rest }: Props) {
-  const { colors, signal } = useTheme();
-  const color = tone === 'signal' ? signal : tone === 'soft' ? colors.inkSoft : colors.ink;
+  const { colors } = useTheme();
+  const color = tone === 'soft' ? colors.inkSoft : colors.ink;
 
   return (
     <RNText

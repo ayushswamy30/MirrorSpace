@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
+import { Masthead, SectionHead } from '@/components/Masthead';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import {
@@ -112,29 +113,29 @@ export default function CheckIn() {
 
   return (
     <Screen>
-      <Text variant="label" tone="soft">
-        check-in
-      </Text>
-      <Text variant="title">
+      <Masthead title="check-in" />
+      <Text variant="reading" style={styles.center}>
         {replacing ? 'Which word fits better?' : 'Where are you, right now?'}
       </Text>
       {error ? (
-        <Text tone="signal" accessibilityRole="alert">
+        <Text variant="bodyItalic" style={styles.center} accessibilityRole="alert">
           {error}
         </Text>
       ) : replacing ? (
         <Button kind="quiet" label={`keep “${replacing.emotion}”`} onPress={() => setStage({ kind: 'after', checkIn: replacing })} />
       ) : latest ? (
-        <Text variant="receipt" tone="soft">
+        <Text variant="receipt" tone="soft" style={styles.center}>
           {lastLine(latest, new Date())}
         </Text>
-      ) : null}
+      ) : (
+        <Text tone="soft" style={styles.center}>
+          One word is enough.
+        </Text>
+      )}
 
       {QUADRANTS.map(quadrant => (
         <View key={quadrant} style={styles.section}>
-          <Text variant="label" tone="soft" accessibilityRole="header">
-            {quadrantLabel[quadrant]}
-          </Text>
+          <SectionHead title={quadrantLabel[quadrant]} />
           <View style={styles.wrap}>
             {wordsNearestFirst(quadrant).map(emotion => (
               <Chip
@@ -203,15 +204,18 @@ function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterPr
 
   return (
     <Screen>
+      <Masthead title="checked in" />
       <Animated.View entering={first} style={styles.block}>
-        <Text variant="label" tone="soft">
-          checked in
+        <Text variant="reading" style={styles.center}>
+          {checkIn.emotion}.
         </Text>
-        <Text variant="title">{checkIn.emotion}.</Text>
-        <Text tone="soft">That’s the check-in. Anything around it?</Text>
+        <Text tone="soft" style={styles.center}>
+          That’s the check-in. Anything around it?
+        </Text>
       </Animated.View>
 
       <Animated.View entering={second} style={styles.block}>
+        <SectionHead title="around it" />
         <View style={styles.wrap}>
           {tagOrder.map(tag => (
             <Chip
@@ -234,14 +238,11 @@ function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterPr
           multiline
           maxLength={500}
           maxFontSizeMultiplier={2}
-          style={[
-            styles.note,
-            { color: colors.ink, borderColor: colors.hairline, backgroundColor: colors.paperRaised }
-          ]}
+          style={[styles.note, { color: colors.ink, borderColor: colors.hairline }]}
         />
 
         {error && (
-          <Text tone="signal" accessibilityRole="alert">
+          <Text variant="bodyItalic" style={styles.center} accessibilityRole="alert">
             {error}
           </Text>
         )}
@@ -265,17 +266,18 @@ function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterPr
 }
 
 const styles = StyleSheet.create({
+  center: { textAlign: 'center' },
   block: { gap: space.md },
-  section: { gap: space.sm },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  section: { gap: space.md },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
   note: {
     fontFamily: fonts.serif,
     fontSize: 18,
-    lineHeight: 27,
+    lineHeight: 26,
     minHeight: 88,
     padding: space.md,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: radius.none,
+    borderWidth: 1,
     textAlignVertical: 'top'
   }
 });
