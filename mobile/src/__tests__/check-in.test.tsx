@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import * as checkIns from '@/lib/checkIns';
+import { recordSafetyEvent } from '@/lib/safety/log';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 import CheckIn from '@/app/(tabs)/check-in';
@@ -18,7 +19,12 @@ jest.mock('@/lib/checkIns', () => {
   };
 });
 
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
+jest.mock('@/lib/safety/log', () => ({ recordSafetyEvent: jest.fn() }));
+
 const mocked = jest.mocked(checkIns);
+const logged = jest.mocked(recordSafetyEvent);
 
 function saved(word: string): checkIns.CheckIn {
   return {
@@ -51,6 +57,7 @@ beforeEach(() => {
   mocked.changeEmotion.mockResolvedValue();
   mocked.setTags.mockResolvedValue();
   mocked.setNote.mockResolvedValue();
+  logged.mockResolvedValue();
 });
 
 test('one tap on a word is a whole check-in', async () => {
@@ -118,4 +125,64 @@ test('a failed save says so and records nothing', async () => {
 
   expect(await screen.findByText('That didn’t save. Try the word once more.')).toBeTruthy();
   expect(screen.queryByText('calm.')).toBeNull();
+});
+
+test('an ordinary check-in logs nothing and interrupts nothing', async () => {
+  await renderCheckIn();
+  fireEvent.press(screen.getByRole('button', { name: 'calm' }));
+  await screen.findByText('calm.');
+
+  expect(logged).not.toHaveBeenCalled();
+  expect(mockPush).not.toHaveBeenCalled();
+  expect(screen.queryByText(/help is one tap away/)).toBeNull();
+});
+
+test('a low word leaves the care line, logs once, and does not interrupt', async () => {
+  await renderCheckIn();
+  fireEvent.press(screen.getByRole('button', { name: 'hopeless' }));
+  await screen.findByText('hopeless.');
+
+  expect(screen.getByText(/help is one tap away/)).toBeTruthy();
+  expect(logged).toHaveBeenCalledTimes(1);
+  expect(logged).toHaveBeenCalledWith('low', 'check_in');
+  expect(mockPush).not.toHaveBeenCalled();
+
+  fireEvent.press(screen.getByRole('button', { name: 'done' }));
+  await screen.findByText('Where are you, right now?');
+  // Still there after leaving, in place of the "last" line.
+  expect(screen.getByText(/help is one tap away/)).toBeTruthy();
+});
+
+test('an acute note opens the crisis card once, however the check-in is edited after', async () => {
+  await renderCheckIn();
+  fireEvent.press(screen.getByRole('button', { name: 'numb' }));
+  await screen.findByText('numb.');
+
+  fireEvent.changeText(screen.getByLabelText('note'), 'I have a plan to end it all');
+  fireEvent(screen.getByLabelText('note'), 'blur');
+
+  await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/crisis?tier=acute'));
+  expect(logged).toHaveBeenCalledWith('acute', 'check_in');
+  // The note was saved before anything else happened.
+  expect(mocked.setNote).toHaveBeenCalledWith('c1', 'I have a plan to end it all');
+
+  fireEvent.press(screen.getByRole('checkbox', { name: 'alone' }));
+  await waitFor(() => expect(mocked.setTags).toHaveBeenCalled());
+  expect(mockPush).toHaveBeenCalledTimes(1);
+  expect(logged).toHaveBeenCalledTimes(1);
+});
+
+test('a note that goes from low to elevated is answered at the higher tier', async () => {
+  await renderCheckIn();
+  fireEvent.press(screen.getByRole('button', { name: 'hopeless' }));
+  await screen.findByText('hopeless.');
+
+  fireEvent.changeText(screen.getByLabelText('note'), 'honestly I want to die');
+  fireEvent.press(screen.getByRole('button', { name: 'done' }));
+
+  await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/crisis?tier=elevated'));
+  expect(logged.mock.calls).toEqual([
+    ['low', 'check_in'],
+    ['elevated', 'check_in']
+  ]);
 });

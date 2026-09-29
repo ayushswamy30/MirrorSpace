@@ -27,7 +27,16 @@ export const migrations: readonly string[] = [
      note         TEXT,
      updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
    );
-   CREATE INDEX check_ins_created_at_idx ON check_ins (created_at);`
+   CREATE INDEX check_ins_created_at_idx ON check_ins (created_at);`,
+
+  // 3 — safety events: tier, source and time only. Deliberately no text and
+  // no reference to the entry that raised it.
+  `CREATE TABLE safety_events (
+     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+     tier       TEXT NOT NULL CHECK (tier IN ('low', 'elevated', 'acute')),
+     source     TEXT NOT NULL CHECK (source IN ('check_in', 'vent', 'chat')),
+     created_at TEXT NOT NULL
+   );`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

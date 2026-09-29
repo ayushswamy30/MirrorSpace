@@ -1,8 +1,10 @@
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
+import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
 import { Masthead, SectionHead } from '@/components/Masthead';
 import { Screen } from '@/components/Screen';
@@ -21,6 +23,8 @@ import {
   type ContextTag
 } from '@/lib/checkIns';
 import { QUADRANTS, quadrantLabel, wordsNearestFirst, type Emotion } from '@/lib/emotions';
+import { recordSafetyEvent } from '@/lib/safety/log';
+import { atLeast, higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useEntering } from '@/theme/motion';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -32,6 +36,9 @@ import { fonts } from '@/theme/typography';
  * Tapping a word *is* the check-in — it is saved on that tap, before anything
  * else appears. What follows (context tags, a line of note) is optional and
  * edits the same row, so walking away at any point loses nothing.
+ *
+ * Every version of a check-in is screened (report §8): a low result leaves a
+ * quiet care line, elevated or acute opens the crisis screen over this one.
  */
 
 type Stage =
@@ -55,8 +62,24 @@ export default function CheckIn() {
   const [latest, setLatest] = useState<CheckInRecord | null>(null);
   const [tagOrder, setTagOrder] = useState<ContextTag[]>(defaultTagOrder);
   const [error, setError] = useState<string | null>(null);
+  // Shown on the choose screen after a check-in that screened above none.
+  const [care, setCare] = useState(false);
   // A fast double tap must not become two check-ins.
   const saving = useRef(false);
+  // The highest tier each check-in has been answered at, so editing tags does
+  // not re-open the crisis screen or log the same concern twice.
+  const answered = useRef(new Map<string, Tier>());
+
+  const respond = (checkIn: CheckInRecord) => {
+    const tier = screenCheckIn(checkIn);
+    const before = answered.current.get(checkIn.id) ?? 'none';
+    if (tier === before || higher(tier, before) !== tier) return;
+
+    answered.current.set(checkIn.id, tier);
+    if (tier === 'none') return;
+    recordSafetyEvent(tier, 'check_in').catch(err => console.warn('Safety event not logged:', err));
+    if (atLeast(tier, 'elevated')) router.push(`/crisis?tier=${tier}`);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +99,7 @@ export default function CheckIn() {
     if (saving.current || stage.kind !== 'choose') return;
     saving.current = true;
     setError(null);
+    setCare(false);
 
     try {
       const { replacing } = stage;
@@ -86,6 +110,7 @@ export default function CheckIn() {
 
       setLatest(checkIn);
       setStage({ kind: 'after', checkIn });
+      respond(checkIn);
     } catch (err) {
       console.error('Check-in save failed:', err);
       setError('That didn’t save. Try the word once more.');
@@ -98,12 +123,17 @@ export default function CheckIn() {
     return (
       <After
         checkIn={stage.checkIn}
+        care={screenCheckIn(stage.checkIn) !== 'none'}
         tagOrder={tagOrder}
         onChange={checkIn => {
           setLatest(checkIn);
           setStage({ kind: 'after', checkIn });
+          respond(checkIn);
         }}
-        onDone={() => setStage({ kind: 'choose', replacing: null })}
+        onDone={checkIn => {
+          setCare(screenCheckIn(checkIn) !== 'none');
+          setStage({ kind: 'choose', replacing: null });
+        }}
         onDifferentWord={checkIn => setStage({ kind: 'choose', replacing: checkIn })}
       />
     );
@@ -121,6 +151,8 @@ export default function CheckIn() {
         <Text variant="bodyItalic" style={styles.center} accessibilityRole="alert">
           {error}
         </Text>
+      ) : care ? (
+        <CareLine />
       ) : replacing ? (
         <Button kind="quiet" label={`keep “${replacing.emotion}”`} onPress={() => setStage({ kind: 'after', checkIn: replacing })} />
       ) : latest ? (
@@ -154,14 +186,16 @@ export default function CheckIn() {
 
 type AfterProps = {
   checkIn: CheckInRecord;
+  /** The check-in screened above none: leave the care line under it. */
+  care: boolean;
   tagOrder: readonly ContextTag[];
   onChange: (checkIn: CheckInRecord) => void;
-  onDone: () => void;
+  onDone: (checkIn: CheckInRecord) => void;
   onDifferentWord: (checkIn: CheckInRecord) => void;
 };
 
 /** Everything after the tap is optional; the check-in already exists. */
-function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterProps) {
+function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: AfterProps) {
   const { colors } = useTheme();
   const [note, setNoteText] = useState(checkIn.note ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +246,7 @@ function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterPr
         <Text tone="soft" style={styles.center}>
           That’s the check-in. Anything around it?
         </Text>
+        {care && <CareLine />}
       </Animated.View>
 
       <Animated.View entering={second} style={styles.block}>
@@ -250,7 +285,7 @@ function After({ checkIn, tagOrder, onChange, onDone, onDifferentWord }: AfterPr
         <Button
           label="done"
           onPress={async () => {
-            if (await saveNote()) onDone();
+            if (await saveNote()) onDone(current.current);
           }}
         />
         <Button
