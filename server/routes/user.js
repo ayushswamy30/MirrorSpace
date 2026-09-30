@@ -5,6 +5,8 @@ import * as users from '../db/users.js';
 import * as account from '../db/account.js';
 import * as consents from '../db/consents.js';
 import * as circle from '../db/circle.js';
+import * as push from '../db/push.js';
+import { parseRegistration, PushValidationError } from '../lib/push.js';
 import { parseConsentChanges, ConsentValidationError } from '../lib/consent.js';
 
 const router = express.Router();
@@ -108,6 +110,28 @@ router.get('/export', auth, accountLimiter, async (req, res, next) => {
     // An export of someone's journals should not sit in any shared cache.
     res.setHeader('Cache-Control', 'no-store');
     res.json(payload);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/user/push-token — { token, platform }: where Circle alerts go
+router.put('/push-token', auth, writeLimiter, async (req, res, next) => {
+  try {
+    await push.save(req.userId, parseRegistration(req.body));
+    res.status(204).end();
+  } catch (error) {
+    if (error instanceof PushValidationError) return res.status(400).json({ message: error.message });
+    next(error);
+  }
+});
+
+// DELETE /api/user/push-token — { token }: this phone stops getting alerts
+router.delete('/push-token', auth, writeLimiter, async (req, res, next) => {
+  try {
+    if (typeof req.body?.token !== 'string') return res.status(400).json({ message: 'token is required' });
+    await push.remove(req.userId, req.body.token);
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

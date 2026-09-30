@@ -11,7 +11,7 @@
  * the first time they start a circle.
  */
 
-export const CONSENT_POLICY_VERSION = '2026-10-01';
+export const CONSENT_POLICY_VERSION = '2026-10-02';
 
 export type ConsentPurpose = 'readings' | 'ai_reflections' | 'health' | 'circle';
 
@@ -35,10 +35,11 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
     title: 'May MirrorSpace send what you write in Vent and Mirror to an AI, to reflect it back?',
     sends: [
       'The text of an entry or message, once, to write a reflection on it.',
-      // Say nothing here about the provider's training or retention terms
-      // until a provider has actually been chosen against them (report §13,
-      // open questions). Consent copy must be true on the day it is shown.
-      'It passes through our server to the AI provider that writes reflections. Our server does not keep it — only the reflection is saved.'
+      // True of Groq's terms as of 2026-10: no training on inputs or outputs on
+      // any plan, nothing retained by default (up to 30 days only for abuse
+      // checks, off with Zero Data Retention). Change the provider, change
+      // this line — and CONSENT_POLICY_VERSION with it.
+      'It passes through our server to Groq, the AI service that writes reflections. Groq doesn’t train on it or keep it, and our server doesn’t keep it either — only the reflection is saved.'
     ],
     neverSends: ['Anything you keep only on this phone without asking for a reflection.'],
     declined: 'Vent still works and stays private; you won’t get reflections, and Mirror chat stays closed.'
