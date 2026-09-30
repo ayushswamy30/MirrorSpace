@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
+import { HealthSync } from '@/components/HealthSync';
 import { ReminderSync } from '@/components/ReminderSync';
 import { WeatherSync } from '@/components/WeatherSync';
 import { Text } from '@/components/Text';
@@ -42,6 +43,7 @@ export default function TabsLayout() {
     <>
       <WeatherSync />
       <ReminderSync />
+      <HealthSync />
       <Tabs tabBar={props => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
         <Tabs.Screen name="index" options={{ title: 'today' }} />
         <Tabs.Screen name="check-in" options={{ title: 'check-in' }} />
