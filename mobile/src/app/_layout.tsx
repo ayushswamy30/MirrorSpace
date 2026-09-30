@@ -35,6 +35,8 @@ function Navigator() {
         <Stack.Screen name="plan" options={{ presentation: 'modal' }} />
         <Stack.Screen name="sleep" options={{ presentation: 'modal' }} />
         <Stack.Screen name="health" options={{ presentation: 'modal' }} />
+        {/* Outside the session gate: signing in must work on a fresh phone. */}
+        <Stack.Screen name="account" options={{ animation: 'fade' }} />
         {/* Full screen and no swipe-to-dismiss, so it can't be flicked away
             by accident; its own buttons always close it. */}
         <Stack.Screen name="crisis" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
