@@ -4,6 +4,7 @@ import { accountLimiter, writeLimiter } from '../middleware/rateLimit.js';
 import * as users from '../db/users.js';
 import * as account from '../db/account.js';
 import * as consents from '../db/consents.js';
+import * as circle from '../db/circle.js';
 import { parseConsentChanges, ConsentValidationError } from '../lib/consent.js';
 
 const router = express.Router();
@@ -60,6 +61,8 @@ router.put('/consents', auth, writeLimiter, async (req, res, next) => {
     }
 
     await consents.record(req.userId, changes);
+    // Withdrawing the circle consent takes down what was shared, at once.
+    if (changes.some(c => c.purpose === 'circle' && !c.granted)) await circle.clearStatus(req.userId);
     res.json({ consents: await consents.current(req.userId) });
   } catch (error) {
     if (error instanceof ConsentValidationError) {

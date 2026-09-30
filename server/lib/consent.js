@@ -6,7 +6,7 @@
  * as it was given. The current state of a purpose is its latest event.
  */
 
-export const CONSENT_PURPOSES = ['readings', 'ai_reflections', 'health'];
+export const CONSENT_PURPOSES = ['readings', 'ai_reflections', 'health', 'circle'];
 
 const MAX_POLICY_VERSION_LENGTH = 40;
 
