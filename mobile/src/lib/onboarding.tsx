@@ -94,5 +94,7 @@ const UNDER_18_KEY = 'age.under18';
 
 export const ageGate = {
   markUnder18: () => kv.set(UNDER_18_KEY, '1'),
-  isUnder18: async () => (await kv.get(UNDER_18_KEY)) === '1'
+  isUnder18: async () => (await kv.get(UNDER_18_KEY)) === '1',
+  /** Development builds only: undo a mis-tap while testing. */
+  resetForTesting: () => kv.remove(UNDER_18_KEY)
 };
