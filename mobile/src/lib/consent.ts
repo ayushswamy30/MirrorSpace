@@ -7,12 +7,13 @@
  * server's consent log can tell the two apart.
  *
  * `health` is not asked during onboarding — it is asked in context, the first
- * time the person connects Apple Health or Health Connect.
+ * time the person connects Apple Health or Health Connect. `circle` likewise,
+ * the first time they start a circle.
  */
 
 export const CONSENT_POLICY_VERSION = '2026-10-01';
 
-export type ConsentPurpose = 'readings' | 'ai_reflections' | 'health';
+export type ConsentPurpose = 'readings' | 'ai_reflections' | 'health' | 'circle';
 
 export type ConsentCopy = {
   title: string;
@@ -47,6 +48,16 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
     sends: ['Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.'],
     neverSends: ['Anything else in your health record.'],
     declined: 'You can log sleep by hand instead.'
+  },
+  circle: {
+    title: 'May MirrorSpace show the people in your circle how your days are going?',
+    sends: [
+      'Today’s Inner Weather — one word, like “fog” or “clear”.',
+      'That you’re “running low”, when you say so. It clears itself after a day.',
+      'Which days of the week tend to be lighter or heavier for you, as seven numbers — so the app can say “you both run heavy on Thursdays”.'
+    ],
+    neverSends: ['Your words, notes, pages or Mirror. Not which feelings you chose — only the weather they make.'],
+    declined: 'You can still see your friends and accept them; they just won’t see anything of yours.'
   }
 };
 

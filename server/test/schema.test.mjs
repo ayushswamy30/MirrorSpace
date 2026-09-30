@@ -106,3 +106,67 @@ test('erasing the auth identity erases the consent log with it', async () => {
   const { rows } = await db.query('select count(*)::int as n from public.consent_events');
   assert.equal(rows[0].n, 0);
 });
+
+test('circle: a friendship is one row per pair, never with yourself', async () => {
+  const db = await freshDatabase();
+  const [a, b] = await twoUsers(db);
+  await db.query('insert into public.friendships (requester_id, addressee_id) values ($1, $2)', [a.id, b.id]);
+  await assert.rejects(
+    db.query('insert into public.friendships (requester_id, addressee_id) values ($1, $2)', [b.id, a.id]),
+    /friendships_pair_key/
+  );
+  await assert.rejects(
+    db.query('insert into public.friendships (requester_id, addressee_id) values ($1, $1)', [a.id]),
+    /friendships_not_self/
+  );
+});
+
+test('circle: only a weather word and seven numbers can be shared', async () => {
+  const db = await freshDatabase();
+  const [a] = await twoUsers(db);
+  await assert.rejects(
+    db.query(`insert into public.circle_status (user_id, weather) values ($1, 'I feel awful')`, [a.id]),
+    /circle_status_weather_valid/
+  );
+  await assert.rejects(
+    db.query(`insert into public.circle_status (user_id, rhythm) values ($1, '{1,2,3}')`, [a.id]),
+    /circle_status_rhythm_valid/
+  );
+  await db.query(`insert into public.circle_status (user_id, weather, rhythm) values ($1, 'fog', '{1,2,3,4,5,-1,null}')`, [a.id]);
+});
+
+test('circle: a person reads only their own status, and no client writes any', async () => {
+  const db = await freshDatabase();
+  const [a, b] = await twoUsers(db);
+  await db.query(`insert into public.circle_status (user_id, weather) values ($1, 'clear'), ($2, 'storm')`, [a.id, b.id]);
+
+  const seen = await asUser(db, a.authId, () => db.query('select weather from public.circle_status'));
+  assert.deepEqual(seen.rows, [{ weather: 'clear' }]);
+
+  await asUser(db, a.authId, () =>
+    assert.rejects(db.query(`update public.circle_status set weather = 'mild'`), /permission denied/)
+  );
+});
+
+test('circle: codes are six readable characters, unique', async () => {
+  const db = await freshDatabase();
+  const [a, b] = await twoUsers(db);
+  await db.query(`update public.users set circle_code = 'K7M2QX' where id = $1`, [a.id]);
+  await assert.rejects(db.query(`update public.users set circle_code = 'K7M2QX' where id = $1`, [b.id]), /users_circle_code_key/);
+  await assert.rejects(db.query(`update public.users set circle_code = 'O0I1AB' where id = $1`, [b.id]), /users_circle_code_valid/);
+});
+
+test('circle: erasing an account takes its friendships, status and nudges with it', async () => {
+  const db = await freshDatabase();
+  const [a, b] = await twoUsers(db);
+  await db.query('insert into public.friendships (requester_id, addressee_id, status) values ($1, $2, $3)', [a.id, b.id, 'accepted']);
+  await db.query(`insert into public.circle_status (user_id, weather) values ($1, 'mild')`, [a.id]);
+  await db.query('insert into public.circle_nudges (from_user_id, to_user_id) values ($1, $2), ($2, $1)', [a.id, b.id]);
+
+  await db.query('delete from auth.users where id = $1', [a.authId]);
+
+  for (const table of ['friendships', 'circle_status', 'circle_nudges']) {
+    const { rows } = await db.query(`select count(*)::int as n from public.${table}`);
+    assert.equal(rows[0].n, 0, `${table} kept rows after erase`);
+  }
+});

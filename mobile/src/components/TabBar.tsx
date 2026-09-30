@@ -7,7 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { Text } from './Text';
 
 /**
- * Five tab names in small mono capitals — text only, no icons, no rule
+ * Six tab names in small mono capitals — text only, no icons, no rule
  * (DESIGN.md). The first and last names sit on the page's margins and the
  * gaps between all five are equal, whatever each name's length. The current
  * tab is ink with a small weather-coloured dot; the rest are soft ink.
@@ -55,7 +55,8 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
   );
 }
 
-const PAD = space.sm;
+// Six names have to fit a 360-point phone with equal gaps; keep the padding lean.
+const PAD = space.xs + 2;
 
 const styles = StyleSheet.create({
   tabs: {

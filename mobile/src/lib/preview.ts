@@ -28,7 +28,7 @@ export function previewProfile(now: Date = new Date()): Profile {
     onboardingComplete: true,
     ageConfirmedAt: at,
     aiDisclosureSeenAt: at,
-    consents: { readings: yes, ai_reflections: { granted: false, at: null, policyVersion: null }, health: yes },
+    consents: { readings: yes, ai_reflections: { granted: false, at: null, policyVersion: null }, health: yes, circle: yes },
     createdAt: at
   };
 }
