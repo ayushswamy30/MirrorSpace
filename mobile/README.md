@@ -54,6 +54,20 @@ scripts/
   generate-sounds.sh  synthesises every calm sound into assets/sounds/
 ```
 
+## Building an installable APK
+
+```bash
+cd mobile
+npx eas-cli@latest build --profile preview --platform android
+```
+
+The preview profile talks to the hosted API on Render. EAS builds never see
+`.env.local`, so the public values the app needs come from EAS itself:
+`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_UNLOCK_ALL` are in `eas.json`, and
+`EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are EAS
+environment variables for the `preview` environment (`eas env:list`). Without
+them the app stops on launch.
+
 ## Previewing it in a browser
 
 No phone needed to look at the screens:
