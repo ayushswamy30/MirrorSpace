@@ -14,6 +14,7 @@ import {
 } from '../lib/circle.js';
 import auth from '../middleware/auth.js';
 import { writeLimiter } from '../middleware/rateLimit.js';
+import { notify } from '../services/push.js';
 
 /**
  * Circle (report §4–5): a few friends who see each other's Inner Weather and
@@ -130,6 +131,7 @@ router.post('/requests', auth, writeLimiter, async (req, res, next) => {
 
     const result = await circle.request(req.userId, target.id);
     if (result === 'exists') return res.status(409).json({ message: `You and ${target.name} are already connected, or waiting.` });
+    notify([target.id], 'request');
     res.status(201).json({ name: target.name });
   } catch (error) {
     handle(res, next, error);
@@ -139,7 +141,9 @@ router.post('/requests', auth, writeLimiter, async (req, res, next) => {
 // POST /api/circle/requests/:id/accept
 router.post('/requests/:id/accept', auth, writeLimiter, async (req, res, next) => {
   try {
-    if (!(await circle.accept(req.params.id, req.userId))) return res.status(404).json({ message: 'That request is gone.' });
+    const requester = await circle.accept(req.params.id, req.userId);
+    if (!requester) return res.status(404).json({ message: 'That request is gone.' });
+    notify([requester], 'accepted');
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -174,6 +178,11 @@ router.put('/low', auth, writeLimiter, async (req, res, next) => {
     if (typeof req.body?.on !== 'boolean') return res.status(400).json({ message: 'on must be true or false' });
     if (!(await sharing(req.userId))) return res.status(403).json({ message: 'Sharing with your circle is off', code: 'no_consent' });
     await circle.setLow(req.userId, req.body.on);
+    // Only turning it on reaches anyone: feeling better needs no alert.
+    if (req.body.on) {
+      const rows = await circle.friendships(req.userId);
+      notify(rows.filter(f => f.status === 'accepted').map(f => other(f, req.userId)), 'low');
+    }
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -191,6 +200,7 @@ router.post('/friends/:id/nudge', auth, writeLimiter, async (req, res, next) => 
       return res.status(429).json({ message: 'Sent already — they’ll see it.' });
     }
     await circle.nudge(req.userId, friendId);
+    notify([friendId], 'nudge');
     res.status(204).end();
   } catch (error) {
     next(error);

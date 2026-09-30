@@ -51,7 +51,7 @@ const providers = {
   gemini,
   groq: request => {
     groqClient ??= new OpenAI({ apiKey: config.ai.groqApiKey, baseURL: 'https://api.groq.com/openai/v1' });
-    return openAiCompatible(groqClient, 'llama-3.3-70b-versatile', request);
+    return openAiCompatible(groqClient, config.ai.groqModel, request);
   },
   openai: request => {
     openaiClient ??= new OpenAI({ apiKey: config.ai.openaiApiKey });
