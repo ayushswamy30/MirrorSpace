@@ -170,3 +170,20 @@ test('circle: erasing an account takes its friendships, status and nudges with i
     assert.equal(rows[0].n, 0, `${table} kept rows after erase`);
   }
 });
+
+test('push tokens: only Expo tokens, one owner each, gone with the account', async () => {
+  const db = await freshDatabase();
+  const [a, b] = await twoUsers(db);
+  const token = 'ExponentPushToken[abcdefghijklmnop]';
+  await db.query(`insert into public.push_tokens (token, user_id, platform) values ($1, $2, 'android')`, [token, a.id]);
+  await assert.rejects(
+    db.query(`insert into public.push_tokens (token, user_id, platform) values ('not a token', $1, 'android')`, [b.id]),
+    /push_tokens_token_valid/
+  );
+  const seen = await asUser(db, b.authId, () => db.query('select token from public.push_tokens'));
+  assert.deepEqual(seen.rows, []);
+
+  await db.query('delete from auth.users where id = $1', [a.authId]);
+  const { rows } = await db.query('select count(*)::int as n from public.push_tokens');
+  assert.equal(rows[0].n, 0);
+});

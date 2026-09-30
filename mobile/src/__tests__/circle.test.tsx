@@ -12,6 +12,8 @@ jest.mock('expo-router', () => {
   return { useFocusEffect: (fn: () => void) => useEffect(fn, [fn]) };
 });
 jest.mock('@/lib/account', () => ({ setConsent: jest.fn() }));
+const mockAskForAlerts = jest.fn(() => Promise.resolve(true));
+jest.mock('@/lib/push', () => ({ askForAlerts: () => mockAskForAlerts() }));
 jest.mock('@/lib/api', () => ({
   api: {},
   ApiError: class ApiError extends Error {
@@ -82,9 +84,12 @@ test('before a name, it asks — and says what would be shared and what never is
 
   fireEvent.changeText(screen.getByLabelText('The name your circle sees'), 'Asha');
   fireEvent.press(screen.getByRole('button', { name: 'start my circle' }));
-  await waitFor(() => expect(account.setConsent).toHaveBeenCalledWith('circle', true));
+  // Several awaits in a row; a cold first run can take longer than the default.
+  await waitFor(() => expect(account.setConsent).toHaveBeenCalledWith('circle', true), { timeout: 5000 });
   expect(mocked.setCircleName).toHaveBeenCalledWith('Asha');
   expect(mocked.shareStatus).toHaveBeenCalled();
+  // Circle alerts are asked for here, where the reason is plain.
+  await waitFor(() => expect(mockAskForAlerts).toHaveBeenCalled());
 });
 
 test('a friend shows their weather, that they are running low, and the rhythm you share', async () => {
