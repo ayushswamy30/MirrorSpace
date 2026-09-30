@@ -16,6 +16,10 @@ jest.mock('@/lib/sleep', () => ({
   allSleep: () => mockAllSleep(),
   onSleepChanged: () => () => undefined
 }));
+jest.mock('@/lib/vents', () => ({
+  ...jest.requireActual('@/lib/vents'),
+  listVents: () => Promise.resolve([])
+}));
 jest.mock('@/lib/checkIns', () => ({
   ...jest.requireActual('@/lib/checkIns'),
   allCheckIns: jest.fn(),
@@ -111,4 +115,35 @@ test('the page ends, with a way to write something down', async () => {
   expect(screen.getByText('The end')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'write something down' }));
   expect(mockNavigate).toHaveBeenCalledWith('/check-in?mode=vent');
+});
+
+test('TODAY opens the week, and an earlier day shows what was written then', async () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(12, 0, 0, 0);
+  mocked.allCheckIns.mockResolvedValue([
+    {
+      id: 'y1',
+      createdAt: yesterday.toISOString(),
+      localDate: checkIns.localDate(yesterday),
+      emotion: 'hopeful',
+      energy: 2,
+      pleasantness: 3,
+      tags: ['friends'],
+      note: 'the walk helped'
+    }
+  ]);
+  await renderToday();
+
+  fireEvent.press(screen.getByRole('button', { name: /^today\. Show the week/ }));
+  const label = yesterday.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  // Yesterday may fall in the previous week when today is the first day of it.
+  if (!screen.queryByRole('button', { name: label })) fireEvent.press(screen.getByRole('button', { name: 'Previous week' }));
+  fireEvent.press(screen.getByRole('button', { name: label }));
+  await act(async () => {});
+
+  expect(screen.getByText('hopeful')).toBeTruthy();
+  expect(screen.getByText('“the walk helped”')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'back to today' }));
+  expect(screen.getByText('The end')).toBeTruthy();
 });

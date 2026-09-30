@@ -5,6 +5,7 @@ import { gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Icon } from './icons';
+import { InkEnd } from './InkEnd';
 import { Text } from './Text';
 
 /**
@@ -177,28 +178,8 @@ export function DoDont({ dos, donts }: { dos: readonly string[]; donts: readonly
   );
 }
 
-/**
- * The bottom of a feed: an ink block that says it's over. The page ends; it
- * does not keep offering more.
- */
-export function EndMark({ link, onPress }: { link?: string; onPress?: () => void }) {
-  const { colors } = useTheme();
-
-  return (
-    <View style={[styles.end, { backgroundColor: colors.ink }]}>
-      <Text variant="title" style={{ color: colors.paper }}>
-        The end
-      </Text>
-      {link && onPress && (
-        <Pressable accessibilityRole="button" accessibilityLabel={link} onPress={onPress} hitSlop={8}>
-          <Text variant="action" style={[styles.endLink, { color: colors.paper }]}>
-            {link}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
+/** The bottom of a feed: ink, and the page says it's over (see InkEnd). */
+export const EndMark = InkEnd;
 
 /**
  * A group of settings, after the reference's settings page: a small grey
@@ -349,15 +330,6 @@ const styles = StyleSheet.create({
   },
   doDont: { flexDirection: 'row', gap: space.lg },
   column: { flex: 1, gap: 2 },
-  end: {
-    marginHorizontal: -gutter,
-    marginBottom: -space.xxl,
-    paddingTop: space.xxl,
-    paddingBottom: space.xxl + space.lg,
-    alignItems: 'center',
-    gap: space.md
-  },
-  endLink: { textDecorationLine: 'underline' },
   box: { borderWidth: 1, borderRadius: radius.none },
   boxTitle: { paddingVertical: space.sm + 2, paddingHorizontal: space.md, borderBottomWidth: 1 },
   boxBody: { padding: space.md, gap: space.xs },
