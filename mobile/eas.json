@@ -10,10 +10,19 @@
     },
     "development-simulator": {
       "extends": "development",
-      "ios": { "simulator": true }
+      "ios": {
+        "simulator": true
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://mirrorspace-api.onrender.com/api",
+        "EXPO_PUBLIC_UNLOCK_ALL": "0"
+      }
     },
     "production": {
       "autoIncrement": true

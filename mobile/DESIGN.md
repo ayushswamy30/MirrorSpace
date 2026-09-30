@@ -50,6 +50,7 @@ decorative and hidden from screen readers.
 | Check-in | doll; after: lily |
 | Mirror | eye (dark) |
 | Chart | beetle |
+| Circle | kittens |
 | You | cat |
 | Vent / plan / sleep / calm | heart / bandage / city / swan |
 | Not yet open | chess king |
@@ -75,7 +76,7 @@ Dynamic Type up to 200% everywhere.
   No rule. Fixed; content scrolls beneath. Onboarding shows the `CALM` link alone.
 - **Sub-screen header**: back arrow left, mono title centred (`Crush Report`
   style) — or a large serif title left-aligned for settings-like screens.
-- **Tab bar**: `TODAY · CHECK-IN · MIRROR · CHART · YOU` — text only, 10pt
+- **Tab bar**: `TODAY · CHECK-IN · CIRCLE · MIRROR · CHART · YOU` — text only, 10pt
   mono capitals, no icons, no rule. First and last sit on the page margins and
   the gaps between all five are equal. Active is ink with a small signal dot;
   inactive is inkSoft.
@@ -116,7 +117,7 @@ spinner centred on paper while loading.
 |---|---|
 | Home: "Your day at a glance", Do/Don't, "Dive deeper" | Today: reading, receipts, Do/Don't |
 | Void (dark room, suggested questions, ask anything) | Mirror chat |
-| Friends list, compatibility | Circle (v1; not a tab until it exists) |
+| Friends list, compatibility | Circle: friends by code, today's weather, running low, "thinking of you", a rhythm line |
 | Chart wheel, tables and boxed placements | Chart: the month as a wheel of weather, words set by size, tag lines, a skyline of nights |
 | You / Settings rows and toggles | You tab: appearance, reminder, lock, consents, export, erase |
 | "Send your future self a message" prompt sheet | Vent / letters |

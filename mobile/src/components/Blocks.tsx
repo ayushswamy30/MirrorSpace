@@ -247,6 +247,8 @@ export function SettingRow({ title, subtitle, value, onValueChange, disabled }: 
         trackColor={{ false: colors.inkSoft, true: colors.ink }}
         thumbColor={knob}
         ios_backgroundColor={colors.inkSoft}
+        // react-native-web colours the "on" knob teal unless told otherwise.
+        {...{ activeThumbColor: knob }}
       />
     </View>
   );

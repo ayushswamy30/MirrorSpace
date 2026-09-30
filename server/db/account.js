@@ -9,7 +9,7 @@ import { supabase, unwrap } from '../config/supabase.js';
  * know about me" than saying nothing.
  */
 export async function collectAllData(userId) {
-  const [sleep, journals, insights, sessions, patterns, calm, consentLog] = await Promise.all([
+  const [sleep, journals, insights, sessions, patterns, calm, consentLog, profile, friendships, status, nudges] = await Promise.all([
     supabase.from('sleep_logs')
       .select('id, date, sleep_time, wake_time, duration, created_at')
       .eq('user_id', userId).order('date', { ascending: true }),
@@ -30,7 +30,15 @@ export async function collectAllData(userId) {
       .eq('user_id', userId).order('created_at', { ascending: true }),
     supabase.from('consent_events')
       .select('id, purpose, granted, policy_version, created_at')
-      .eq('user_id', userId).order('created_at', { ascending: true })
+      .eq('user_id', userId).order('created_at', { ascending: true }),
+    supabase.from('users').select('circle_name, circle_code').eq('id', userId).single(),
+    supabase.from('friendships')
+      .select('id, requester_id, addressee_id, status, created_at, accepted_at')
+      .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
+    supabase.from('circle_status').select('weather, weather_date, low_since, rhythm, updated_at').eq('user_id', userId),
+    supabase.from('circle_nudges')
+      .select('from_user_id, to_user_id, created_at, seen_at')
+      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
   ]);
 
   return {
@@ -50,7 +58,15 @@ export async function collectAllData(userId) {
     moodPatterns: unwrap(patterns, 'export.moodPatterns'),
     calmTriggers: unwrap(calm, 'export.calmTriggers'),
     // Every grant and withdrawal, in order — what was agreed to, and when.
-    consentEvents: unwrap(consentLog, 'export.consentEvents')
+    consentEvents: unwrap(consentLog, 'export.consentEvents'),
+    // Circle: the name and code, who you're connected to (by row, not by
+    // their details — those are theirs), what you shared, and nudges.
+    circle: {
+      ...unwrap(profile, 'export.circleProfile'),
+      friendships: unwrap(friendships, 'export.friendships'),
+      shared: unwrap(status, 'export.circleStatus')[0] ?? null,
+      nudges: unwrap(nudges, 'export.nudges')
+    }
   };
 }
 
