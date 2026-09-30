@@ -11,6 +11,7 @@ import { Text } from '@/components/Text';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import type { ConsentPurpose } from '@/lib/consent';
+import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
 import type { Appearance } from '@/lib/appearance';
 import {
@@ -126,6 +127,8 @@ export default function You() {
     }
   };
 
+  const encryption = databaseEncryption();
+
   const consentValue = (purpose: ConsentPurpose) => pending[purpose] ?? profile.consents[purpose]?.granted ?? false;
 
   const runExport = async () => {
@@ -207,6 +210,16 @@ export default function You() {
       </SettingGroup>
 
       <SettingGroup title="Privacy">
+        {encryption && (
+          <SettingLink
+            title={encryption.encrypted ? 'Encrypted on this phone' : 'Not encrypted in Expo Go'}
+            subtitle={
+              encryption.encrypted
+                ? `SQLCipher ${encryption.cipher.split(' ')[0]} · the key never leaves this phone`
+                : 'MirrorSpace’s own build encrypts everything you write'
+            }
+          />
+        )}
         <SettingRow
           title="App lock"
           subtitle="Face, fingerprint or passcode to open"

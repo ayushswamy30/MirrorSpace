@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { DoDont, EndMark, Row, SectionLabel } from '@/components/Blocks';
+import { Art, ArtDisc, artOfTheDay } from '@/components/Art';
+import { DoDont, EndMark, Lede, Row, Section } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { AppHeader, shortDate } from '@/components/Header';
 import { Screen } from '@/components/Screen';
@@ -14,9 +15,10 @@ import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /**
- * Today — "your day at a glance" (DESIGN.md): the reading, Do/Don't, what it
- * was built from, the Inner Weather, and an end. Everything is computed on
- * the phone from check-ins; sleep joins when health data does.
+ * Today — "your day at a glance" (DESIGN.md), laid out like the reference's
+ * home: the day's picture in a disc at the top right, air, then the reading,
+ * Do/Don't and one action. Below: last night, what the reading was built
+ * from, the Inner Weather, and an end. Everything is computed on the phone.
  */
 export default function Today() {
   const data = useToday();
@@ -31,10 +33,14 @@ export default function Today() {
 
   return (
     <Screen header={<AppHeader />}>
+      <View style={styles.hero}>
+        <ArtDisc name={artOfTheDay()} size={104} />
+      </View>
+
       <Animated.View entering={first} style={styles.block}>
-        <SectionLabel title={`your day at a glance · ${shortDate()}`} rule={false} />
-        <Text variant="reading">{reading.headline}</Text>
-        <Text>{reading.subtext}</Text>
+        <Lede label={`your day at a glance · ${shortDate()}`} title={reading.headline}>
+          <Text>{reading.subtext}</Text>
+        </Lede>
       </Animated.View>
 
       <Animated.View entering={second} style={styles.block}>
@@ -44,8 +50,7 @@ export default function Today() {
         )}
       </Animated.View>
 
-      <View>
-        <SectionLabel title="last night" />
+      <Section title="last night">
         {lastNight ? (
           <Row
             title={formatDuration(lastNight.minutes)}
@@ -58,20 +63,20 @@ export default function Today() {
         ) : (
           <Row title="How did you sleep?" subtitle="two times, by hand" onPress={() => router.push('/sleep')} />
         )}
-      </View>
+      </Section>
 
       {receipts.length > 0 && (
-        <View>
-          <SectionLabel title="behind this reading" />
+        <Section title="behind this reading">
           {receipts.map(fact => (
             <Row key={fact.key} title={fact.text} subtitle={fact.receipt} />
           ))}
-        </View>
+        </Section>
       )}
 
+      <Art name="masks" size={150} style={styles.margin} />
+
       {weather && (
-        <View style={styles.block}>
-          <SectionLabel title="inner weather" />
+        <Section title="inner weather">
           <View style={styles.weather}>
             <View style={[styles.dot, { backgroundColor: signal }]} />
             <Text variant="title">{weather}</Text>
@@ -79,7 +84,7 @@ export default function Today() {
           <Text variant="caption" tone="soft">
             From your check-ins over the last three days. It sets the one colour you see around the app.
           </Text>
-        </View>
+        </Section>
       )}
 
       {!weather && facts.length === 0 && (
@@ -92,8 +97,11 @@ export default function Today() {
 }
 
 const styles = StyleSheet.create({
-  block: { gap: space.md },
+  // The reference's opening: the picture high on the right, then a long pause.
+  hero: { alignItems: 'flex-end', paddingTop: space.sm, paddingBottom: space.xl },
+  block: { gap: space.lg },
   cta: { marginTop: space.sm },
-  weather: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  margin: { alignSelf: 'flex-start', marginVertical: -space.sm },
+  weather: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingTop: space.sm },
   dot: { width: 14, height: 14, borderRadius: radius.dot }
 });

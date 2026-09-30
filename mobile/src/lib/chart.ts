@@ -72,6 +72,28 @@ export function nightsSummary(logs: readonly SleepLog[], now: Date = new Date())
   };
 }
 
+/** Minutes slept each night, oldest first, ending last night; null where none was logged. */
+export function nightly(logs: readonly SleepLog[], now: Date = new Date(), days = 30): (number | null)[] {
+  const byDate = new Map(logs.map(l => [l.wakeDate, l.minutes]));
+  const out: (number | null)[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    out.push(byDate.get(localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i))) ?? null);
+  }
+  return out;
+}
+
+/** The weather most days had, and how many; null before any check-in. Ties go to the lighter sky. */
+export function mostlyWeather(days: readonly ChartDay[]): { weather: Weather; days: number } | null {
+  const counts = new Map<Weather, number>();
+  for (const d of days) if (d.weather) counts.set(d.weather, (counts.get(d.weather) ?? 0) + 1);
+  let best: { weather: Weather; days: number } | null = null;
+  for (const weather of Object.keys(WEATHER_INK) as Weather[]) {
+    const n = counts.get(weather) ?? 0;
+    if (n > 0 && (!best || n > best.days)) best = { weather, days: n };
+  }
+  return best;
+}
+
 /** Weather as ink density, lightest to heaviest — the chart stays monochrome. */
 export const WEATHER_INK: Record<Weather, number> = {
   clear: 0,

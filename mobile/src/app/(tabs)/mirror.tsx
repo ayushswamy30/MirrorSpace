@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { Art } from '@/components/Art';
 import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
@@ -116,6 +117,7 @@ function Room() {
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
         <ScrollView ref={scroll} contentContainerStyle={styles.feed} keyboardShouldPersistTaps="handled">
+          <Art name="eye" size={84} scheme="dark" style={styles.eye} />
           <Text variant="label" style={[styles.centre, { color: LIGHT }]} accessibilityRole="header">
             welcome to the mirror
           </Text>
@@ -232,6 +234,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   feed: { paddingHorizontal: gutter, paddingVertical: space.lg, gap: space.lg },
   centre: { textAlign: 'center' },
+  eye: { alignSelf: 'center', marginTop: space.md },
   suggestions: { gap: space.sm, marginTop: space.md },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },

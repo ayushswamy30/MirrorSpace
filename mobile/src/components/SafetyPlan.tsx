@@ -16,6 +16,7 @@ import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
+import { Art } from './Art';
 import { SectionLabel } from './Blocks';
 import { Button } from './Button';
 import { Text } from './Text';
@@ -54,6 +55,7 @@ export function SafetyPlan() {
   if (!editing && isEmpty(plan)) {
     return (
       <View style={styles.block}>
+        <Art name="bandage" size={132} style={styles.art} />
         <Text variant="title">A plan for a hard moment, written in a calm one.</Text>
         <Text tone="soft">Seven short steps. Fill in what you can — one line anywhere already helps.</Text>
         <Button label="start" arrow onPress={() => setEditing(true)} />
@@ -175,6 +177,7 @@ function EditSection({ number, section, plan, onChange }: SectionProps & { onCha
 }
 
 const styles = StyleSheet.create({
+  art: { alignSelf: 'flex-end' },
   block: { gap: space.lg },
   section: { gap: space.sm },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

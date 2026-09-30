@@ -62,11 +62,13 @@ function Acute() {
 
   return (
     <Screen edges={['top', 'bottom']} header={<SubHeader title="right now" leading="close" />}>
-      <Text variant="reading">Please talk to someone right now.</Text>
-      <Text>
-        You don’t have to act on what you’re feeling. The people on these lines are trained for exactly this moment,
-        and it’s free and confidential.
-      </Text>
+      <View style={styles.lede}>
+        <Text variant="reading">Please talk to someone right now.</Text>
+        <Text>
+          You don’t have to act on what you’re feeling. The people on these lines are trained for exactly this moment,
+          and it’s free and confidential.
+        </Text>
+      </View>
 
       {line && (
         <View style={styles.primary}>
@@ -99,22 +101,29 @@ function Acute() {
 function Elevated() {
   return (
     <Screen edges={['top', 'bottom']} header={<SubHeader title="a moment" leading="close" />}>
-      <Text variant="reading">That sounds like a lot to carry.</Text>
-      <Text>What you wrote is saved, and it stays on this phone. Before anything else:</Text>
-      <Text variant="bodyItalic">
-        Breathe out slowly, longer than you breathed in. Then name three things you can see from where you are.
-      </Text>
+      <View style={styles.lede}>
+        <Text variant="reading">That sounds like a lot to carry.</Text>
+        <Text>What you wrote is saved, and it stays on this phone. Before anything else:</Text>
+        <Text variant="bodyItalic">
+          Breathe out slowly, longer than you breathed in. Then name three things you can see from where you are.
+        </Text>
+      </View>
 
-      <Button arrow label="breathe for a minute" onPress={() => router.replace('/calm')} />
-      <PlanLink />
+      <View style={styles.lede}>
+        <Button arrow label="breathe for a minute" onPress={() => router.replace('/calm')} />
+        <PlanLink />
+      </View>
 
-      <Text tone="soft">If it’s more than a moment, these lines are free, confidential and open now:</Text>
-      <HelplineList />
+      <View style={styles.lede}>
+        <Text tone="soft">If it’s more than a moment, these lines are free, confidential and open now:</Text>
+        <HelplineList />
+      </View>
       <Button kind="link" label="i’m okay for now" onPress={() => router.back()} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  lede: { gap: space.md },
   primary: { gap: space.sm }
 });

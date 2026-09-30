@@ -1,4 +1,4 @@
-import { dailyWeather, nightsSummary, tagTable, topWords, WEATHER_INK } from '../chart';
+import { dailyWeather, mostlyWeather, nightly, nightsSummary, tagTable, topWords, WEATHER_INK } from '../chart';
 import { localDate, type CheckIn } from '../checkIns';
 import { night } from '../sleep';
 
@@ -53,4 +53,20 @@ test('weather ink runs from light to heavy', () => {
   const order = ['clear', 'mild', 'overcast', 'fog', 'storm'] as const;
   const inks = order.map(w => WEATHER_INK[w]);
   expect(inks).toEqual([...inks].sort((a, b) => a - b));
+});
+
+test('nights line up by the morning they ended, with gaps left empty', () => {
+  const lastNight = night(23 * 60, 7 * 60, NOW);
+  const threeAgo = night(1 * 60, 6 * 60, new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate() - 3));
+  const nights = nightly([lastNight, threeAgo], NOW);
+  expect(nights).toHaveLength(30);
+  expect(nights[29]).toBe(8 * 60);
+  expect(nights[26]).toBe(5 * 60);
+  expect(nights[28]).toBeNull();
+});
+
+test('the month is named for its most common weather, ties to the lighter sky', () => {
+  expect(mostlyWeather(dailyWeather([], NOW))).toBeNull();
+  const days = dailyWeather([on(0, 3), on(1, -3, -3), on(2, 3), on(3, -3, -3)], NOW);
+  expect(mostlyWeather(days)).toEqual({ weather: 'clear', days: 2 });
 });
