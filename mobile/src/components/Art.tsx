@@ -45,6 +45,12 @@ const ART = {
 
 export type ArtName = keyof typeof ART;
 
+export const ART_NAMES = Object.keys(ART) as ArtName[];
+
+export function isArtName(value: unknown): value is ArtName {
+  return typeof value === 'string' && value in ART;
+}
+
 /** Today's hero, one a day in turn — the gentler pictures only. */
 const DAILY: readonly ArtName[] = ['lily', 'swan', 'orchid', 'butterfly', 'moka', 'bean', 'swallow', 'kittens', 'cat', 'king', 'dice', 'stamp'];
 

@@ -1,8 +1,8 @@
 import { Redirect, router } from 'expo-router';
 import { Tabs } from 'expo-router/tabs';
-import { ActivityIndicator, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Loader } from '@/components/Loader';
 import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
 import { CircleSync } from '@/components/CircleSync';
@@ -12,18 +12,12 @@ import { ReminderSync } from '@/components/ReminderSync';
 import { WeatherSync } from '@/components/WeatherSync';
 import { Text } from '@/components/Text';
 import { needsOnboarding, useSession } from '@/lib/session';
-import { useTheme } from '@/theme/ThemeProvider';
 
 export default function TabsLayout() {
   const session = useSession();
-  const { colors } = useTheme();
 
   if (session.status === 'loading') {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.paper }}>
-        <ActivityIndicator color={colors.inkSoft} accessibilityLabel="Opening your space" />
-      </View>
-    );
+    return <Loader fill size={72} label="Opening your space" />;
   }
 
   if (session.status === 'error') {
@@ -48,7 +42,8 @@ export default function TabsLayout() {
       <HealthSync />
       <CircleSync />
       <PushSync />
-      <Tabs tabBar={props => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
+      {/* Tabs cross-fade: one page gives way to the next, like turning a leaf. */}
+      <Tabs tabBar={props => <TabBar {...props} />} screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Tabs.Screen name="index" options={{ title: 'today' }} />
         <Tabs.Screen name="check-in" options={{ title: 'check-in' }} />
         <Tabs.Screen name="circle" options={{ title: 'circle' }} />

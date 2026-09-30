@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
-import { Easing, FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
+import { Easing, FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+
+import { useMotion } from '@/lib/preferences';
 
 /**
  * Transitions ease like breathing — 600–900 ms, nothing bounces. With the
@@ -15,7 +17,8 @@ export const duration = {
 export const breathEasing = Easing.bezier(0.37, 0, 0.63, 1);
 
 export function useEntering(delay = 0) {
-  const reduced = useReducedMotion();
+  const motion = useMotion();
+  const reduced = motion === 'still';
   // On web, Reanimated leaves an entering view absolutely positioned, so it
   // lands on top of what follows. The browser preview simply doesn't animate.
   if (Platform.OS === 'web') return undefined;
