@@ -1,15 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
 import { Vent } from '@/components/Vent';
-import { Art } from '@/components/Art';
+import { Art, type ArtName } from '@/components/Art';
 import { Lede, Section, Segmented } from '@/components/Blocks';
 import { AppHeader } from '@/components/Header';
+import { WeatherMark } from '@/components/TodayParts';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import {
@@ -25,7 +26,7 @@ import {
   type CheckIn as CheckInRecord,
   type ContextTag
 } from '@/lib/checkIns';
-import { QUADRANTS, quadrantLabel, wordsNearestFirst, type Emotion } from '@/lib/emotions';
+import { QUADRANTS, findEmotion, wordsNearestFirst, type Emotion, type Quadrant } from '@/lib/emotions';
 import { answerConcern } from '@/lib/safety/respond';
 import { higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useEntering } from '@/theme/motion';
@@ -68,6 +69,7 @@ function lastLine(checkIn: CheckInRecord, now: Date): string {
 }
 
 export default function CheckIn() {
+  const { colors } = useTheme();
   // Today's "write something down" arrives with ?mode=vent.
   const params = useLocalSearchParams<{ mode?: string }>();
   const [stage, setStage] = useState<Stage>({ kind: 'choose', replacing: null });
@@ -171,7 +173,10 @@ export default function CheckIn() {
     <Screen header={<AppHeader />}>
       {!replacing && <Segmented options={MODES} value={mode} onChange={setMode} />}
       <View style={styles.block}>
-        <Art name="doll" size={96} style={styles.art} />
+        {/* A dot breathing slowly: the only thing asked before choosing. */}
+        <View style={styles.art}>
+          <WeatherMark color={colors.inkSoft} size={10} />
+        </View>
         <Lede
           label={replacing ? 'change the word' : 'name it'}
           title={replacing ? 'Which word fits better?' : 'Where are you, right now?'}
@@ -198,21 +203,94 @@ export default function CheckIn() {
         </Lede>
       </View>
 
-      {QUADRANTS.map(quadrant => (
-        <Section key={quadrant} title={quadrantLabel[quadrant]}>
-          <View style={styles.wrap}>
-            {wordsNearestFirst(quadrant).map(emotion => (
-              <Chip
-                key={emotion.word}
-                label={emotion.word}
-                selected={replacing?.emotion === emotion.word}
-                onPress={() => choose(emotion)}
-              />
-            ))}
-          </View>
-        </Section>
-      ))}
+      <Choose
+        // A new "different word" opens on the mood of the word being replaced.
+        key={replacing?.id ?? 'new'}
+        start={replacing ? (findEmotion(replacing.emotion)?.quadrant ?? null) : null}
+        selectedWord={replacing?.emotion}
+        onChoose={choose}
+      />
     </Screen>
+  );
+}
+
+/**
+ * The words, gently: first four moods, each a card with a picture; then only
+ * that mood's closest words, and the rest one tap further. A hundred words at
+ * once asks for a decision; four asks for a feeling.
+ */
+const MOODS: Record<Quadrant, { title: string; hint: string; art: ArtName }> = {
+  'charged-unpleasant': { title: 'Wound up', hint: 'tense · uneasy · on edge', art: 'urchin' },
+  'charged-pleasant': { title: 'Bright', hint: 'lively · glad · focused', art: 'butterfly' },
+  'low-unpleasant': { title: 'Heavy', hint: 'tired · low · drained', art: 'can' },
+  'low-pleasant': { title: 'Easy', hint: 'calm · content · settled', art: 'lily' }
+};
+
+const FIRST_WORDS = 10;
+
+function Choose({
+  start,
+  selectedWord,
+  onChoose
+}: {
+  start: Quadrant | null;
+  selectedWord?: string;
+  onChoose: (emotion: Emotion) => void;
+}) {
+  const { colors } = useTheme();
+  const [quadrant, setQuadrant] = useState<Quadrant | null>(start);
+  const [more, setMore] = useState(false);
+  const enter = useEntering();
+
+  if (!quadrant) {
+    return (
+      <Animated.View entering={enter} style={styles.moods}>
+        {QUADRANTS.map(q => (
+          <Pressable
+            key={q}
+            accessibilityRole="button"
+            accessibilityLabel={`${MOODS[q].title}: ${MOODS[q].hint}`}
+            onPress={() => {
+              setQuadrant(q);
+              setMore(false);
+            }}
+            style={({ pressed }) => [styles.mood, { borderColor: colors.hairline, backgroundColor: pressed ? colors.band : colors.paper }]}
+          >
+            <Art name={MOODS[q].art} size={56} />
+            <Text variant="heading">{MOODS[q].title}</Text>
+            <Text variant="mono" tone="soft" style={styles.centre}>
+              {MOODS[q].hint}
+            </Text>
+          </Pressable>
+        ))}
+      </Animated.View>
+    );
+  }
+
+  const words = wordsNearestFirst(quadrant);
+  const shown = more ? words : words.slice(0, FIRST_WORDS);
+
+  return (
+    <Animated.View key={quadrant} entering={enter} style={styles.block}>
+      <View style={styles.moodHead}>
+        <Art name={MOODS[quadrant].art} size={40} />
+        <View style={styles.flex}>
+          <Text variant="label" tone="soft">
+            {MOODS[quadrant].title}
+          </Text>
+          <Text variant="bodyItalic">Which word is closest?</Text>
+        </View>
+      </View>
+      <View style={styles.wrap}>
+        {shown.map(emotion => (
+          <Chip key={emotion.word} label={emotion.word} selected={selectedWord === emotion.word} onPress={() => onChoose(emotion)} />
+        ))}
+      </View>
+      <View style={styles.links}>
+        {!more && words.length > FIRST_WORDS && <Button kind="link" label="more words" onPress={() => setMore(true)} />}
+        <Button kind="link" label="another mood" onPress={() => setQuadrant(null)} />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -338,6 +416,19 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
 const styles = StyleSheet.create({
   block: { gap: space.lg },
   art: { alignSelf: 'flex-end' },
+  moods: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  mood: {
+    width: '48.5%',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.sm,
+    alignItems: 'center',
+    gap: space.sm
+  },
+  centre: { textAlign: 'center' },
+  moodHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  flex: { flex: 1 },
+  links: { flexDirection: 'row', gap: space.lg },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   sheet: { padding: space.md, gap: space.sm },
   note: {

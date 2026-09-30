@@ -62,3 +62,10 @@ test('rhythm lines say what the two weeks share, or nothing', () => {
   assert.match(rhythmLine([-3, 0, 1, 1, 1, 2, 0], [1, 1, 1, 1, -3, 0, 2], 'Sam'), /Mondays for you, Fridays for Sam/);
   assert.equal(rhythmLine([1, null, null, null, null, 0, 0], sam, 'Sam'), null);
 });
+
+test('a picture is one of the app’s own, or none', async () => {
+  const { parseIcon } = await import('../../lib/circle.js');
+  assert.equal(parseIcon('swan'), 'swan');
+  assert.equal(parseIcon(null), null);
+  assert.throws(() => parseIcon('https://example.com/me.png'), CircleValidationError);
+});

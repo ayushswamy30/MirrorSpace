@@ -70,10 +70,29 @@ beforeEach(() => {
   logged.mockResolvedValue();
 });
 
+/**
+ * Words sit behind a mood card now: open the word's mood, and the longer list
+ * if the word isn't among the first few, then tap it.
+ */
+function pick(word: string) {
+  const { findEmotion } = jest.requireActual('@/lib/emotions');
+  const moods: Record<string, string> = {
+    'charged-unpleasant': 'Wound up',
+    'charged-pleasant': 'Bright',
+    'low-unpleasant': 'Heavy',
+    'low-pleasant': 'Easy'
+  };
+  const card = screen.queryByRole('button', { name: new RegExp(`^${moods[findEmotion(word).quadrant]}:`) });
+  if (card) fireEvent.press(card);
+  const more = screen.queryByRole('button', { name: 'more words' });
+  if (!screen.queryByRole('button', { name: word }) && more) fireEvent.press(more);
+  fireEvent.press(screen.getByRole('button', { name: word }));
+}
+
 test('one tap on a word is a whole check-in', async () => {
   await renderCheckIn();
 
-  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  pick('peaceful');
 
   await screen.findByText('peaceful.');
   expect(mocked.recordCheckIn).toHaveBeenCalledTimes(1);
@@ -86,6 +105,8 @@ test('one tap on a word is a whole check-in', async () => {
 test('a double tap still makes one check-in', async () => {
   await renderCheckIn();
 
+  fireEvent.press(screen.getByRole('button', { name: /^Easy:/ }));
+  if (!screen.queryByRole('button', { name: 'peaceful' })) fireEvent.press(screen.getByRole('button', { name: 'more words' }));
   const calm = screen.getByRole('button', { name: 'peaceful' });
   fireEvent.press(calm);
   fireEvent.press(calm);
@@ -96,7 +117,7 @@ test('a double tap still makes one check-in', async () => {
 
 test('tags and a note are added to the same check-in', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'tired' }));
+  pick('tired');
   await screen.findByText('tired.');
 
   fireEvent.press(screen.getByRole('checkbox', { name: 'sleep' }));
@@ -114,12 +135,12 @@ test('tags and a note are added to the same check-in', async () => {
 
 test('choosing a different word edits the check-in instead of adding one', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  pick('peaceful');
   await screen.findByText('peaceful.');
 
   fireEvent.press(screen.getByRole('button', { name: 'a different word' }));
   await screen.findByText('Which word fits better?');
-  fireEvent.press(screen.getByRole('button', { name: 'settled' }));
+  pick('settled');
 
   await screen.findByText('settled.');
   expect(mocked.recordCheckIn).toHaveBeenCalledTimes(1);
@@ -131,7 +152,7 @@ test('a failed save says so and records nothing', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
   await renderCheckIn();
 
-  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  pick('peaceful');
 
   expect(await screen.findByText('That didn’t save. Try the word once more.')).toBeTruthy();
   expect(screen.queryByText('peaceful.')).toBeNull();
@@ -139,7 +160,7 @@ test('a failed save says so and records nothing', async () => {
 
 test('an ordinary check-in logs nothing and interrupts nothing', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'peaceful' }));
+  pick('peaceful');
   await screen.findByText('peaceful.');
 
   expect(logged).not.toHaveBeenCalled();
@@ -149,7 +170,7 @@ test('an ordinary check-in logs nothing and interrupts nothing', async () => {
 
 test('a low word leaves the care line, logs once, and does not interrupt', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'hopeless' }));
+  pick('hopeless');
   await screen.findByText('hopeless.');
 
   expect(screen.getByText(/help is one tap away/)).toBeTruthy();
@@ -165,7 +186,7 @@ test('a low word leaves the care line, logs once, and does not interrupt', async
 
 test('an acute note opens the crisis card once, however the check-in is edited after', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'numb' }));
+  pick('numb');
   await screen.findByText('numb.');
 
   fireEvent.changeText(screen.getByLabelText('note'), 'I have a plan to end it all');
@@ -184,7 +205,7 @@ test('an acute note opens the crisis card once, however the check-in is edited a
 
 test('a note that goes from low to elevated is answered at the higher tier', async () => {
   await renderCheckIn();
-  fireEvent.press(screen.getByRole('button', { name: 'hopeless' }));
+  pick('hopeless');
   await screen.findByText('hopeless.');
 
   fireEvent.changeText(screen.getByLabelText('note'), 'honestly I want to die');
@@ -210,4 +231,22 @@ test('?mode=vent opens straight onto the page', async () => {
   mockParams = { mode: 'vent' };
   await renderCheckIn();
   expect(screen.getByText('Put it down here.')).toBeTruthy();
+});
+
+test('it opens gently: four moods first, then only that mood’s closest words', async () => {
+  await renderCheckIn();
+  for (const mood of ['Wound up', 'Bright', 'Heavy', 'Easy']) {
+    expect(screen.getByRole('button', { name: new RegExp(`^${mood}:`) })).toBeTruthy();
+  }
+  expect(screen.queryByRole('button', { name: 'tired' })).toBeNull();
+
+  fireEvent.press(screen.getByRole('button', { name: /^Heavy:/ }));
+  expect(screen.getByRole('button', { name: 'tired' })).toBeTruthy();
+  // The far ends of a mood wait behind one more tap.
+  expect(screen.queryByRole('button', { name: 'despairing' })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'more words' }));
+  expect(screen.getByRole('button', { name: 'despairing' })).toBeTruthy();
+
+  fireEvent.press(screen.getByRole('button', { name: 'another mood' }));
+  expect(screen.getByRole('button', { name: /^Bright:/ })).toBeTruthy();
 });

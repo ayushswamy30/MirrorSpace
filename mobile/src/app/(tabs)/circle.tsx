@@ -1,8 +1,11 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { Art } from '@/components/Art';
+import { Art, type ArtName } from '@/components/Art';
+import { Avatar, IconPicker } from '@/components/Avatar';
+import { Orbit } from '@/components/Orbit';
 import { Box, Lede, Section, SettingRow } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { AppHeader } from '@/components/Header';
@@ -25,6 +28,7 @@ import {
   type CircleState
 } from '@/lib/circle';
 import { consentCopy } from '@/lib/consent';
+import { useMotion } from '@/lib/preferences';
 import { askForAlerts } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { gutter, hitTarget, radius, space } from '@/theme/tokens';
@@ -50,6 +54,7 @@ export default function Circle() {
   const session = useSession();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [note, setNote] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     loadCircle()
@@ -88,8 +93,8 @@ export default function Circle() {
   if (!circle.me.name) {
     return (
       <StartCircle
-        onStart={async (name, share) => {
-          await setCircleName(name);
+        onStart={async (name, share, icon) => {
+          await setCircleName(name, icon);
           if (share) {
             await setConsent('circle', true);
             await session.refreshProfile();
@@ -107,10 +112,15 @@ export default function Circle() {
   return (
     <Screen header={<AppHeader />}>
       <View style={styles.top}>
-        <Art name="kittens" size={96} style={styles.art} />
         <Lede label="your circle" title={circle.friends.length ? peopleLine(circle.friends) : 'Just you, so far.'}>
           <Text tone="soft">They see your weather, and nothing else.</Text>
         </Lede>
+        <Orbit
+          me={{ name: circle.me.name, icon: circle.me.icon }}
+          friends={circle.friends}
+          onSelect={id => setOpenId(current => (current === id ? null : id))}
+        />
+        <Button kind="link" label="change your name or picture" onPress={() => router.navigate('/you')} style={styles.centred} />
       </View>
 
       {note && (
@@ -159,6 +169,8 @@ export default function Circle() {
             <FriendRow
               key={f.id}
               friend={f}
+              open={openId === f.id}
+              onToggle={() => setOpenId(current => (current === f.id ? null : f.id))}
               onNudge={() => act(() => thinkingOfYou(f.id), 'That didn’t send.').then(() => setNote(`${f.name} will see you’re thinking of them.`))}
               onRemove={() => act(() => removeFriend(f.id), 'That didn’t go through.')}
             />
@@ -213,10 +225,11 @@ function peopleLine(friends: CircleFriend[]): string {
 }
 
 /** The consent screen for Circle: what they'd see, what they never will. */
-function StartCircle({ onStart }: { onStart: (name: string, share: boolean) => Promise<void> }) {
+function StartCircle({ onStart }: { onStart: (name: string, share: boolean, icon: ArtName | null) => Promise<void> }) {
   const { colors } = useTheme();
   const copy = consentCopy.circle;
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState<ArtName | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -224,7 +237,7 @@ function StartCircle({ onStart }: { onStart: (name: string, share: boolean) => P
     setBusy(true);
     setError(null);
     try {
-      await onStart(name, share);
+      await onStart(name, share, icon);
     } catch (err) {
       setError(message(err, 'That needs a connection. Nothing was shared.'));
     } finally {
@@ -267,6 +280,16 @@ function StartCircle({ onStart }: { onStart: (name: string, share: boolean) => P
         />
       </Section>
 
+      <Section title="the picture they see">
+        <View style={styles.preview}>
+          <Avatar icon={icon} name={name || '·'} size={56} />
+          <Text variant="caption" tone="soft" style={styles.flex}>
+            One of the app’s own pictures, beside your name. You can change it any time under You.
+          </Text>
+        </View>
+        <IconPicker value={icon} onChange={setIcon} />
+      </Section>
+
       <View style={styles.block}>
         {error && (
           <Text variant="bodyItalic" accessibilityRole="alert">
@@ -301,21 +324,43 @@ function Nudges({ nudges, onSeen }: { nudges: CircleState['nudges']; onSeen: () 
   );
 }
 
-/** A weather mark in the Chart's ink: a ruled circle, filled by how heavy the day is. */
-function WeatherMark({ weather }: { weather: CircleFriend['weather'] }) {
-  const { colors } = useTheme();
-  if (!weather) return <View style={[styles.speck, { backgroundColor: colors.inkSoft }]} />;
+/** A heart that rises from the row and fades: "thinking of you" was sent. */
+function SentHeart() {
+  const motion = useMotion();
+  const rise = useSharedValue(0);
+
+  useEffect(() => {
+    rise.value = withTiming(1, { duration: motion === 'still' ? 0 : 1600, easing: Easing.out(Easing.cubic) });
+  }, [motion, rise]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: 1 - rise.value,
+    transform: [{ translateY: -46 * rise.value }, { scale: 0.8 + rise.value * 0.4 }]
+  }));
+
   return (
-    <View style={[styles.mark, { borderColor: colors.ink }]}>
-      <View style={[styles.fill, { backgroundColor: colors.ink, opacity: WEATHER_INK[weather] }]} />
-    </View>
+    <Animated.View pointerEvents="none" style={[styles.heart, style]}>
+      <Art name="heart" size={26} />
+    </Animated.View>
   );
 }
 
-function FriendRow({ friend, onNudge, onRemove }: { friend: CircleFriend; onNudge: () => void; onRemove: () => void }) {
+function FriendRow({
+  friend,
+  open,
+  onToggle,
+  onNudge,
+  onRemove
+}: {
+  friend: CircleFriend;
+  open: boolean;
+  onToggle: () => void;
+  onNudge: () => Promise<void>;
+  onRemove: () => void;
+}) {
   const { colors, signal } = useTheme();
-  const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [sent, setSent] = useState(0);
   const today = friend.weather ? `${friend.weather} today` : 'no weather today';
   const status = friend.low ? `${today} · running low` : today;
 
@@ -326,12 +371,19 @@ function FriendRow({ friend, onNudge, onRemove }: { friend: CircleFriend; onNudg
         accessibilityLabel={`${friend.name}. ${status}${friend.rhythm ? `. ${friend.rhythm}` : ''}`}
         accessibilityState={{ expanded: open }}
         onPress={() => {
-          setOpen(o => !o);
+          onToggle();
           setConfirm(false);
         }}
         style={({ pressed }) => [styles.friendRow, { opacity: pressed ? 0.6 : 1 }]}
       >
-        <WeatherMark weather={friend.weather} />
+        <View>
+          <Avatar icon={friend.icon} name={friend.name} size={40} />
+          {friend.weather && (
+            <View style={[styles.badge, { borderColor: colors.ink, backgroundColor: colors.paper }]}>
+              <View style={[styles.fill, { backgroundColor: colors.ink, opacity: WEATHER_INK[friend.weather] }]} />
+            </View>
+          )}
+        </View>
         <View style={styles.flex}>
           <Text variant="heading">{friend.name}</Text>
           <Text variant="caption" tone="soft">
@@ -348,7 +400,17 @@ function FriendRow({ friend, onNudge, onRemove }: { friend: CircleFriend; onNudg
       </Pressable>
       {open && (
         <View style={styles.actions}>
-          <Button kind="outline" label="thinking of you" onPress={onNudge} />
+          <View>
+            <Button
+              kind="outline"
+              label="thinking of you"
+              onPress={async () => {
+                await onNudge();
+                setSent(n => n + 1);
+              }}
+            />
+            {sent > 0 && <SentHeart key={sent} />}
+          </View>
           {confirm ? (
             <Button kind="link" label={`remove ${friend.name}`} onPress={onRemove} />
           ) : (
@@ -427,6 +489,9 @@ const styles = StyleSheet.create({
   low: { width: 8, height: 8, borderRadius: radius.dot },
   waiting: { paddingTop: space.sm },
   centred: { alignSelf: 'center' },
+  badge: { position: 'absolute', right: -2, bottom: -2, width: 13, height: 13, borderRadius: radius.dot, borderWidth: 1, overflow: 'hidden' },
+  heart: { position: 'absolute', alignSelf: 'center', top: -8 },
+  preview: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingBottom: space.sm },
   code: { fontFamily: fonts.mono, fontSize: 30, lineHeight: 38, letterSpacing: 6 },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   field: {

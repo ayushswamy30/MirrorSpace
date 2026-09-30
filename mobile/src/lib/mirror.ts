@@ -28,6 +28,39 @@ export const SUGGESTIONS = [
   'What keeps coming back?'
 ] as const;
 
+/**
+ * The reference's Void offers questions by theme, each with a picture. These
+ * are MirrorSpace's own: about the person, never about the stars.
+ */
+export const TOPICS = [
+  {
+    key: 'self',
+    label: 'self',
+    art: 'eye',
+    questions: ['Why do I feel like this?', 'Am I being too hard on myself?', 'What keeps coming back?', 'What do I need right now?']
+  },
+  {
+    key: 'love',
+    label: 'love',
+    art: 'heart',
+    questions: ['Why does this person stay on my mind?', 'Am I giving more than I get?', 'How do I say what I need?', 'What am I afraid to ask for?']
+  },
+  {
+    key: 'work',
+    label: 'work',
+    art: 'moka',
+    questions: ['What have I been avoiding?', 'Why does this feel so heavy?', 'What would make tomorrow lighter?', 'Am I doing this for me?']
+  },
+  {
+    key: 'rest',
+    label: 'rest',
+    art: 'swan',
+    questions: ['What would help tonight?', 'What did today take out of me?', 'Why can’t I switch off?', 'What does rest look like for me?']
+  }
+] as const;
+
+export type TopicKey = (typeof TOPICS)[number]['key'];
+
 export async function mirrorStatus(): Promise<MirrorStatus> {
   if (isPreview) return { kind: 'open' };
   try {

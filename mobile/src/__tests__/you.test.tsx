@@ -40,6 +40,14 @@ jest.mock('@/lib/session', () => ({
   })
 }));
 
+const mockSetCircleName = jest.fn(() => Promise.resolve({ name: 'Sam', code: 'K7M2QX' }));
+jest.mock('@/lib/api', () => ({ api: {}, ApiError: class extends Error {}, NetworkError: class extends Error {} }));
+jest.mock('@/lib/circle', () => ({
+  loadCircle: () =>
+    Promise.resolve({ me: { name: 'Asha', code: 'K7M2QX', icon: 'cat', sharing: false, low: false }, friends: [], incoming: [], outgoing: [], nudges: [] }),
+  setCircleName: (...a: unknown[]) => (mockSetCircleName as (...args: unknown[]) => unknown)(...a)
+}));
+
 const mockSaveAppearance = jest.fn();
 jest.mock('@/lib/appearance', () => ({
   loadAppearance: () => Promise.resolve('system'),
@@ -137,4 +145,14 @@ test('export reports when only the phone part could be gathered', async () => {
   renderYou();
   fireEvent.press(screen.getByRole('button', { name: /^Download everything/ }));
   expect(await screen.findByText(/its part is missing/)).toBeTruthy();
+});
+
+test('your name and picture can be changed here', async () => {
+  renderYou();
+  fireEvent.press(await screen.findByRole('button', { name: /^Asha\. Change your name or picture/ }));
+  fireEvent.changeText(screen.getByLabelText('Your name'), 'Sam');
+  fireEvent.press(screen.getByRole('radio', { name: 'swan' }));
+  fireEvent.press(screen.getByRole('button', { name: 'save' }));
+  await waitFor(() => expect(mockSetCircleName).toHaveBeenCalledWith('Sam', 'swan'));
+  expect(await screen.findByText('Sam')).toBeTruthy();
 });

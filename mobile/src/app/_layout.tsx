@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LockScreen } from '@/components/LockScreen';
 import { AppLockProvider } from '@/lib/appLock';
 import { SessionProvider } from '@/lib/session';
+import { PreferencesProvider } from '@/lib/preferences';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { MAX_WIDTH } from '@/theme/tokens';
 
@@ -23,7 +24,8 @@ function Navigator() {
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+      {/* Pushed pages rise and settle like a sheet of paper; nothing slides sideways. */}
+      <Stack screenOptions={{ headerShown: false, animation: 'fade_from_bottom', contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
         {/* Care screens sit outside the session gate in (tabs): they must open
@@ -33,6 +35,8 @@ function Navigator() {
         <Stack.Screen name="plan" options={{ presentation: 'modal' }} />
         <Stack.Screen name="sleep" options={{ presentation: 'modal' }} />
         <Stack.Screen name="health" options={{ presentation: 'modal' }} />
+        {/* Outside the session gate: signing in must work on a fresh phone. */}
+        <Stack.Screen name="account" options={{ animation: 'fade' }} />
         {/* Full screen and no swipe-to-dismiss, so it can't be flicked away
             by accident; its own buttons always close it. */}
         <Stack.Screen name="crisis" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
@@ -66,11 +70,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' }}>
       <SafeAreaProvider>
         <ThemeProvider>
+          <PreferencesProvider>
           <SessionProvider>
             <AppLockProvider>
               <Navigator />
             </AppLockProvider>
           </SessionProvider>
+          </PreferencesProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
