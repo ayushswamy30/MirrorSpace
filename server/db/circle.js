@@ -81,7 +81,7 @@ export async function request(fromId, toId) {
   unwrap({ error }, 'circle.request');
 }
 
-/** Only the person asked can accept. Returns whether anything changed. */
+/** Only the person asked can accept. Returns who asked, or null if nothing changed. */
 export async function accept(friendshipId, userId) {
   const rows = unwrap(
     await supabase
@@ -90,10 +90,10 @@ export async function accept(friendshipId, userId) {
       .eq('id', friendshipId)
       .eq('addressee_id', userId)
       .eq('status', 'pending')
-      .select('id'),
+      .select('requester_id'),
     'circle.accept'
   );
-  return rows.length > 0;
+  return rows[0]?.requester_id ?? null;
 }
 
 /** Declining, cancelling and removing are the same thing: the row goes. */

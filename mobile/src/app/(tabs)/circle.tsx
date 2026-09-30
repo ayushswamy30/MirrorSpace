@@ -25,6 +25,7 @@ import {
   type CircleState
 } from '@/lib/circle';
 import { consentCopy } from '@/lib/consent';
+import { askForAlerts } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -94,6 +95,9 @@ export default function Circle() {
             await session.refreshProfile();
             await shareStatus().catch(() => undefined);
           }
+          // So a friend's "running low" can reach this phone. Asked here, where
+          // the reason is plain; declining changes nothing else.
+          await askForAlerts().catch(() => false);
           refresh();
         }}
       />
