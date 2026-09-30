@@ -177,6 +177,18 @@ export default function You() {
         </Text>
       )}
 
+      <SettingGroup title="Account">
+        {profile.isAnonymous ? (
+          <SettingLink
+            title="Keep your space with an email"
+            subtitle="So you can sign in on a new phone. A six-digit code, no password."
+            onPress={() => router.push('/account')}
+          />
+        ) : (
+          <SettingLink title={profile.email ?? 'Your account'} subtitle="Signed in — your account, circle and settings follow you" />
+        )}
+      </SettingGroup>
+
       <SettingGroup title="Appearance">
         <Segmented options={APPEARANCES} value={appearance} onChange={setAppearance} bleed={false} />
       </SettingGroup>
