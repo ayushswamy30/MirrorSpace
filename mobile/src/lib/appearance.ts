@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 /**
  * Light, dark, or the phone's own setting. Kept outside the encrypted
@@ -15,7 +16,8 @@ function isAppearance(value: unknown): value is Appearance {
 
 export async function loadAppearance(): Promise<Appearance> {
   try {
-    const saved = await SecureStore.getItemAsync(KEY);
+    // The browser preview has no keystore.
+    const saved = Platform.OS === 'web' ? globalThis.localStorage?.getItem(KEY) : await SecureStore.getItemAsync(KEY);
     return isAppearance(saved) ? saved : 'system';
   } catch {
     return 'system';
@@ -24,7 +26,8 @@ export async function loadAppearance(): Promise<Appearance> {
 
 export async function saveAppearance(appearance: Appearance): Promise<void> {
   try {
-    await SecureStore.setItemAsync(KEY, appearance);
+    if (Platform.OS === 'web') globalThis.localStorage?.setItem(KEY, appearance);
+    else await SecureStore.setItemAsync(KEY, appearance);
   } catch (err) {
     // The choice still applies for this session; it just won't be remembered.
     console.warn('Appearance not saved:', err);

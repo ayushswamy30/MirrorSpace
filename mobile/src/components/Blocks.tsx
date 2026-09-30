@@ -225,7 +225,9 @@ type SettingProps = {
 
 /** A settings line with a switch: grey when off, ink when on, no colour. */
 export function SettingRow({ title, subtitle, value, onValueChange, disabled }: SettingProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
+  // At night an off switch's knob would be near-black on grey; keep it light.
+  const knob = value || scheme === 'light' ? colors.paper : colors.ink;
 
   return (
     <View style={styles.setting}>
@@ -243,7 +245,7 @@ export function SettingRow({ title, subtitle, value, onValueChange, disabled }: 
         disabled={disabled}
         accessibilityLabel={title}
         trackColor={{ false: colors.inkSoft, true: colors.ink }}
-        thumbColor={colors.paper}
+        thumbColor={knob}
         ios_backgroundColor={colors.inkSoft}
       />
     </View>

@@ -13,6 +13,7 @@ import { LockScreen } from '@/components/LockScreen';
 import { AppLockProvider } from '@/lib/appLock';
 import { SessionProvider } from '@/lib/session';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { MAX_WIDTH } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -62,7 +63,7 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' }}>
       <SafeAreaProvider>
         <ThemeProvider>
           <SessionProvider>

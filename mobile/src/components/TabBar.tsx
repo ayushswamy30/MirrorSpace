@@ -1,7 +1,7 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { gutter, hitTarget, radius, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Text } from './Text';
@@ -11,9 +11,14 @@ import { Text } from './Text';
  * (DESIGN.md). The first and last names sit on the page's margins and the
  * gaps between all five are equal, whatever each name's length. The current
  * tab is ink with a small weather-coloured dot; the rest are soft ink.
+ * Under the Mirror room the bar goes dark with it, whatever the theme, so
+ * the room runs to the bottom of the screen as the reference's Void does.
  */
 export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
-  const { colors, signal } = useTheme();
+  const theme = useTheme();
+  const onVoid = state.routes[state.index]?.name === 'mirror';
+  const colors = onVoid ? { ...dark, paper: theme.colors.void } : theme.colors;
+  const signal = onVoid ? dark.signal[theme.weather ?? 'fog'] : theme.signal;
 
   return (
     <View style={{ backgroundColor: colors.paper, paddingBottom: Math.max(insets.bottom, space.sm) }}>

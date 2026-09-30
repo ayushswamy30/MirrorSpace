@@ -91,6 +91,9 @@ export const space = {
 /** The page's side margin. */
 export const gutter = 20;
 
+/** The widest the page column gets (the browser preview, a large phone). */
+export const MAX_WIDTH = 430;
+
 /** Square, like print. Only the weather dot is round. */
 export const radius = {
   none: 0,

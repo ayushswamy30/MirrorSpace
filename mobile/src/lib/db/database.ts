@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
 import { inExpoGo } from '../runtime';
 
@@ -36,7 +37,10 @@ export function databaseEncryption(): Encryption | null {
  * SQLCipher answers `PRAGMA cipher_version`; plain SQLite doesn't know the
  * pragma and returns nothing.
  */
-export async function checkEncryption(db: SQLite.SQLiteDatabase, allowPlain: boolean = inExpoGo): Promise<Encryption> {
+export async function checkEncryption(
+  db: SQLite.SQLiteDatabase,
+  allowPlain: boolean = inExpoGo || Platform.OS === 'web'
+): Promise<Encryption> {
   const row = await db.getFirstAsync<{ cipher_version: string }>('PRAGMA cipher_version').catch(() => null);
   if (row?.cipher_version) return { encrypted: true, cipher: row.cipher_version };
   if (!allowPlain) throw new Error('SQLCipher is not active: refusing to store anything unencrypted.');
@@ -70,6 +74,15 @@ async function loadOrCreateKey(): Promise<string> {
 }
 
 async function open(): Promise<SQLite.SQLiteDatabase> {
+  // The browser preview has no keystore and no SQLCipher: it opens plain.
+  if (Platform.OS === 'web') {
+    const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+    encryption = await checkEncryption(db);
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+    await migrate(db);
+    return db;
+  }
+
   const key = await loadOrCreateKey();
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 

@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "backgroundColor": "#F6F6F3",
     "ios": {
@@ -89,6 +90,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }
