@@ -20,6 +20,7 @@ import chatRoutes from './routes/chat.js';
 import calmRoutes from './routes/calm.js';
 import patternRoutes from './routes/patterns.js';
 import mirrorRoutes from './routes/mirror.js';
+import circleRoutes from './routes/circle.js';
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/calm', calmRoutes);
 app.use('/api/patterns', patternRoutes);
 app.use('/api/mirror', mirrorRoutes);
+app.use('/api/circle', circleRoutes);
 
 // Health check — reports whether Supabase is actually reachable.
 app.get('/api/health', async (req, res) => {

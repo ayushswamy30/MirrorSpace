@@ -10,6 +10,7 @@ import { listSafetyEvents } from './safety/log';
 import { loadPlan } from './safetyPlan';
 import { allSleep } from './sleep';
 import { supabase } from './supabase';
+import { isPreview } from './preview';
 import { listVents } from './vents';
 
 /**
@@ -91,5 +92,6 @@ export async function eraseEverything(): Promise<void> {
 }
 
 export async function setConsent(purpose: ConsentPurpose, granted: boolean): Promise<void> {
+  if (isPreview) return;
   await api.put('/user/consents', { consents: { [purpose]: granted }, policyVersion: CONSENT_POLICY_VERSION });
 }
