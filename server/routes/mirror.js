@@ -5,7 +5,7 @@ import { MirrorValidationError, parseTurns } from '../lib/mirror.js';
 import auth from '../middleware/auth.js';
 import { chatLimiter } from '../middleware/rateLimit.js';
 import { canReflectOnPersonalText, generateText } from '../services/ai.js';
-import { CHATBOT_PROMPT, PERSONALITY_PROMPT } from '../prompts/personality.js';
+import { CHATBOT_PROMPT, MIRROR_ROOM_PROMPT, PERSONALITY_PROMPT } from '../prompts/personality.js';
 
 const router = express.Router();
 
@@ -40,7 +40,8 @@ router.post('/reply', auth, chatLimiter, async (req, res, next) => {
 
     const conversation = turns.map(t => `${t.role === 'user' ? 'User' : 'Mirror'}: ${t.content}`).join('\n');
     const reply = await generateText({
-      system: `${PERSONALITY_PROMPT}\n\n${CHATBOT_PROMPT}`,
+      // The room knows only the conversation; the last word says so.
+      system: `${PERSONALITY_PROMPT}\n\n${CHATBOT_PROMPT}\n\n${MIRROR_ROOM_PROMPT}`,
       prompt: `Conversation so far:\n${conversation}\n\nRespond as Mirror:`,
       personal: true
     });

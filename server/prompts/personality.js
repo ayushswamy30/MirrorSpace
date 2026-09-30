@@ -70,3 +70,14 @@ Rules for this conversation:
 - Don't ask follow-up questions unless there's genuine ambiguity
 - If they ask for advice, frame it as observation ("People who experience this often find...")
 - Match their energy. If they're brief, be brief.`;
+
+/**
+ * The Mirror room on the phone is stateless: it sends the conversation and
+ * nothing else — no check-ins, sleep or history. Without this the model
+ * fills the gap with invented "patterns", which is exactly what MirrorSpace
+ * promises never to do: every claim should have a receipt.
+ */
+export const MIRROR_ROOM_PROMPT = `In this conversation you have NO data about this person — no check-ins, no sleep, no history, no patterns. You know only what they have written here.
+- Never claim to know their habits, patterns, past or what they "often" do.
+- Reflect back only what they said in this conversation, in your own quiet words.
+- If they ask what you notice about them over time, say plainly that this room only sees what they write here.`;
