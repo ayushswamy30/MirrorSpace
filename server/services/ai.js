@@ -42,7 +42,10 @@ async function openAiCompatible(client, model, { system, prompt, temperature, ma
       { role: 'user', content: prompt }
     ],
     temperature,
-    max_tokens: maxTokens
+    max_tokens: maxTokens,
+    // gpt-oss models think before they answer, and the thinking counts
+    // against max_tokens. A short reflection needs little of it.
+    ...(model.includes('gpt-oss') ? { reasoning_effort: 'low' } : {})
   });
   return completion.choices[0]?.message?.content ?? null;
 }
