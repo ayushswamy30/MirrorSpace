@@ -2,31 +2,49 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Band, Row, SectionLabel, SettingRow } from '@/components/Blocks';
+import { Art } from '@/components/Art';
+import { Band, Lede, Segmented, SettingGroup, SettingLink, SettingRow } from '@/components/Blocks';
 import { Button } from '@/components/Button';
-import { SubHeader } from '@/components/Header';
+import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import type { ConsentPurpose } from '@/lib/consent';
+import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
-import { disableReminders, enableReminders, remindersEnabled, remindersSupported } from '@/lib/reminders';
+import type { Appearance } from '@/lib/appearance';
+import {
+  disableReminders,
+  enableReminders,
+  remindersEnabled,
+  remindersSupported,
+  sendTestReminder
+} from '@/lib/reminders';
 import { useSession } from '@/lib/session';
 import { dayNumber } from '@/lib/unlocks';
 import { space } from '@/theme/tokens';
+import { useAppearance } from '@/theme/ThemeProvider';
 
 /**
- * You — the reference's settings page, for MirrorSpace: who this space is,
- * the lock, what may be used, and the person's own data. Every control says
- * plainly what it does; withdrawing a consent is exactly as easy as giving it.
+ * You — the last tab, the reference's settings page, for MirrorSpace: how the
+ * app looks, the reminder, the lock, what may be used, and the person's own
+ * data. Every control says plainly what it does; withdrawing a consent is
+ * exactly as easy as giving it.
  */
+
+const APPEARANCES = [
+  { key: 'system', label: 'system' },
+  { key: 'light', label: 'light' },
+  { key: 'dark', label: 'dark' }
+] as const satisfies readonly { key: Appearance; label: string }[];
 
 type Erase = 'idle' | 'confirm' | 'erasing';
 
 export default function You() {
   const session = useSession();
   const lock = useAppLock();
+  const { appearance, setAppearance } = useAppearance();
   const [note, setNote] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [erase, setErase] = useState<Erase>('idle');
@@ -45,7 +63,7 @@ export default function You() {
 
   if (session.status !== 'ready') {
     return (
-      <Screen edges={['top', 'bottom']} header={<SubHeader title="you" />}>
+      <Screen header={<AppHeader />}>
         <Text tone="soft">Your space isn’t open yet.</Text>
       </Screen>
     );
@@ -82,6 +100,16 @@ export default function You() {
     }
   };
 
+  const testReminder = async () => {
+    setNote(null);
+    try {
+      if (await sendTestReminder()) setNote('A test reminder is on its way — give it five seconds.');
+    } catch (err) {
+      console.error('Test reminder failed:', err);
+      setNote('The test reminder didn’t go out.');
+    }
+  };
+
   const toggleConsent = async (purpose: ConsentPurpose, granted: boolean) => {
     setNote(null);
     setPending(p => ({ ...p, [purpose]: granted }));
@@ -98,6 +126,8 @@ export default function You() {
       });
     }
   };
+
+  const encryption = databaseEncryption();
 
   const consentValue = (purpose: ConsentPurpose) => pending[purpose] ?? profile.consents[purpose]?.granted ?? false;
 
@@ -131,13 +161,12 @@ export default function You() {
   };
 
   return (
-    <Screen edges={['top', 'bottom']} header={<SubHeader title="you" />}>
-      <View>
-        <Text variant="title">Your space</Text>
+    <Screen header={<AppHeader />}>
+      <Lede label={`day ${day}`} title="Your space." size="title">
         <Text variant="mono" tone="soft">
-          {`day ${day} · ${profile.isAnonymous ? 'no account — this phone only' : profile.email ?? 'account'}${offline ? ' · offline' : ''}`}
+          {`${profile.isAnonymous ? 'no account — this phone only' : profile.email ?? 'account'}${offline ? ' · offline' : ''}`}
         </Text>
-      </View>
+      </Lede>
 
       {note && (
         <Text variant="bodyItalic" accessibilityRole="alert">
@@ -145,24 +174,29 @@ export default function You() {
         </Text>
       )}
 
-      <View>
-        <SectionLabel title="reminder" />
+      <SettingGroup title="Appearance">
+        <Segmented options={APPEARANCES} value={appearance} onChange={setAppearance} bleed={false} />
+      </SettingGroup>
+
+      <SettingGroup title="Notifications">
         <SettingRow
           title="Daily reminder"
           subtitle={
             remindersSupported
               ? 'Once a day at most, around when you usually check in — never after you have'
-              : 'Needs MirrorSpace’s own app build — Expo Go can’t send reminders'
+              : 'Needs MirrorSpace’s own app build — Expo Go and the preview can’t send them'
           }
           value={reminder}
           onValueChange={toggleReminder}
           disabled={!remindersSupported}
         />
-      </View>
+        {reminder && (
+          <SettingLink title="Send a test" subtitle="See one arrive in five seconds" onPress={testReminder} />
+        )}
+      </SettingGroup>
 
-      <View>
-        <SectionLabel title="sleep" />
-        <Row
+      <SettingGroup title="Sleep">
+        <SettingLink
           title="Sleep from Health Connect"
           subtitle={
             healthPlatform() === 'not-android'
@@ -173,10 +207,19 @@ export default function You() {
           }
           onPress={() => router.push('/health')}
         />
-      </View>
+      </SettingGroup>
 
-      <View>
-        <SectionLabel title="privacy" />
+      <SettingGroup title="Privacy">
+        {encryption && (
+          <SettingLink
+            title={encryption.encrypted ? 'Encrypted on this phone' : 'Not encrypted in Expo Go'}
+            subtitle={
+              encryption.encrypted
+                ? `SQLCipher ${encryption.cipher.split(' ')[0]} · the key never leaves this phone`
+                : 'MirrorSpace’s own build encrypts everything you write'
+            }
+          />
+        )}
         <SettingRow
           title="App lock"
           subtitle="Face, fingerprint or passcode to open"
@@ -197,21 +240,19 @@ export default function You() {
           onValueChange={v => toggleConsent('ai_reflections', v)}
           disabled={offline}
         />
-      </View>
+      </SettingGroup>
 
-      <View>
-        <SectionLabel title="your data" />
-        <Row
+      <SettingGroup title="Your data">
+        <SettingLink
           title={exporting ? 'Gathering…' : 'Download everything'}
           subtitle="Check-ins, pages, nights, Mirror, your plan and your account — one file"
           onPress={exporting ? undefined : runExport}
         />
-      </View>
+      </SettingGroup>
 
       <Band />
 
-      <View style={styles.block}>
-        <SectionLabel title="erase" rule={false} />
+      <SettingGroup title="Erase">
         {erase === 'idle' ? (
           <Button kind="link" label="erase everything" onPress={() => setErase('confirm')} />
         ) : (
@@ -233,11 +274,11 @@ export default function You() {
             </View>
           </View>
         )}
-      </View>
+      </SettingGroup>
 
-      <View style={styles.block}>
-        <SectionLabel title="about" />
-        <Text tone="soft">
+      <View style={styles.about}>
+        <Art name="cat" size={72} />
+        <Text variant="caption" tone="soft" style={styles.aboutText}>
           The Mirror is software, not a person, and not a therapist. MirrorSpace can’t call anyone for you — crisis lines
           are under calm, then help.
         </Text>
@@ -248,5 +289,7 @@ export default function You() {
 
 const styles = StyleSheet.create({
   block: { gap: space.md },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: space.lg }
+  actions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  about: { alignItems: 'center', gap: space.md, paddingTop: space.lg },
+  aboutText: { textAlign: 'center', maxWidth: 300 }
 });

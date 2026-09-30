@@ -54,10 +54,31 @@ scripts/
   generate-sounds.sh  synthesises every calm sound into assets/sounds/
 ```
 
+## Previewing it in a browser
+
+No phone needed to look at the screens:
+
+```bash
+cd mobile
+npm run preview     # opens http://localhost:8081
+```
+
+The browser preview uses a stand-in profile and fills in a month of made-up
+check-ins and nights, so Today and Chart have something to show. It never
+talks to Supabase or the API, it isn't encrypted, and reminders, the app lock
+and Health Connect don't run there. It's for looking at the design; the real
+thing is the phone build below.
+
 ## Running it
 
-SQLCipher, and later HealthKit / Health Connect and widgets, are native
-modules that **Expo Go does not include**. You need a development build.
+SQLCipher, reminders (expo-notifications), and Health Connect are native
+modules that **Expo Go does not include** (or that crash it on Android). You
+need a development build. In Expo Go the app still opens, but the database is
+not encrypted (You → Privacy says so) and reminders stay off.
+
+Reminders are local notifications, scheduled on the phone — no push server,
+no token, nothing sent anywhere. Once the dev build is installed: You →
+Notifications → Daily reminder, then **Send a test** to see one arrive.
 
 ```bash
 cd mobile

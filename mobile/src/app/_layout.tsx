@@ -13,6 +13,7 @@ import { LockScreen } from '@/components/LockScreen';
 import { AppLockProvider } from '@/lib/appLock';
 import { SessionProvider } from '@/lib/session';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { MAX_WIDTH } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,7 +31,6 @@ function Navigator() {
         <Stack.Screen name="calm" options={{ presentation: 'modal' }} />
         <Stack.Screen name="help" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plan" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="you" />
         <Stack.Screen name="sleep" options={{ presentation: 'modal' }} />
         <Stack.Screen name="health" options={{ presentation: 'modal' }} />
         {/* Full screen and no swipe-to-dismiss, so it can't be flicked away
@@ -63,7 +63,7 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' }}>
       <SafeAreaProvider>
         <ThemeProvider>
           <SessionProvider>

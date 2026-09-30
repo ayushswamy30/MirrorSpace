@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { Art } from '@/components/Art';
 import { Segmented, Row } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { Breather } from '@/components/calm/Breather';
@@ -77,6 +78,7 @@ export default function Calm() {
           <Breather pattern={pattern} onClose={() => setPattern(null)} />
         ) : (
           <View>
+            <Art name="swan" size={140} style={{ alignSelf: 'flex-end', marginBottom: space.lg }} />
             <Text variant="title">Breathe out for longer than you breathe in.</Text>
             <View style={{ marginTop: space.md }}>
               {PATTERNS.map(p => (

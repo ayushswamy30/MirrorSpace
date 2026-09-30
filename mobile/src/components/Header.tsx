@@ -38,38 +38,20 @@ export function CalmLink({ ink }: { ink?: string }) {
   );
 }
 
-/** The person's own page: settings, the lock, their data. */
-function YouLink({ ink }: { ink: string }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="You"
-      accessibilityHint="Settings, app lock, and your data"
-      onPress={() => router.push('/you')}
-      hitSlop={8}
-      style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
-    >
-      <Text variant="label" style={{ color: ink }}>
-        you
-      </Text>
-    </Pressable>
-  );
-}
-
 /**
- * The bar on every tab: the wordmark with the weather dot beside it — the one
- * place colour appears on the page, and small on purpose — then "you" and
- * calm on the right, a rule underneath. `onVoid` sets it light on the dark
- * Mirror room, whatever the system theme.
+ * The bar on every tab, after the reference: the wordmark with the weather
+ * dot beside it — the one place colour appears on the page, and small on
+ * purpose — and calm alone on the right, where the reference keeps its date.
+ * No rule: the page's air does the dividing. `onVoid` sets it light on the
+ * dark Mirror room, whatever the theme.
  */
 export function AppHeader({ onVoid = false }: { onVoid?: boolean }) {
   const { colors, signal, weather } = useTheme();
   const ink = onVoid ? dark.ink : colors.ink;
-  const rule = onVoid ? dark.inkFaint : colors.hairline;
   const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
 
   return (
-    <View style={[styles.bar, { borderBottomColor: rule }, onVoid && { backgroundColor: colors.void }]}>
+    <View style={[styles.bar, onVoid && { backgroundColor: colors.void }]}>
       <View style={styles.brand}>
         <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace" style={{ color: ink }}>
           mirror – space
@@ -80,10 +62,7 @@ export function AppHeader({ onVoid = false }: { onVoid?: boolean }) {
           importantForAccessibility="no-hide-descendants"
         />
       </View>
-      <View style={styles.links}>
-        <YouLink ink={ink} />
-        <CalmLink ink={ink} />
-      </View>
+      <CalmLink ink={ink} />
     </View>
   );
 }
@@ -97,12 +76,12 @@ type SubHeaderProps = {
   trailing?: ReactNode;
 };
 
-/** A pushed screen: a back or close control, the title centred in mono. */
+/** A pushed screen: a back or close control, the title centred in mono, no rule. */
 export function SubHeader({ title, leading = 'back', onLeading, trailing }: SubHeaderProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.bar, { borderBottomColor: colors.hairline }]}>
+    <View style={styles.bar}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={leading === 'close' ? 'close' : 'back'}
@@ -127,11 +106,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: gutter,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth
+    justifyContent: 'space-between'
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  links: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },
   side: { minWidth: hitTarget, height: hitTarget, justifyContent: 'center' },

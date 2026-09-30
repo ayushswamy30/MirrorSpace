@@ -31,6 +31,8 @@ export type Palette = {
   band: string;
   /** The rare soft surface: a writing prompt, a sheet. */
   tint: string;
+  /** The disc an illustration sits in, a shade lighter than the page. */
+  disc: string;
   /** Full-dark rooms (Mirror) keep this in both themes, with light text. */
   void: string;
   /** The one colour, keyed by Inner Weather. Small marks only. */
@@ -46,6 +48,7 @@ export const light: Palette = {
   hairline: '#111111',
   band: '#ECECE8',
   tint: '#F7EEF4',
+  disc: '#FFFFFF',
   void: '#0A0A0A',
   signal: {
     clear: '#9A5B1E',
@@ -65,6 +68,7 @@ export const dark: Palette = {
   hairline: '#F2F2EF',
   band: '#1A1A1A',
   tint: '#1C1519',
+  disc: '#1C1C1B',
   void: '#0A0A0A',
   signal: {
     clear: '#E0A868',
@@ -86,6 +90,9 @@ export const space = {
 
 /** The page's side margin. */
 export const gutter = 20;
+
+/** The widest the page column gets (the browser preview, a large phone). */
+export const MAX_WIDTH = 430;
 
 /** Square, like print. Only the weather dot is round. */
 export const radius = {

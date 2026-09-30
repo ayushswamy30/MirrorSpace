@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "backgroundColor": "#F6F6F3",
     "ios": {
@@ -66,6 +67,14 @@
           "enableBackgroundPlayback": true
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#111111",
+          "defaultChannel": "reminders"
+        }
+      ],
       "expo-sharing",
       "expo-asset",
       "react-native-health-connect",
@@ -81,6 +90,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }

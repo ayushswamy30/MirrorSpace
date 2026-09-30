@@ -7,7 +7,8 @@ import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
 import { Vent } from '@/components/Vent';
-import { SectionLabel, Segmented } from '@/components/Blocks';
+import { Art } from '@/components/Art';
+import { Lede, Section, Segmented } from '@/components/Blocks';
 import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -170,28 +171,35 @@ export default function CheckIn() {
     <Screen header={<AppHeader />}>
       {!replacing && <Segmented options={MODES} value={mode} onChange={setMode} />}
       <View style={styles.block}>
-        <SectionLabel title={replacing ? 'change the word' : 'name it'} rule={false} />
-        <Text variant="reading">{replacing ? 'Which word fits better?' : 'Where are you, right now?'}</Text>
+        <Art name="doll" size={96} style={styles.art} />
+        <Lede
+          label={replacing ? 'change the word' : 'name it'}
+          title={replacing ? 'Which word fits better?' : 'Where are you, right now?'}
+        >
+          {error ? (
+            <Text variant="bodyItalic" accessibilityRole="alert">
+              {error}
+            </Text>
+          ) : care ? (
+            <CareLine />
+          ) : replacing ? (
+            <Button
+              kind="link"
+              label={`keep “${replacing.emotion}”`}
+              onPress={() => setStage({ kind: 'after', checkIn: replacing })}
+            />
+          ) : latest ? (
+            <Text variant="mono" tone="soft">
+              {lastLine(latest, new Date())}
+            </Text>
+          ) : (
+            <Text tone="soft">One word is enough.</Text>
+          )}
+        </Lede>
       </View>
-      {error ? (
-        <Text variant="bodyItalic" accessibilityRole="alert">
-          {error}
-        </Text>
-      ) : care ? (
-        <CareLine />
-      ) : replacing ? (
-        <Button kind="link" label={`keep “${replacing.emotion}”`} onPress={() => setStage({ kind: 'after', checkIn: replacing })} />
-      ) : latest ? (
-        <Text variant="mono" tone="soft">
-          {lastLine(latest, new Date())}
-        </Text>
-      ) : (
-        <Text tone="soft">One word is enough.</Text>
-      )}
 
       {QUADRANTS.map(quadrant => (
-        <View key={quadrant} style={styles.section}>
-          <SectionLabel title={quadrantLabel[quadrant]} />
+        <Section key={quadrant} title={quadrantLabel[quadrant]}>
           <View style={styles.wrap}>
             {wordsNearestFirst(quadrant).map(emotion => (
               <Chip
@@ -202,7 +210,7 @@ export default function CheckIn() {
               />
             ))}
           </View>
-        </View>
+        </Section>
       ))}
     </Screen>
   );
@@ -263,25 +271,27 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
   return (
     <Screen header={<AppHeader />}>
       <Animated.View entering={first} style={styles.block}>
-        <SectionLabel title="checked in" rule={false} />
-        <Text variant="reading">{checkIn.emotion}.</Text>
-        <Text tone="soft">That’s the check-in. Anything around it?</Text>
-        {care && <CareLine />}
+        <Art name="lily" size={112} style={styles.art} />
+        <Lede label="checked in" title={`${checkIn.emotion}.`}>
+          <Text tone="soft">That’s the check-in. Anything around it?</Text>
+          {care && <CareLine />}
+        </Lede>
       </Animated.View>
 
       <Animated.View entering={second} style={styles.block}>
-        <SectionLabel title="around it" />
-        <View style={styles.wrap}>
-          {tagOrder.map(tag => (
-            <Chip
-              key={tag}
-              role="checkbox"
-              label={tag}
-              selected={checkIn.tags.includes(tag)}
-              onPress={() => toggle(tag)}
-            />
-          ))}
-        </View>
+        <Section title="around it">
+          <View style={styles.wrap}>
+            {tagOrder.map(tag => (
+              <Chip
+                key={tag}
+                role="checkbox"
+                label={tag}
+                selected={checkIn.tags.includes(tag)}
+                onPress={() => toggle(tag)}
+              />
+            ))}
+          </View>
+        </Section>
 
         {/* A writing sheet: a soft tinted block with its prompt in italic serif. */}
         <View style={[styles.sheet, { backgroundColor: colors.tint }]}>
@@ -326,8 +336,8 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
 }
 
 const styles = StyleSheet.create({
-  block: { gap: space.md },
-  section: { gap: space.md },
+  block: { gap: space.lg },
+  art: { alignSelf: 'flex-end' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   sheet: { padding: space.md, gap: space.sm },
   note: {

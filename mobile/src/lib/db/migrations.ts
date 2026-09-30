@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 /**
@@ -77,10 +78,14 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
   const current = row?.user_version ?? 0;
 
   for (let version = current; version < migrations.length; version++) {
-    await db.withExclusiveTransactionAsync(async txn => {
+    const step = async (txn: Pick<SQLiteDatabase, 'execAsync'>) => {
       await txn.execAsync(migrations[version]);
       // PRAGMA does not take bound parameters; the value is our own integer.
       await txn.execAsync(`PRAGMA user_version = ${version + 1}`);
-    });
+    };
+    // The browser preview's SQLite has no exclusive transactions; nothing
+    // else touches its database while it migrates.
+    if (Platform.OS === 'web') await db.withTransactionAsync(() => step(db));
+    else await db.withExclusiveTransactionAsync(step);
   }
 }

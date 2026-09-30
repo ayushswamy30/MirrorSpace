@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api, ApiError } from './api';
 import type { ConsentPurpose } from './consent';
 import { kv } from './db/kv';
+import { isPreview, previewProfile, seedPreview } from './preview';
 import { supabase } from './supabase';
 
 /**
@@ -84,6 +85,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     (async () => {
+      if (isPreview) {
+        await seedPreview().catch(err => console.warn('Preview data not seeded:', err));
+        if (!cancelled) setState({ status: 'ready', profile: previewProfile(), offline: false });
+        return;
+      }
       try {
         await ensureSession();
         const profile = await fetchProfile();
@@ -117,6 +123,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    if (isPreview) return;
     const profile = await fetchProfile();
     setState({ status: 'ready', profile, offline: false });
   }, []);
