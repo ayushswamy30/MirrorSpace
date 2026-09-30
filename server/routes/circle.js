@@ -8,6 +8,7 @@ import {
   isLow,
   MAX_FRIENDS,
   normalizeCode,
+  parseIcon,
   parseName,
   parseStatus,
   rhythmLine
@@ -64,7 +65,7 @@ router.get('/', auth, async (req, res, next) => {
     ]);
 
     const ids = [...new Set([...rows.map(f => other(f, userId)), ...nudges.map(n => n.from_user_id)])];
-    const [names, statuses] = await Promise.all([circle.names(ids), circle.statuses([userId, ...ids])]);
+    const [names, icons, statuses] = await Promise.all([circle.names(ids), circle.icons(ids), circle.statuses([userId, ...ids])]);
     const mine = statuses.get(userId);
     const now = new Date();
 
@@ -77,6 +78,7 @@ router.get('/', auth, async (req, res, next) => {
         return {
           id: f.id,
           name,
+          icon: icons.get(id) ?? null,
           weather: s ? currentWeather(s.weather, s.weather_date, now) : null,
           low: s ? isLow(s.low_since, now) : false,
           rhythm: shared ? rhythmLine(mine?.rhythm, s?.rhythm, name) : null,
@@ -90,11 +92,14 @@ router.get('/', auth, async (req, res, next) => {
       me: {
         name: profile.name,
         code: profile.code,
+        icon: profile.icon ?? null,
         sharing: shared,
         low: mine ? isLow(mine.low_since, now) : false
       },
       friends,
-      incoming: pending.filter(f => f.addressee_id === userId).map(f => ({ id: f.id, name: names.get(f.requester_id) ?? 'Someone' })),
+      incoming: pending
+        .filter(f => f.addressee_id === userId)
+        .map(f => ({ id: f.id, name: names.get(f.requester_id) ?? 'Someone', icon: icons.get(f.requester_id) ?? null })),
       outgoing: pending.filter(f => f.requester_id === userId).map(f => ({ id: f.id, name: names.get(f.addressee_id) ?? 'Someone' })),
       nudges: nudges.map(n => ({ name: names.get(n.from_user_id) ?? 'A friend', at: n.created_at }))
     });
@@ -103,10 +108,11 @@ router.get('/', auth, async (req, res, next) => {
   }
 });
 
-// PUT /api/circle/profile — { name }: the name friends see; mints a code
+// PUT /api/circle/profile — { name, icon? }: what friends see; mints a code
 router.put('/profile', auth, writeLimiter, async (req, res, next) => {
   try {
-    res.json(await circle.setName(req.userId, parseName(req.body?.name)));
+    const icon = req.body?.icon === undefined ? undefined : parseIcon(req.body.icon);
+    res.json(await circle.setName(req.userId, parseName(req.body?.name), icon));
   } catch (error) {
     handle(res, next, error);
   }
