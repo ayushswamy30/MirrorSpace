@@ -24,8 +24,8 @@ const STEP = 15;
 
 export const DEFAULT_TIME = 21 * 60;
 
-/** False in Expo Go: reminders need the app's own build. */
-export const remindersSupported = !inExpoGo;
+/** False in Expo Go and the browser preview: reminders need the app's own build. */
+export const remindersSupported = !inExpoGo && Platform.OS !== 'web';
 
 function notifications(): typeof NotificationsModule | null {
   if (!remindersSupported) return null;

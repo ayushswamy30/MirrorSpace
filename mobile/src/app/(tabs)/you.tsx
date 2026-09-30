@@ -184,7 +184,7 @@ export default function You() {
           subtitle={
             remindersSupported
               ? 'Once a day at most, around when you usually check in — never after you have'
-              : 'Needs MirrorSpace’s own app build — Expo Go can’t send reminders'
+              : 'Needs MirrorSpace’s own app build — Expo Go and the preview can’t send them'
           }
           value={reminder}
           onValueChange={toggleReminder}

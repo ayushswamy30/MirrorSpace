@@ -23,7 +23,7 @@ import {
 } from '@/lib/chart';
 import { allCheckIns, onCheckInsChanged } from '@/lib/checkIns';
 import { allSleep, formatDuration, onSleepChanged } from '@/lib/sleep';
-import { gutter, radius, space } from '@/theme/tokens';
+import { gutter, MAX_WIDTH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Weather } from '@/theme/tokens';
 
@@ -118,8 +118,8 @@ function ChartPage() {
 
       {tags.length > 0 && (
         <Box title="around your days">
-          {tags.map((t, i) => (
-            <TagLine key={t.tag} row={t} max={tags[0].count} last={i === tags.length - 1} />
+          {tags.map(t => (
+            <TagLine key={t.tag} row={t} max={tags[0].count} />
           ))}
         </Box>
       )}
@@ -152,7 +152,7 @@ function ChartPage() {
 function Wheel({ days, centre }: { days: ChartDay[]; centre: Weather | null }) {
   const { colors, signal } = useTheme();
   const { width } = useWindowDimensions();
-  const size = Math.min(width - gutter * 2, 320);
+  const size = Math.min(width - gutter * 2, MAX_WIDTH - gutter * 2, 320);
   const mid = size / 2;
   const ring = mid - 24;
   const dot = Math.max(4, Math.min(8, (Math.PI * ring) / days.length - 2));
@@ -257,12 +257,15 @@ function Words({ words }: { words: WordCount[] }) {
 
 const LEAN: Record<TagRow['lean'], string> = { lighter: '↑ lighter', heavier: '↓ heavier', even: '· even' };
 
-/** One tag: its name, a rule as long as its count, and which way its days lean. */
-function TagLine({ row, max, last }: { row: TagRow; max: number; last: boolean }) {
+/**
+ * One tag: its name, a rule as long as its count, and which way its days
+ * lean. The rules themselves separate the lines; no dividers between them.
+ */
+function TagLine({ row, max }: { row: TagRow; max: number }) {
   const { colors } = useTheme();
   return (
     <View
-      style={[styles.tagLine, !last && { borderBottomColor: colors.hairline, borderBottomWidth: StyleSheet.hairlineWidth }]}
+      style={styles.tagLine}
       accessible
       accessibilityLabel={`${row.tag}: ${row.count} days, ${row.lean}`}
     >
@@ -288,14 +291,18 @@ const SKY_TOP = 11 * 60;
  */
 function Skyline({ nights }: { nights: (number | null)[] }) {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const w = width - gutter * 2;
+  const [w, setW] = useState(0);
   const h = 88;
   const step = w / nights.length;
   const y = (minutes: number) => h - (Math.min(minutes, SKY_TOP) / SKY_TOP) * h;
 
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.skyline}>
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={styles.skyline}
+      onLayout={e => setW(e.nativeEvent.layout.width)}
+    >
       <Svg width={w} height={h + 1}>
         <Line
           x1={0}
@@ -351,7 +358,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm
   },
   word: { flexDirection: 'row', alignItems: 'flex-start', gap: 3 },
-  tagLine: { paddingVertical: space.sm, gap: space.xs + 2 },
+  tagLine: { paddingVertical: space.sm + 2, gap: space.xs + 2 },
   tagTop: { flexDirection: 'row', alignItems: 'baseline', gap: space.md },
   flex: { flex: 1 },
   bar: { height: 1.5 },

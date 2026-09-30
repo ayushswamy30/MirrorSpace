@@ -87,7 +87,7 @@ export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: numb
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Art name={name} size={size * 0.62} />
+      <Art name={name} size={size * 0.72} />
     </View>
   );
 }
