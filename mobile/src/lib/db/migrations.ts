@@ -64,7 +64,12 @@ export const migrations: readonly string[] = [
      role       TEXT NOT NULL CHECK (role IN ('user', 'mirror')),
      content    TEXT NOT NULL,
      created_at TEXT NOT NULL
-   );`
+   );`,
+
+  // 7 — where a night came from. A night logged by hand always wins over one
+  // read from Health Connect.
+  `ALTER TABLE sleep_logs ADD COLUMN source TEXT NOT NULL DEFAULT 'hand'
+     CHECK (source IN ('hand', 'health'));`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
