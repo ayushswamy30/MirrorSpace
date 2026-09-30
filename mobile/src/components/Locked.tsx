@@ -4,7 +4,12 @@ import { config } from '@/lib/config';
 import { useProfile } from '@/lib/session';
 import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 
-import { SectionLabel } from './Blocks';
+import { StyleSheet } from 'react-native';
+
+import { space } from '@/theme/tokens';
+
+import { Art } from './Art';
+import { Lede } from './Blocks';
 import { AppHeader } from './Header';
 import { Screen } from './Screen';
 import { Text } from './Text';
@@ -31,11 +36,16 @@ export function Locked({ feature, promise, children }: Props) {
 
   return (
     <Screen header={<AppHeader />}>
-      <SectionLabel title={days === 1 ? 'opens tomorrow' : `opens in ${days} days`} />
-      <Text variant="title">{promise}</Text>
-      <Text tone="soft">
-        {days === 1 ? 'This opens tomorrow.' : `This opens in ${days} days.`} It needs a little of your rhythm first.
-      </Text>
+      <Art name="king" size={150} style={styles.art} />
+      <Lede label={days === 1 ? 'opens tomorrow' : `opens in ${days} days`} title={promise} size="title">
+        <Text tone="soft">
+          {days === 1 ? 'This opens tomorrow.' : `This opens in ${days} days.`} It needs a little of your rhythm first.
+        </Text>
+      </Lede>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  art: { alignSelf: 'flex-end', marginTop: space.lg }
+});

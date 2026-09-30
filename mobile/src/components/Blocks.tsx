@@ -27,6 +27,41 @@ export function SectionLabel({ title, rule = true }: { title: string; rule?: boo
   );
 }
 
+type LedeProps = {
+  /** The small mono capital line above: "YOUR DAY AT A GLANCE". */
+  label?: string;
+  title: string;
+  /** 'reading' is the page's one big line; 'title' for a quieter page. */
+  size?: 'reading' | 'title';
+  children?: ReactNode;
+};
+
+/**
+ * The top of a page, after the reference: a label, the big serif line, then
+ * a short paragraph — close together, as one block.
+ */
+export function Lede({ label, title, size = 'reading', children }: LedeProps) {
+  return (
+    <View style={styles.lede}>
+      {label && <SectionLabel title={label} rule={false} />}
+      <Text variant={size} accessibilityRole="header">
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
+/** A section: its label (ruled) and what's under it, kept together. */
+export function Section({ title, rule = true, children }: { title?: string; rule?: boolean; children: ReactNode }) {
+  return (
+    <View style={styles.sectionBlock}>
+      {title && <SectionLabel title={title} rule={rule} />}
+      {children}
+    </View>
+  );
+}
+
 /** A full-bleed thick break between sections. */
 export function Band() {
   const { colors } = useTheme();
@@ -165,6 +200,21 @@ export function EndMark({ link, onPress }: { link?: string; onPress?: () => void
   );
 }
 
+/**
+ * A group of settings, after the reference's settings page: a small grey
+ * heading, then lines with no rules between them — space alone groups them.
+ */
+export function SettingGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View style={styles.group}>
+      <Text variant="mono" tone="soft" accessibilityRole="header">
+        {title}
+      </Text>
+      <View>{children}</View>
+    </View>
+  );
+}
+
 type SettingProps = {
   title: string;
   subtitle?: string;
@@ -178,7 +228,7 @@ export function SettingRow({ title, subtitle, value, onValueChange, disabled }: 
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
+    <View style={styles.setting}>
       <View style={styles.rowText}>
         <Text>{title}</Text>
         {subtitle && (
@@ -197,6 +247,39 @@ export function SettingRow({ title, subtitle, value, onValueChange, disabled }: 
         ios_backgroundColor={colors.inkSoft}
       />
     </View>
+  );
+}
+
+type SettingLinkProps = {
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  accessibilityHint?: string;
+};
+
+/** A settings line that opens or does something: plain title, → at the end. */
+export function SettingLink({ title, subtitle, onPress, accessibilityHint }: SettingLinkProps) {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+      accessibilityHint={accessibilityHint}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.setting, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <View style={styles.rowText}>
+        <Text>{title}</Text>
+        {subtitle && (
+          <Text variant="caption" tone="soft">
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      {onPress && <Icon name="arrow" color={colors.ink} size={14} />}
+    </Pressable>
   );
 }
 
@@ -227,6 +310,8 @@ export function Box({ title, children, centred = false }: BoxProps) {
 
 const styles = StyleSheet.create({
   section: { paddingBottom: space.sm },
+  lede: { gap: space.md - 4 },
+  sectionBlock: { gap: space.sm },
   band: { height: space.md, marginHorizontal: -gutter },
   segmentedWrap: { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   bleed: { marginHorizontal: -gutter },
@@ -250,6 +335,14 @@ const styles = StyleSheet.create({
   },
   rowLeading: { width: 36, alignItems: 'center' },
   rowText: { flex: 1, gap: 2 },
+  group: { gap: space.xs },
+  setting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: hitTarget + 8,
+    paddingVertical: space.sm + 2
+  },
   doDont: { flexDirection: 'row', gap: space.lg },
   column: { flex: 1, gap: 2 },
   end: {

@@ -49,7 +49,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="check-in" options={{ title: 'check-in' }} />
         <Tabs.Screen name="mirror" options={{ title: 'mirror' }} />
         <Tabs.Screen name="chart" options={{ title: 'chart' }} />
-        <Tabs.Screen name="circle" options={{ title: 'circle' }} />
+        <Tabs.Screen name="you" options={{ title: 'you' }} />
       </Tabs>
     </>
   );

@@ -30,7 +30,6 @@ function Navigator() {
         <Stack.Screen name="calm" options={{ presentation: 'modal' }} />
         <Stack.Screen name="help" options={{ presentation: 'modal' }} />
         <Stack.Screen name="plan" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="you" />
         <Stack.Screen name="sleep" options={{ presentation: 'modal' }} />
         <Stack.Screen name="health" options={{ presentation: 'modal' }} />
         {/* Full screen and no swipe-to-dismiss, so it can't be flicked away

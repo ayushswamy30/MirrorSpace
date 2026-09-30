@@ -17,7 +17,11 @@ type Props = {
   contentStyle?: ViewStyle;
 };
 
-/** A single column on paper with the page's side margin. */
+/**
+ * A single column on paper with the page's side margin. Its direct children
+ * are sections, 40 apart; what belongs together goes in one View (or a Lede)
+ * with its own tighter gap. That one rhythm is what keeps pages calm.
+ */
 export function Screen({ children, header, scroll = true, edges = ['top'], background, contentStyle }: Props) {
   const { colors } = useTheme();
 
@@ -46,8 +50,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   content: {
     paddingHorizontal: gutter,
-    paddingTop: space.lg,
+    paddingTop: space.md,
     paddingBottom: space.xxl,
-    gap: space.lg
+    gap: space.xl
   }
 });
