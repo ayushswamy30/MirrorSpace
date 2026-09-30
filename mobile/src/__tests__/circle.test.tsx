@@ -46,9 +46,9 @@ const mocked = jest.mocked(circle);
 
 function state(overrides: Partial<CircleState> = {}): CircleState {
   return {
-    me: { name: 'Asha', code: 'K7M2QX', sharing: true, low: false },
+    me: { name: 'Asha', code: 'K7M2QX', icon: null, sharing: true, low: false },
     friends: [
-      { id: 'f1', name: 'Ben', weather: 'fog', low: true, rhythm: 'You both run heavy on Thursdays.', since: null }
+      { id: 'f1', name: 'Ben', icon: 'cat', weather: 'fog', low: true, rhythm: 'You both run heavy on Thursdays.', since: null }
     ],
     incoming: [],
     outgoing: [],
@@ -75,7 +75,7 @@ beforeEach(() => {
 });
 
 test('before a name, it asks — and says what would be shared and what never is', async () => {
-  mocked.loadCircle.mockResolvedValue(state({ me: { name: null, code: null, sharing: false, low: false }, friends: [] }));
+  mocked.loadCircle.mockResolvedValue(state({ me: { name: null, code: null, icon: null, sharing: false, low: false }, friends: [] }));
   mocked.setCircleName.mockResolvedValue({ name: 'Asha', code: 'K7M2QX' });
   await renderCircle();
 
@@ -83,10 +83,11 @@ test('before a name, it asks — and says what would be shared and what never is
   expect(screen.getByText(/Your words, notes, pages or Mirror/)).toBeTruthy();
 
   fireEvent.changeText(screen.getByLabelText('The name your circle sees'), 'Asha');
+  fireEvent.press(screen.getByRole('radio', { name: 'swan' }));
   fireEvent.press(screen.getByRole('button', { name: 'start my circle' }));
   // Several awaits in a row; a cold first run can take longer than the default.
   await waitFor(() => expect(account.setConsent).toHaveBeenCalledWith('circle', true), { timeout: 5000 });
-  expect(mocked.setCircleName).toHaveBeenCalledWith('Asha');
+  expect(mocked.setCircleName).toHaveBeenCalledWith('Asha', 'swan');
   expect(mocked.shareStatus).toHaveBeenCalled();
   // Circle alerts are asked for here, where the reason is plain.
   await waitFor(() => expect(mockAskForAlerts).toHaveBeenCalled());

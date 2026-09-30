@@ -1,3 +1,4 @@
+import type { ArtName } from '@/components/Art';
 import type { Weather } from '@/theme/tokens';
 
 import { api } from './api';
@@ -16,6 +17,8 @@ export type CircleFriend = {
   /** The friendship's id: what accept, remove and nudge are addressed to. */
   id: string;
   name: string;
+  /** The picture they chose, or none. */
+  icon: ArtName | null;
   weather: Weather | null;
   low: boolean;
   /** "You both run heavy on Thursdays." — only when both share. */
@@ -24,9 +27,9 @@ export type CircleFriend = {
 };
 
 export type CircleState = {
-  me: { name: string | null; code: string | null; sharing: boolean; low: boolean };
+  me: { name: string | null; code: string | null; icon: ArtName | null; sharing: boolean; low: boolean };
   friends: CircleFriend[];
-  incoming: { id: string; name: string }[];
+  incoming: { id: string; name: string; icon?: ArtName | null }[];
   outgoing: { id: string; name: string }[];
   nudges: { name: string; at: string }[];
 };
@@ -54,11 +57,11 @@ export function weekdayRhythm(checkIns: readonly CheckIn[], now: Date = new Date
 // --- The browser preview's stand-in circle ---------------------------------
 
 let previewState: CircleState = {
-  me: { name: 'You', code: 'K7M2QX', sharing: true, low: false },
+  me: { name: 'You', code: 'K7M2QX', icon: 'swan', sharing: true, low: false },
   friends: [
-    { id: 'p1', name: 'Asha', weather: 'fog', low: true, rhythm: 'You both run heavy on Thursdays.', since: null },
-    { id: 'p2', name: 'Ben', weather: 'clear', low: false, rhythm: 'Sundays tend to be good for you both.', since: null },
-    { id: 'p3', name: 'Mira', weather: 'overcast', low: false, rhythm: null, since: null }
+    { id: 'p1', name: 'Asha', icon: 'orchid', weather: 'fog', low: true, rhythm: 'You both run heavy on Thursdays.', since: null },
+    { id: 'p2', name: 'Ben', icon: 'cat', weather: 'clear', low: false, rhythm: 'Sundays tend to be good for you both.', since: null },
+    { id: 'p3', name: 'Mira', icon: null, weather: 'overcast', low: false, rhythm: null, since: null }
   ],
   incoming: [{ id: 'p4', name: 'Kabir' }],
   outgoing: [],
@@ -72,12 +75,13 @@ export async function loadCircle(): Promise<CircleState> {
   return api.get<CircleState>('/circle');
 }
 
-export async function setCircleName(name: string): Promise<{ name: string; code: string }> {
+/** The name, and optionally the picture, your circle sees. */
+export async function setCircleName(name: string, icon?: ArtName | null): Promise<{ name: string; code: string }> {
   if (isPreview) {
-    previewState = { ...previewState, me: { ...previewState.me, name } };
+    previewState = { ...previewState, me: { ...previewState.me, name, ...(icon === undefined ? {} : { icon }) } };
     return { name, code: previewState.me.code! };
   }
-  return api.put('/circle/profile', { name });
+  return api.put('/circle/profile', icon === undefined ? { name } : { name, icon });
 }
 
 /** Resolves to the name of the person asked. */
@@ -94,7 +98,7 @@ export async function acceptFriend(id: string): Promise<void> {
       ...previewState,
       incoming: previewState.incoming.filter(r => r.id !== id),
       friends: asked
-        ? [...previewState.friends, { id, name: asked.name, weather: null, low: false, rhythm: null, since: null }]
+        ? [...previewState.friends, { id, name: asked.name, icon: null, weather: null, low: false, rhythm: null, since: null }]
         : previewState.friends
     };
     return;
