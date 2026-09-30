@@ -66,6 +66,14 @@
           "enableBackgroundPlayback": true
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#111111",
+          "defaultChannel": "reminders"
+        }
+      ],
       "expo-sharing",
       "expo-asset",
       "react-native-health-connect",
