@@ -1,54 +1,105 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { Art, ArtDisc, artOfTheDay } from '@/components/Art';
+import { artOfTheDay } from '@/components/Art';
 import { DoDont, EndMark, Lede, Row, Section } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { AppHeader, shortDate } from '@/components/Header';
+import { Loader } from '@/components/Loader';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import { ArtRule, DateControl, FloatingDisc, WeatherMark, WeekStrip, sameDay } from '@/components/TodayParts';
+import { addDays, startOfDay, useDayRecord, useDays, weekMarks, weekOf, type DayRecord } from '@/lib/days';
+import { usePreferences } from '@/lib/preferences';
 import { clockOf, formatClock, formatDuration } from '@/lib/sleep';
 import { useToday } from '@/lib/useToday';
+import { firstLine } from '@/lib/vents';
 import { useEntering } from '@/theme/motion';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /**
  * Today — "your day at a glance" (DESIGN.md), laid out like the reference's
- * home: the day's picture in a disc at the top right, air, then the reading,
- * Do/Don't and one action. Below: last night, what the reading was built
- * from, the Inner Weather, and an end. Everything is computed on the phone.
+ * home: the day's picture floating in a disc at the top right, air, then the
+ * reading, Do/Don't and one action; last night, what the reading was built
+ * from, the Inner Weather breathing, and the ink the page ends in.
+ *
+ * "TODAY ⌄" opens the week: any earlier day shows as it stood that evening —
+ * its reading, its check-ins and notes, its night and the pages kept.
  */
 export default function Today() {
   const data = useToday();
+  const days = useDays();
+  const { weekStart } = usePreferences();
+  const [selected, setSelected] = useState(() => startOfDay(new Date()));
+  const [open, setOpen] = useState(false);
+  const record = useDayRecord(selected, days);
+  const content = useEntering();
+
+  const week = weekOf(selected, weekStart);
+  const isToday = sameDay(selected, new Date());
+  const header = (
+    <AppHeader extra={<DateControl date={selected} open={open} onPress={() => setOpen(o => !o)} />} />
+  );
+
+  if (!data) {
+    return (
+      <Screen header={header} scroll={false}>
+        <Loader fill label="Reading your day" />
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen header={header}>
+      {open && (
+        <WeekStrip
+          days={week}
+          selected={selected}
+          marks={days ? weekMarks(week, days.checkIns) : week.map(() => null)}
+          onSelect={day => setSelected(day)}
+          onWeek={direction => setSelected(d => {
+            const next = addDays(d, 7 * direction);
+            return next.getTime() > Date.now() ? startOfDay(new Date()) : next;
+          })}
+          canGoForward={!week.some(d => sameDay(d, new Date()))}
+        />
+      )}
+
+      {/* A new day fades in, rather than snapping. */}
+      <Animated.View key={selected.toDateString()} entering={content} style={styles.page}>
+        {isToday ? <TodayPage data={data} /> : record ? <PastDay record={record} onToday={() => setSelected(startOfDay(new Date()))} /> : <Loader />}
+      </Animated.View>
+    </Screen>
+  );
+}
+
+function TodayPage({ data }: { data: NonNullable<ReturnType<typeof useToday>> }) {
   const { signal } = useTheme();
-  const first = useEntering();
-  const second = useEntering(150);
-
-  if (!data) return <Screen header={<AppHeader />}>{null}</Screen>;
-
+  const { picture } = usePreferences();
   const { reading, facts, weather, checkedInToday, lastNight } = data;
   const receipts = facts.slice(0, 3);
 
   return (
-    <Screen header={<AppHeader />}>
+    <>
       <View style={styles.hero}>
-        <ArtDisc name={artOfTheDay()} size={104} />
+        <FloatingDisc name={picture === 'daily' ? artOfTheDay() : picture} size={104} />
       </View>
 
-      <Animated.View entering={first} style={styles.block}>
+      <View style={styles.block}>
         <Lede label={`your day at a glance · ${shortDate()}`} title={reading.headline}>
           <Text>{reading.subtext}</Text>
         </Lede>
-      </Animated.View>
+      </View>
 
-      <Animated.View entering={second} style={styles.block}>
+      <View style={styles.block}>
         <DoDont dos={reading.dos} donts={reading.donts} />
         {!checkedInToday && (
           <Button label="check in" arrow onPress={() => router.navigate('/check-in')} style={styles.cta} />
         )}
-      </Animated.View>
+      </View>
 
       <Section title="last night">
         {lastNight ? (
@@ -73,12 +124,12 @@ export default function Today() {
         </Section>
       )}
 
-      <Art name="masks" size={150} style={styles.margin} />
+      <ArtRule name="masks" size={120} />
 
       {weather && (
         <Section title="inner weather">
           <View style={styles.weather}>
-            <View style={[styles.dot, { backgroundColor: signal }]} />
+            <WeatherMark color={signal} />
             <Text variant="title">{weather}</Text>
           </View>
           <Text variant="caption" tone="soft">
@@ -92,16 +143,81 @@ export default function Today() {
       )}
 
       <EndMark link="write something down" onPress={() => router.navigate('/check-in?mode=vent')} />
-    </Screen>
+    </>
+  );
+}
+
+/** An earlier day, as it stood that evening — and everything written in it. */
+function PastDay({ record, onToday }: { record: DayRecord; onToday: () => void }) {
+  const { view, checkIns, night, pages, weather } = record;
+  const date = new Date(`${record.date}T12:00:00`);
+  const quiet = checkIns.length === 0 && !night && pages.length === 0;
+
+  return (
+    <>
+      <View style={styles.block}>
+        <Lede label={date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} title={view.reading.headline}>
+          <Text>{view.reading.subtext}</Text>
+        </Lede>
+        <DoDont dos={view.reading.dos} donts={view.reading.donts} />
+      </View>
+
+      {weather && (
+        <Section title="that day's weather">
+          <Text variant="title">{weather}</Text>
+        </Section>
+      )}
+
+      {checkIns.length > 0 && (
+        <Section title={checkIns.length === 1 ? 'the check-in' : `${checkIns.length} check-ins`}>
+          {checkIns.map(c => (
+            <View key={c.id} style={styles.entry}>
+              <Text variant="mono" tone="soft">
+                {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {c.tags.length ? ` · ${c.tags.join(', ')}` : ''}
+              </Text>
+              <Text variant="heading">{c.emotion}</Text>
+              {c.note && <Text variant="bodyItalic">{`“${c.note}”`}</Text>}
+            </View>
+          ))}
+        </Section>
+      )}
+
+      {night && (
+        <Section title="that night">
+          <Row
+            title={formatDuration(night.minutes)}
+            subtitle={`${formatClock(clockOf(night.bedAt))} – ${formatClock(clockOf(night.wakeAt))}`}
+          />
+        </Section>
+      )}
+
+      {pages.length > 0 && (
+        <Section title={pages.length === 1 ? 'a page you kept' : `${pages.length} pages you kept`}>
+          {pages.map(p => (
+            <Row key={p.id} title={firstLine(p.body)} subtitle="vent" arrow={false} />
+          ))}
+        </Section>
+      )}
+
+      {quiet && (
+        <>
+          <ArtRule name="swallow" size={90} side="right" />
+          <Text tone="soft">A quiet day — nothing was written down, and that’s allowed.</Text>
+        </>
+      )}
+
+      <Button kind="link" label="back to today" onPress={onToday} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  page: { gap: space.xl },
   // The reference's opening: the picture high on the right, then a long pause.
   hero: { alignItems: 'flex-end', paddingTop: space.sm, paddingBottom: space.xl },
   block: { gap: space.lg },
   cta: { marginTop: space.sm },
-  margin: { alignSelf: 'flex-start', marginVertical: -space.sm },
-  weather: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingTop: space.sm },
-  dot: { width: 14, height: 14, borderRadius: radius.dot }
+  weather: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
+  entry: { gap: 2, paddingVertical: space.sm }
 });

@@ -35,6 +35,18 @@ export function normalizeCode(input) {
   return code;
 }
 
+/** The pictures a person can show their circle: the app's own cut-outs. */
+export const ICONS = [
+  'bandage', 'bean', 'beetle', 'butterfly', 'can', 'cat', 'city', 'dice', 'doll', 'eye', 'heart',
+  'king', 'kittens', 'lily', 'masks', 'moka', 'orchid', 'stamp', 'swallow', 'swan', 'urchin'
+];
+
+export function parseIcon(input) {
+  if (input === undefined || input === null) return null;
+  if (!ICONS.includes(input)) throw new CircleValidationError('unknown picture');
+  return input;
+}
+
 export function parseName(input) {
   if (typeof input !== 'string') throw new CircleValidationError('name must be a string');
   const name = input.replace(/\s+/g, ' ').trim();

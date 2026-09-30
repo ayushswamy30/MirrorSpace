@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
+import { Personalisation, ProfileCard } from '@/components/YouParts';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import type { ConsentPurpose } from '@/lib/consent';
@@ -162,6 +163,8 @@ export default function You() {
 
   return (
     <Screen header={<AppHeader />}>
+      <ProfileCard />
+
       <Lede label={`day ${day}`} title="Your space." size="title">
         <Text variant="mono" tone="soft">
           {`${profile.isAnonymous ? 'no account — this phone only' : profile.email ?? 'account'}${offline ? ' · offline' : ''}`}
@@ -174,9 +177,23 @@ export default function You() {
         </Text>
       )}
 
+      <SettingGroup title="Account">
+        {profile.isAnonymous ? (
+          <SettingLink
+            title="Keep your space with an email"
+            subtitle="So you can sign in on a new phone. A six-digit code, no password."
+            onPress={() => router.push('/account')}
+          />
+        ) : (
+          <SettingLink title={profile.email ?? 'Your account'} subtitle="Signed in — your account, circle and settings follow you" />
+        )}
+      </SettingGroup>
+
       <SettingGroup title="Appearance">
         <Segmented options={APPEARANCES} value={appearance} onChange={setAppearance} bleed={false} />
       </SettingGroup>
+
+      <Personalisation />
 
       <SettingGroup title="Notifications">
         <SettingRow

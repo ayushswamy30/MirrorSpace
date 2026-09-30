@@ -10,25 +10,29 @@ const UNIQUE_VIOLATION = '23505';
 
 export async function me(userId) {
   const row = unwrap(
-    await supabase.from('users').select('circle_name, circle_code').eq('id', userId).single(),
+    await supabase.from('users').select('circle_name, circle_code, circle_icon').eq('id', userId).single(),
     'circle.me'
   );
-  return { name: row.circle_name, code: row.circle_code };
+  return { name: row.circle_name, code: row.circle_code, icon: row.circle_icon };
 }
 
-/** Sets the name friends see, and hands out a code the first time. */
-export async function setName(userId, name) {
+/**
+ * Sets the name (and, if given, the picture) friends see, and hands out a
+ * code the first time.
+ */
+export async function setName(userId, name, icon) {
   const current = await me(userId);
+  const change = icon === undefined ? { circle_name: name } : { circle_name: name, circle_icon: icon };
   if (current.code) {
-    unwrap(await supabase.from('users').update({ circle_name: name }).eq('id', userId), 'circle.setName');
-    return { name, code: current.code };
+    unwrap(await supabase.from('users').update(change).eq('id', userId), 'circle.setName');
+    return { name, code: current.code, icon: icon === undefined ? current.icon : icon };
   }
 
   // Codes are random; on the rare collision, draw again.
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateCode();
-    const { error } = await supabase.from('users').update({ circle_name: name, circle_code: code }).eq('id', userId);
-    if (!error) return { name, code };
+    const { error } = await supabase.from('users').update({ ...change, circle_code: code }).eq('id', userId);
+    if (!error) return { name, code, icon: icon === undefined ? current.icon : icon };
     if (error.code !== UNIQUE_VIOLATION) unwrap({ error }, 'circle.setName');
   }
   throw new Error('circle.setName: could not find a free code');
@@ -58,10 +62,16 @@ export async function friendships(userId) {
 export async function names(userIds) {
   if (userIds.length === 0) return new Map();
   const rows = unwrap(
-    await supabase.from('users').select('id, circle_name').in('id', userIds),
+    await supabase.from('users').select('id, circle_name, circle_icon').in('id', userIds),
     'circle.names'
   );
   return new Map(rows.map(r => [r.id, r.circle_name]));
+}
+
+export async function icons(userIds) {
+  if (userIds.length === 0) return new Map();
+  const rows = unwrap(await supabase.from('users').select('id, circle_icon').in('id', userIds), 'circle.icons');
+  return new Map(rows.map(r => [r.id, r.circle_icon]));
 }
 
 export async function statuses(userIds) {

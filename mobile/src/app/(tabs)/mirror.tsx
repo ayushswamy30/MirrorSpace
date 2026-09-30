@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Art } from '@/components/Art';
 import { AppHeader } from '@/components/Header';
+import { Starfield } from '@/components/Starfield';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -14,7 +16,8 @@ import {
   listMessages,
   mirrorStatus,
   MirrorUnavailable,
-  SUGGESTIONS,
+  TOPICS,
+  type TopicKey,
   type MirrorMessage,
   type MirrorStatus
 } from '@/lib/mirror';
@@ -22,6 +25,7 @@ import { reflectionsPaused } from '@/lib/safety/log';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
 import { dark, gutter, hitTarget, space } from '@/theme/tokens';
+import { useEntering } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -115,6 +119,7 @@ function Room() {
       background={colors.void}
       contentStyle={styles.page}
     >
+      <Starfield />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
         <ScrollView
           ref={scroll}
@@ -132,13 +137,7 @@ function Room() {
 
           {status && !open && <Closed status={status} onRetry={refresh} />}
 
-          {open && messages.length === 0 && (
-            <View style={styles.suggestions}>
-              {SUGGESTIONS.map(s => (
-                <VoidLink key={s} label={s} onPress={() => setText(s)} />
-              ))}
-            </View>
-          )}
+          {open && messages.length === 0 && <Topics onAsk={setText} />}
 
           {messages.map(m => (
             <Text
@@ -233,6 +232,46 @@ function SendButton({ onPress, disabled }: { onPress: () => void; disabled: bool
   );
 }
 
+/**
+ * The reference's Void: four themes, each a small picture in a square, the
+ * chosen one ruled round; under it, that theme's questions to start from.
+ */
+function Topics({ onAsk }: { onAsk: (question: string) => void }) {
+  const [topic, setTopic] = useState<TopicKey>('self');
+  const enter = useEntering();
+  const chosen = TOPICS.find(t => t.key === topic)!;
+
+  return (
+    <View style={styles.topics}>
+      <View style={styles.topicRow} accessibilityRole="tablist">
+        {TOPICS.map(t => {
+          const active = t.key === topic;
+          return (
+            <Pressable
+              key={t.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={t.label}
+              onPress={() => setTopic(t.key)}
+              style={[styles.topic, { borderColor: active ? LIGHT : 'transparent' }]}
+            >
+              <Art name={t.art} size={34} scheme="dark" />
+              <Text variant="label" style={{ color: active ? LIGHT : SOFT }}>
+                {t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Animated.View key={topic} entering={enter} style={styles.suggestions}>
+        {chosen.questions.map(q => (
+          <VoidLink key={q} label={q} onPress={() => onAsk(q)} />
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
+
 /** Underlined mono capitals in light ink — the room's only kind of control. */
 function VoidLink({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -259,6 +298,9 @@ const styles = StyleSheet.create({
   centre: { textAlign: 'center' },
   eye: { alignSelf: 'center', marginTop: space.md },
   suggestions: { gap: space.sm, marginTop: space.md },
+  topics: { gap: space.md, marginTop: space.lg },
+  topicRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  topic: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm, width: '23%', borderWidth: 1 },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },
   link: { minHeight: hitTarget, justifyContent: 'center', alignSelf: 'center' },

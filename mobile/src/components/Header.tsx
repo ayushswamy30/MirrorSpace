@@ -45,7 +45,7 @@ export function CalmLink({ ink }: { ink?: string }) {
  * No rule: the page's air does the dividing. `onVoid` sets it light on the
  * dark Mirror room, whatever the theme.
  */
-export function AppHeader({ onVoid = false }: { onVoid?: boolean }) {
+export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Beside calm, e.g. Today's date control. */ extra?: ReactNode }) {
   const { colors, signal, weather } = useTheme();
   const ink = onVoid ? dark.ink : colors.ink;
   const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
@@ -62,7 +62,10 @@ export function AppHeader({ onVoid = false }: { onVoid?: boolean }) {
           importantForAccessibility="no-hide-descendants"
         />
       </View>
-      <CalmLink ink={ink} />
+      <View style={styles.right}>
+        {extra}
+        <CalmLink ink={ink} />
+      </View>
     </View>
   );
 }
@@ -109,6 +112,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  right: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },
   side: { minWidth: hitTarget, height: hitTarget, justifyContent: 'center' },

@@ -50,6 +50,9 @@ beforeEach(() => {
 test('says what it is, and offers questions to start with', async () => {
   await renderMirror();
   expect(screen.getByText('software, not a person · not a therapist')).toBeTruthy();
+  // Questions come by theme, as in the reference's Void.
+  expect(screen.getByRole('button', { name: 'Why do I feel like this?' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('tab', { name: 'rest' }));
   fireEvent.press(screen.getByRole('button', { name: 'What would help tonight?' }));
   expect(screen.getByLabelText('Ask Mirror').props.value).toBe('What would help tonight?');
 });

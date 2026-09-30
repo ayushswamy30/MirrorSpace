@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedProps,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
 import Svg, { Circle, Line } from 'react-native-svg';
 
 import { Art } from '@/components/Art';
@@ -22,6 +31,7 @@ import {
   type WordCount
 } from '@/lib/chart';
 import { allCheckIns, onCheckInsChanged } from '@/lib/checkIns';
+import { useMotion } from '@/lib/preferences';
 import { allSleep, formatDuration, onSleepChanged } from '@/lib/sleep';
 import { gutter, MAX_WIDTH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -41,9 +51,13 @@ type Data = {
   tags: TagRow[];
   nights: NightsSummary;
   perNight: (number | null)[];
+  /** The words chosen each day, for the wheel's middle. */
+  wordsOn: Record<string, string[]>;
 };
 
 const WEATHERS: Weather[] = ['clear', 'mild', 'overcast', 'fog', 'storm'];
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 function useChart(): Data | null {
   const [data, setData] = useState<Data | null>(null);
@@ -57,7 +71,11 @@ function useChart(): Data | null {
           words: topWords(checkIns, now),
           tags: tagTable(checkIns, now),
           nights: nightsSummary(sleep, now),
-          perNight: nightly(sleep, now)
+          perNight: nightly(sleep, now),
+          wordsOn: checkIns.reduce<Record<string, string[]>>((acc, c) => {
+            (acc[c.localDate] ??= []).push(c.emotion);
+            return acc;
+          }, {})
         });
       })
       .catch(err => console.warn('Chart unavailable:', err));
@@ -89,7 +107,7 @@ function ChartPage() {
 
   if (!data) return <Screen header={<AppHeader />}>{null}</Screen>;
 
-  const { days, words, tags, nights, perNight } = data;
+  const { days, words, tags, nights, perNight, wordsOn } = data;
   const mostly = mostlyWeather(days);
   const checkedIn = days.filter(d => d.weather).length;
 
@@ -104,7 +122,7 @@ function ChartPage() {
       </Lede>
 
       <Section title="weather, day by day">
-        <Wheel days={days} centre={mostly?.weather ?? null} />
+        <Wheel days={days} centre={mostly?.weather ?? null} wordsOn={wordsOn} />
         <Legend />
       </Section>
 
@@ -149,9 +167,10 @@ function ChartPage() {
  * its weather's ink; a day without a check-in is a speck. Today carries the
  * one signal mark, just outside the ring.
  */
-function Wheel({ days, centre }: { days: ChartDay[]; centre: Weather | null }) {
+function Wheel({ days, centre, wordsOn }: { days: ChartDay[]; centre: Weather | null; wordsOn: Record<string, string[]> }) {
   const { colors, signal } = useTheme();
   const { width } = useWindowDimensions();
+  const [picked, setPicked] = useState<number | null>(null);
   const size = Math.min(width - gutter * 2, MAX_WIDTH - gutter * 2, 320);
   const mid = size / 2;
   const ring = mid - 24;
@@ -164,12 +183,14 @@ function Wheel({ days, centre }: { days: ChartDay[]; centre: Weather | null }) {
   const counts = WEATHERS.map(w => `${days.filter(d => d.weather === w).length} ${w}`).join(', ');
   const empty = days.filter(d => !d.weather).length;
   const today = at(days.length - 1, ring + dot + 8);
+  const day = picked === null ? null : days[picked];
 
   return (
     <View
       style={[styles.wheel, { width: size, height: size }]}
       accessible
       accessibilityLabel={`Last 30 days: ${counts}; ${empty} without a check-in.`}
+      accessibilityHint="Tap a day on the ring to see it in the middle"
     >
       <Svg width={size} height={size}>
         <Circle cx={mid} cy={mid} r={ring - dot - 10} stroke={colors.ink} strokeWidth={0.5} fill="none" />
@@ -183,32 +204,119 @@ function Wheel({ days, centre }: { days: ChartDay[]; centre: Weather | null }) {
           stroke={colors.ink}
           strokeWidth={0.5}
         />
-        {days.map((day, i) => {
+        {days.map((d, i) => {
           const { x, y } = at(i, ring);
-          return day.weather ? (
-            <Circle
-              key={day.date}
-              cx={x}
-              cy={y}
-              r={dot}
-              stroke={colors.ink}
-              strokeWidth={1}
-              fill={colors.ink}
-              fillOpacity={WEATHER_INK[day.weather]}
+          return (
+            <DayDot
+              key={d.date}
+              index={i}
+              x={x}
+              y={y}
+              r={d.weather ? dot : 1.5}
+              weather={d.weather}
+              picked={picked === i}
+              onPress={() => setPicked(p => (p === i ? null : i))}
             />
-          ) : (
-            <Circle key={day.date} cx={x} cy={y} r={1.5} fill={colors.inkSoft} />
           );
         })}
-        <Circle cx={today.x} cy={today.y} r={3} fill={signal} />
+        <TodayMark x={today.x} y={today.y} color={signal} />
       </Svg>
       <View style={styles.wheelCentre} pointerEvents="none">
-        <Text variant="mono" tone="soft">
-          {centre ? 'mostly' : 'no weather yet'}
-        </Text>
-        {centre && <Text variant="title">{centre}</Text>}
+        {day ? (
+          <>
+            <Text variant="mono" tone="soft">
+              {new Date(`${day.date}T12:00:00`).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+            </Text>
+            <Text variant="title">{day.weather ?? 'quiet'}</Text>
+            <Text variant="mono" tone="soft" style={styles.centreText}>
+              {(wordsOn[day.date] ?? []).slice(0, 3).join(' · ') || 'no check-in'}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text variant="mono" tone="soft">
+              {centre ? 'mostly' : 'no weather yet'}
+            </Text>
+            {centre && <Text variant="title">{centre}</Text>}
+          </>
+        )}
       </View>
     </View>
+  );
+}
+
+/**
+ * One day on the ring. The days ripple in one after another, clockwise from
+ * the top, the first time the page opens; a tapped day is ruled round.
+ */
+function DayDot({
+  index,
+  x,
+  y,
+  r,
+  weather,
+  picked,
+  onPress
+}: {
+  index: number;
+  x: number;
+  y: number;
+  r: number;
+  weather: Weather | null;
+  picked: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const motion = useMotion();
+  const shown = useSharedValue(motion === 'still' ? 1 : 0);
+
+  useEffect(() => {
+    if (motion === 'still') return;
+    shown.value = withDelay(index * 28, withTiming(1, { duration: 520, easing: Easing.out(Easing.back(2)) }));
+  }, [index, motion, shown]);
+
+  const body = useAnimatedProps(() => ({ r: r * shown.value }));
+
+  return (
+    <>
+      {picked && <Circle cx={x} cy={y} r={r + 5} stroke={colors.ink} strokeWidth={1} fill="none" />}
+      {weather ? (
+        <AnimatedCircle
+          animatedProps={body}
+          cx={x}
+          cy={y}
+          stroke={colors.ink}
+          strokeWidth={1}
+          fill={colors.ink}
+          fillOpacity={WEATHER_INK[weather]}
+        />
+      ) : (
+        <AnimatedCircle animatedProps={body} cx={x} cy={y} fill={colors.inkSoft} />
+      )}
+      {/* A larger, invisible target: the dots are small, fingers aren't. */}
+      <Circle cx={x} cy={y} r={Math.max(r, 4) + 7} fill="transparent" onPress={onPress} />
+    </>
+  );
+}
+
+/** Today's signal mark, with a slow ring going out from it. */
+function TodayMark({ x, y, color }: { x: number; y: number; color: string }) {
+  const motion = useMotion();
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    if (motion === 'still') return;
+    pulse.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false);
+    return () => cancelAnimation(pulse);
+  }, [motion, pulse]);
+
+  const ring = useAnimatedProps(() => ({ r: 3 + pulse.value * 7, strokeOpacity: 0.6 * (1 - pulse.value) }));
+
+  return (
+    <>
+      <AnimatedCircle animatedProps={ring} cx={x} cy={y} stroke={color} strokeWidth={1} fill="none" />
+      <Circle cx={x} cy={y} r={3} fill={color} />
+    </>
   );
 }
 
@@ -229,7 +337,7 @@ function Legend() {
         ))}
       </View>
       <Text variant="mono" tone="soft" style={styles.centreText}>
-        Clockwise from the top: thirty days ago, round to today’s coloured mark.
+        Clockwise from the top: thirty days ago, round to today’s coloured mark. Tap a day to see it.
       </Text>
     </View>
   );
