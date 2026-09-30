@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 
 import { allCheckIns, localDate, type CheckIn } from '../checkIns';
 import { kv } from '../db/kv';
-import { DEFAULT_TIME, nextReminder, syncReminder, usualTime } from '../reminders';
+import { DEFAULT_TIME, nextReminder, quietWhileOpen, sendTestReminder, syncReminder, usualTime } from '../reminders';
 
 jest.mock('../db/kv', () => ({ kv: { get: jest.fn(), set: jest.fn() } }));
 jest.mock('../runtime', () => ({ inExpoGo: false }));
@@ -50,4 +50,27 @@ test('with reminders on, exactly one is scheduled, and it says nothing personal'
   expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
   const [request] = jest.mocked(Notifications.scheduleNotificationAsync).mock.calls[0];
   expect(request.content).toEqual({ title: 'MirrorSpace', body: 'A word for today, if you have one.' });
+});
+
+test('a test reminder arrives in a few seconds, only once reminders are on', async () => {
+  jest.mocked(kv.get).mockResolvedValue('0');
+  expect(await sendTestReminder()).toBe(false);
+  expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+  jest.mocked(kv.get).mockResolvedValue('1');
+  expect(await sendTestReminder()).toBe(true);
+  expect(Notifications.cancelAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
+    content: expect.objectContaining({ data: { test: true } }),
+    trigger: { type: 'timeInterval', seconds: 5, channelId: 'reminders' }
+  });
+});
+
+test('with the app open, only the test reminder shows a banner', async () => {
+  quietWhileOpen();
+  const { handleNotification } = jest.mocked(Notifications.setNotificationHandler).mock.calls[0][0]!;
+  const note = (data: Record<string, unknown>) => ({ request: { content: { data } } }) as never;
+
+  expect((await handleNotification(note({ test: true }))).shouldShowBanner).toBe(true);
+  expect((await handleNotification(note({}))).shouldShowBanner).toBe(false);
 });

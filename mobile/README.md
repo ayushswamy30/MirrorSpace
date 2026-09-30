@@ -56,8 +56,14 @@ scripts/
 
 ## Running it
 
-SQLCipher, and later HealthKit / Health Connect and widgets, are native
-modules that **Expo Go does not include**. You need a development build.
+SQLCipher, reminders (expo-notifications), and Health Connect are native
+modules that **Expo Go does not include** (or that crash it on Android). You
+need a development build. In Expo Go the app still opens, but the database is
+not encrypted (You → Privacy says so) and reminders stay off.
+
+Reminders are local notifications, scheduled on the phone — no push server,
+no token, nothing sent anywhere. Once the dev build is installed: You →
+Notifications → Daily reminder, then **Send a test** to see one arrive.
 
 ```bash
 cd mobile
