@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "712241078913",
+    "project_id": "mirrorspace-4cc0a",
+    "storage_bucket": "mirrorspace-4cc0a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712241078913:android:bf942e5676fae1c66be380",
+        "android_client_info": {
+          "package_name": "app.mirrorspace"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTcmwY--UXxd5OAD0AqSf8gGKrdR58jfI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
