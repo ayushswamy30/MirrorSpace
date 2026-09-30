@@ -24,8 +24,8 @@ const STEP = 15;
 
 export const DEFAULT_TIME = 21 * 60;
 
-/** False in Expo Go: reminders need the app's own build. */
-export const remindersSupported = !inExpoGo;
+/** False in Expo Go and the browser preview: reminders need the app's own build. */
+export const remindersSupported = !inExpoGo && Platform.OS !== 'web';
 
 function notifications(): typeof NotificationsModule | null {
   if (!remindersSupported) return null;
@@ -79,16 +79,41 @@ export async function disableReminders(): Promise<void> {
   await notifications()?.cancelAllScheduledNotificationsAsync();
 }
 
-/** No banner while the app is already open. Called once, at start-up. */
+/**
+ * No banner while the app is already open — except the test reminder, which
+ * is asked for from inside the app and has to be seen to be any use. Called
+ * once, at start-up.
+ */
 export function quietWhileOpen(): void {
   notifications()?.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: false,
-      shouldShowList: false,
-      shouldPlaySound: false,
-      shouldSetBadge: false
-    })
+    handleNotification: async notification => {
+      const show = notification.request.content.data?.test === true;
+      return { shouldShowBanner: show, shouldShowList: show, shouldPlaySound: false, shouldSetBadge: false };
+    }
   });
+}
+
+async function ensureChannel(N: typeof NotificationsModule): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await N.setNotificationChannelAsync(CHANNEL, {
+    name: 'Daily reminder',
+    importance: N.AndroidImportance.DEFAULT
+  });
+}
+
+/**
+ * The same reminder, a few seconds from now, so the person can see what it
+ * looks like and that it arrives. It doesn't touch the scheduled one.
+ */
+export async function sendTestReminder(seconds = 5): Promise<boolean> {
+  const N = notifications();
+  if (!N || !(await remindersEnabled())) return false;
+  await ensureChannel(N);
+  await N.scheduleNotificationAsync({
+    content: { title: 'MirrorSpace', body: 'A word for today, if you have one.', data: { test: true } },
+    trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: CHANNEL }
+  });
+  return true;
 }
 
 /** Replaces whatever is pending with the one right reminder, or none. */
@@ -98,12 +123,7 @@ export async function syncReminder(now: Date = new Date()): Promise<Date | null>
   await N.cancelAllScheduledNotificationsAsync();
   if (!(await remindersEnabled())) return null;
 
-  if (Platform.OS === 'android') {
-    await N.setNotificationChannelAsync(CHANNEL, {
-      name: 'Daily reminder',
-      importance: N.AndroidImportance.DEFAULT
-    });
-  }
+  await ensureChannel(N);
 
   const checkIns = await allCheckIns();
   const at = nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);

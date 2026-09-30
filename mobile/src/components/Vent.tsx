@@ -10,6 +10,7 @@ import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
+import { Art } from './Art';
 import { Row, SectionLabel } from './Blocks';
 import { Button } from './Button';
 import { CareLine } from './CareLine';
@@ -147,6 +148,7 @@ export function Vent() {
 
   return (
     <View style={styles.block}>
+      <Art name="heart" size={96} style={styles.art} />
       <SectionLabel title="vent" rule={false} />
       <Text variant="reading">Put it down here.</Text>
       <Text tone="soft">No one reads this. Keep it, or let it go when you’re done.</Text>
@@ -203,6 +205,7 @@ export function Vent() {
 }
 
 const styles = StyleSheet.create({
+  art: { alignSelf: 'flex-end' },
   block: { gap: space.md },
   sheet: { padding: space.md },
   input: {

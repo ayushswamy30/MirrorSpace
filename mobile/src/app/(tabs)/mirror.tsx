@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { Art } from '@/components/Art';
 import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
@@ -115,7 +116,13 @@ function Room() {
       contentStyle={styles.page}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
-        <ScrollView ref={scroll} contentContainerStyle={styles.feed} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scroll}
+          contentContainerStyle={styles.feed}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Art name="eye" size={84} scheme="dark" style={styles.eye} />
           <Text variant="label" style={[styles.centre, { color: LIGHT }]} accessibilityRole="header">
             welcome to the mirror
           </Text>
@@ -180,7 +187,7 @@ function Room() {
               maxFontSizeMultiplier={2}
               style={[styles.input, { color: LIGHT }]}
             />
-            <VoidLink label="send" onPress={send} disabled={!text.trim() || sending} />
+            <SendButton onPress={send} disabled={!text.trim() || sending} />
           </View>
         )}
       </KeyboardAvoidingView>
@@ -208,6 +215,24 @@ function Closed({ status, onRetry }: { status: MirrorStatus; onRetry: () => void
   );
 }
 
+/** The reference's small light box at the end of the ask bar. */
+function SendButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="send"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.send, { backgroundColor: LIGHT, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 }]}
+    >
+      <Text variant="action" style={{ color: dark.paper }}>
+        send
+      </Text>
+    </Pressable>
+  );
+}
+
 /** Underlined mono capitals in light ink — the room's only kind of control. */
 function VoidLink({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -232,6 +257,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   feed: { paddingHorizontal: gutter, paddingVertical: space.lg, gap: space.lg },
   centre: { textAlign: 'center' },
+  eye: { alignSelf: 'center', marginTop: space.md },
   suggestions: { gap: space.sm, marginTop: space.md },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },
@@ -245,5 +271,14 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm,
     borderTopWidth: StyleSheet.hairlineWidth
   },
-  input: { flex: 1, fontFamily: fonts.mono, fontSize: 13, maxHeight: 120, minHeight: hitTarget }
+  input: {
+    flex: 1,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    maxHeight: 120,
+    minHeight: hitTarget,
+    paddingVertical: space.sm + 4,
+    textAlignVertical: 'center'
+  },
+  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' }
 });

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import * as account from '@/lib/account';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
-import You from '@/app/you';
+import You from '@/app/(tabs)/you';
 
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({ router: { replace: (...a: unknown[]) => mockReplace(...a), back: jest.fn() } }));
@@ -40,6 +40,12 @@ jest.mock('@/lib/session', () => ({
   })
 }));
 
+const mockSaveAppearance = jest.fn();
+jest.mock('@/lib/appearance', () => ({
+  loadAppearance: () => Promise.resolve('system'),
+  saveAppearance: (a: string) => mockSaveAppearance(a)
+}));
+
 const mocked = jest.mocked(account);
 
 function renderYou() {
@@ -60,7 +66,17 @@ beforeEach(() => {
 
 test('shows the day and that there is no account', () => {
   renderYou();
-  expect(screen.getByText('day 1 · no account — this phone only')).toBeTruthy();
+  expect(screen.getByText('day 1')).toBeTruthy();
+  expect(screen.getByText('no account — this phone only')).toBeTruthy();
+});
+
+test('appearance can be set to light, dark, or follow the phone', () => {
+  renderYou();
+  expect(screen.getByRole('tab', { name: 'system' }).props.accessibilityState).toMatchObject({ selected: true });
+
+  fireEvent.press(screen.getByRole('tab', { name: 'dark' }));
+  expect(screen.getByRole('tab', { name: 'dark' }).props.accessibilityState).toMatchObject({ selected: true });
+  expect(mockSaveAppearance).toHaveBeenCalledWith('dark');
 });
 
 test('withdrawing a consent is one switch, sent and re-read', async () => {

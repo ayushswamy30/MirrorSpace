@@ -1,4 +1,5 @@
 import { api, ApiError, NetworkError } from './api';
+import { isPreview } from './preview';
 import { getDatabase } from './db/database';
 
 /**
@@ -28,6 +29,7 @@ export const SUGGESTIONS = [
 ] as const;
 
 export async function mirrorStatus(): Promise<MirrorStatus> {
+  if (isPreview) return { kind: 'open' };
   try {
     const s = await api.get<{ consented: boolean; available: boolean }>('/mirror/status');
     if (!s.consented) return { kind: 'no-consent' };
@@ -47,6 +49,7 @@ export class MirrorUnavailable extends Error {
 
 /** Mirror's answer to the conversation so far (which ends on the person's turn). */
 export async function askMirror(history: readonly MirrorMessage[]): Promise<string> {
+  if (isPreview) return 'This is the browser preview, so nothing was sent anywhere. On the phone, Mirror answers here.';
   const messages = history.slice(-TURNS_SENT).map(m => ({ role: m.role, content: m.content }));
   try {
     const { reply } = await api.post<{ reply: string }>('/mirror/reply', { messages });

@@ -1,6 +1,9 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
+
+import { inExpoGo } from '../runtime';
 
 import { migrate } from './migrations';
 
@@ -14,8 +17,35 @@ import { migrate } from './migrations';
  * device is unlocked and never included in backups or synced to another
  * device. It never leaves the phone, and the server never sees it.
  *
- * SQLCipher needs a development build; it is not in Expo Go.
+ * SQLCipher needs a development build; it is not in Expo Go. There, plain
+ * SQLite quietly ignores the key, so the database is checked after keying:
+ * in MirrorSpace's own build an unencrypted database is refused outright
+ * rather than written to; in Expo Go it opens, and You says it isn't
+ * encrypted.
  */
+
+export type Encryption = { encrypted: true; cipher: string } | { encrypted: false };
+
+let encryption: Encryption | null = null;
+
+/** Whether the open database is SQLCipher-encrypted; null until it has opened. */
+export function databaseEncryption(): Encryption | null {
+  return encryption;
+}
+
+/**
+ * SQLCipher answers `PRAGMA cipher_version`; plain SQLite doesn't know the
+ * pragma and returns nothing.
+ */
+export async function checkEncryption(
+  db: SQLite.SQLiteDatabase,
+  allowPlain: boolean = inExpoGo || Platform.OS === 'web'
+): Promise<Encryption> {
+  const row = await db.getFirstAsync<{ cipher_version: string }>('PRAGMA cipher_version').catch(() => null);
+  if (row?.cipher_version) return { encrypted: true, cipher: row.cipher_version };
+  if (!allowPlain) throw new Error('SQLCipher is not active: refusing to store anything unencrypted.');
+  return { encrypted: false };
+}
 
 const DATABASE_NAME = 'mirrorspace.db';
 const KEY_NAME = 'mirrorspace.db.key.v1';
@@ -44,6 +74,15 @@ async function loadOrCreateKey(): Promise<string> {
 }
 
 async function open(): Promise<SQLite.SQLiteDatabase> {
+  // The browser preview has no keystore and no SQLCipher: it opens plain.
+  if (Platform.OS === 'web') {
+    const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+    encryption = await checkEncryption(db);
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+    await migrate(db);
+    return db;
+  }
+
   const key = await loadOrCreateKey();
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
@@ -51,6 +90,10 @@ async function open(): Promise<SQLite.SQLiteDatabase> {
   // SQLCipher a raw 256-bit key, skipping its passphrase derivation — the key
   // is already random, so stretching it adds nothing.
   await db.execAsync(`PRAGMA key = "x'${key}'";`);
+  encryption = await checkEncryption(db).catch(async error => {
+    await db.closeAsync();
+    throw error;
+  });
 
   // Fails with "file is not a database" if the key is wrong. Surfacing that
   // here beats a confusing error on the first real query.

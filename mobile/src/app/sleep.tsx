@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { SubHeader } from '@/components/Header';
+import { Art } from '@/components/Art';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { localDate } from '@/lib/checkIns';
@@ -58,16 +59,20 @@ export default function Sleep() {
 
   return (
     <Screen edges={['top', 'bottom']} header={<SubHeader title="last night" leading="close" />}>
-      <Text variant="reading">How did you sleep?</Text>
-
-      <View>
-        <Stepper label="went to bed" value={bed} onChange={setBed} />
-        <Stepper label="woke up" value={wake} onChange={setWake} />
+      <View style={{ gap: space.lg }}>
+        <Art name="city" size={180} style={{ alignSelf: 'flex-end' }} />
+        <Text variant="reading">How did you sleep?</Text>
       </View>
 
-      <Text variant="mono" tone="soft" accessibilityLiveRegion="polite">
-        {formatDuration(preview.minutes)}
-      </Text>
+      <View style={{ gap: space.md }}>
+        <View>
+          <Stepper label="went to bed" value={bed} onChange={setBed} />
+          <Stepper label="woke up" value={wake} onChange={setWake} />
+        </View>
+        <Text variant="mono" tone="soft" accessibilityLiveRegion="polite">
+          {formatDuration(preview.minutes)}
+        </Text>
+      </View>
 
       {error && (
         <Text variant="bodyItalic" accessibilityRole="alert">
@@ -75,10 +80,12 @@ export default function Sleep() {
         </Text>
       )}
 
-      <Button label="save" arrow onPress={save} />
-      <Text variant="caption" tone="soft">
-        Kept on this phone. With readings on, Today looks for how your nights and days go together.
-      </Text>
+      <View style={{ gap: space.md }}>
+        <Button label="save" arrow onPress={save} />
+        <Text variant="caption" tone="soft">
+          Kept on this phone. With readings on, Today looks for how your nights and days go together.
+        </Text>
+      </View>
     </Screen>
   );
 }

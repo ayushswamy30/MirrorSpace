@@ -1,6 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, Platform, type AppStateStatus } from 'react-native';
 
 import { kv } from './db/kv';
 
@@ -101,7 +101,9 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ enabled, locked, covered: covered || !settled, unlock, setEnabled }),
+    // The browser preview has no app switcher to hide from, and a tab that
+    // isn't focused would otherwise stay covered.
+    () => ({ enabled, locked, covered: Platform.OS !== 'web' && (covered || !settled), unlock, setEnabled }),
     [enabled, locked, covered, settled, unlock, setEnabled]
   );
 

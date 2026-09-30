@@ -19,7 +19,7 @@ jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: jest.fn(() => Promise.resolve('id')),
   setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
   AndroidImportance: { DEFAULT: 3 },
-  SchedulableTriggerInputTypes: { DATE: 'date' }
+  SchedulableTriggerInputTypes: { DATE: 'date', TIME_INTERVAL: 'timeInterval' }
 }));
 
 // Reanimated 4 runs animations on a worklets runtime that doesn't exist in

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Easing, FadeIn, FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
 
 /**
@@ -15,6 +16,9 @@ export const breathEasing = Easing.bezier(0.37, 0, 0.63, 1);
 
 export function useEntering(delay = 0) {
   const reduced = useReducedMotion();
+  // On web, Reanimated leaves an entering view absolutely positioned, so it
+  // lands on top of what follows. The browser preview simply doesn't animate.
+  if (Platform.OS === 'web') return undefined;
   if (reduced) {
     return FadeIn.duration(duration.settle).delay(delay);
   }
