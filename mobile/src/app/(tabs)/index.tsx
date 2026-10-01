@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -7,6 +7,7 @@ import { artOfTheDay } from '@/components/Art';
 import { DoDont, EndMark, Lede, Row, Section } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { AppHeader, shortDate } from '@/components/Header';
+import { LetterSync } from '@/components/LetterSync';
 import { Loader } from '@/components/Loader';
 import { Glance, LowDay } from '@/components/LowDay';
 import { Screen } from '@/components/Screen';
@@ -15,6 +16,7 @@ import { Text } from '@/components/Text';
 import { ArtRule, DateControl, FloatingDisc, WeatherMark, WeekStrip, sameDay } from '@/components/TodayParts';
 import { addDays, startOfDay, useDayRecord, useDays, weekMarks, weekOf, type DayRecord } from '@/lib/days';
 import { glance, isLowDay, type AreaReading } from '@/lib/glance';
+import { listLetters, type Letter } from '@/lib/letters';
 import { usePreferences } from '@/lib/preferences';
 import { clockOf, formatClock, formatDuration } from '@/lib/sleep';
 import { useToday } from '@/lib/useToday';
@@ -53,6 +55,13 @@ export default function Today() {
   const [wholeDay, setWholeDay] = useState(false);
   const { lowDay: lowDayMode } = usePreferences();
   const record = useDayRecord(selected, days);
+  const [letters, setLetters] = useState<Letter[]>([]);
+  const loadLetters = useCallback(() => {
+    listLetters()
+      .then(all => setLetters(all.filter(l => l.deliveredAt && !l.openedAt)))
+      .catch(() => undefined);
+  }, []);
+  useEffect(loadLetters, [loadLetters]);
   const content = useEntering();
 
   const week = weekOf(selected, weekStart);
@@ -71,6 +80,7 @@ export default function Today() {
 
   return (
     <Screen header={header}>
+      <LetterSync onDelivered={loadLetters} />
       {open && (
         <WeekStrip
           days={week}
@@ -91,7 +101,7 @@ export default function Today() {
           lowDayMode && !wholeDay && days && isLowDay(days.checkIns) ? (
             <LowDay onShowDay={() => setWholeDay(true)} />
           ) : (
-            <TodayPage data={data} areas={days ? glance(days.checkIns, days.sleep) : null} />
+            <TodayPage data={data} areas={days ? glance(days.checkIns, days.sleep) : null} letters={letters} />
           )
         ) : record ? <PastDay record={record} onToday={() => setSelected(startOfDay(new Date()))} /> : <Loader />}
       </Animated.View>
@@ -99,7 +109,15 @@ export default function Today() {
   );
 }
 
-function TodayPage({ data, areas }: { data: NonNullable<ReturnType<typeof useToday>>; areas: AreaReading[] | null }) {
+function TodayPage({
+  data,
+  areas,
+  letters
+}: {
+  data: NonNullable<ReturnType<typeof useToday>>;
+  areas: AreaReading[] | null;
+  letters: Letter[];
+}) {
   const { signal } = useTheme();
   const { picture, weekStart } = usePreferences();
   const { reading, facts, weather, checkedInToday, lastNight } = data;
@@ -127,6 +145,19 @@ function TodayPage({ data, areas }: { data: NonNullable<ReturnType<typeof useTod
           <Button label="check in" arrow onPress={() => router.navigate('/check-in')} style={styles.cta} />
         )}
       </View>
+
+      {letters.length > 0 && (
+        <Section title="a letter from you">
+          {letters.map(l => (
+            <Row
+              key={l.id}
+              title={`Written ${new Date(l.createdAt).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}`}
+              subtitle="its day has come"
+              onPress={() => router.navigate(`/check-in?mode=letter&open=${l.id}`)}
+            />
+          ))}
+        </Section>
+      )}
 
       {/* The week's last day offers its reflection, as the reference's long read. */}
       {isWeekEnd(new Date(), weekStart) && (
