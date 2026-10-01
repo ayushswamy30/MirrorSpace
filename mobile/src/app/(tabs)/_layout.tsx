@@ -1,4 +1,5 @@
 import { Redirect, router } from 'expo-router';
+import { View } from 'react-native';
 import { Tabs } from 'expo-router/tabs';
 
 import { Button } from '@/components/Button';
@@ -17,7 +18,16 @@ export default function TabsLayout() {
   const session = useSession();
 
   if (session.status === 'loading') {
-    return <Loader fill size={72} label="Opening your space" />;
+    return (
+      <View style={{ flex: 1 }}>
+        <Loader fill size={72} label={session.waking ? 'Waking up' : 'Opening your space'} />
+        {session.waking && (
+          <Text variant="mono" tone="soft" style={{ position: 'absolute', bottom: 120, left: 0, right: 0, textAlign: 'center' }}>
+            Waking up — the first open can take a moment.
+          </Text>
+        )}
+      </View>
+    );
   }
 
   if (session.status === 'error') {
