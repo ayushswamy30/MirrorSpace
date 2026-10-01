@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { api, ApiError } from './api';
+import { api, ApiError, NetworkError } from './api';
 import type { ConsentPurpose } from './consent';
 import { kv } from './db/kv';
 import { isPreview, previewProfile, seedPreview } from './preview';
@@ -39,7 +39,7 @@ export function needsOnboarding(profile: Profile): boolean {
 }
 
 type SessionState =
-  | { status: 'loading' }
+  | { status: 'loading'; /** The server is slow to answer: probably waking from sleep. */ waking?: boolean }
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: Profile; offline: boolean };
 
@@ -67,6 +67,33 @@ async function fetchProfile(): Promise<Profile> {
   return profile;
 }
 
+/**
+ * The hosted API sleeps when nobody has used it for a while and takes up to
+ * a minute to wake. A request that times out still wakes it, so a first open
+ * keeps trying for about that long before saying anything is wrong.
+ */
+const WAKE_DELAYS_MS = [3000, 6000, 10000, 15000];
+
+function asleep(error: unknown): boolean {
+  return error instanceof NetworkError || (error instanceof ApiError && [502, 503, 504].includes(error.status));
+}
+
+export async function withWakeRetries<T>(
+  run: () => Promise<T>,
+  onWaking: () => void,
+  wait: (ms: number) => Promise<void> = ms => new Promise(r => setTimeout(r, ms))
+): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await run();
+    } catch (error) {
+      if (!asleep(error) || i >= WAKE_DELAYS_MS.length) throw error;
+      onWaking();
+      await wait(WAKE_DELAYS_MS[i]);
+    }
+  }
+}
+
 async function cachedProfile(): Promise<Profile | null> {
   const raw = await kv.get(PROFILE_CACHE_KEY);
   if (!raw) return null;
@@ -92,7 +119,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
       try {
         await ensureSession();
-        const profile = await fetchProfile();
+        // With a profile already on the phone, open on it rather than wait
+        // for a sleeping server; otherwise, give the server time to wake.
+        const cachedFirst = await cachedProfile().catch(() => null);
+        const profile = cachedFirst
+          ? await fetchProfile()
+          : await withWakeRetries(fetchProfile, () => {
+              if (!cancelled) setState({ status: 'loading', waking: true });
+            });
         if (!cancelled) setState({ status: 'ready', profile, offline: false });
       } catch (error) {
         // A 401 means the stored session is dead (e.g. the account was erased
