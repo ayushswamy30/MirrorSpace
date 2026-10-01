@@ -24,12 +24,13 @@ export default function Search() {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<Hit[] | null>(null);
 
+  const searching = query.trim().length >= 2;
+  // Too short to search shows nothing — derived, not stored.
+  const shown = searching ? hits : null;
+
   // Searches a moment after typing stops.
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setHits(null);
-      return;
-    }
+    if (!searching) return;
     let cancelled = false;
     const id = setTimeout(() => {
       search(query)
@@ -42,7 +43,7 @@ export default function Search() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [query]);
+  }, [query, searching]);
 
   return (
     <Screen edges={['top', 'bottom']} header={<SubHeader title="search" leading="close" />}>
@@ -63,11 +64,11 @@ export default function Search() {
         </Text>
       </View>
 
-      {hits && hits.length === 0 && <Text tone="soft">{`Nothing written with “${query.trim()}” yet.`}</Text>}
+      {shown && shown.length === 0 && <Text tone="soft">{`Nothing written with “${query.trim()}” yet.`}</Text>}
 
-      {hits && hits.length > 0 && (
+      {shown && shown.length > 0 && (
         <View>
-          {hits.map(hit => (
+          {shown.map(hit => (
             <Row
               key={hit.id}
               title={hit.snippet}
