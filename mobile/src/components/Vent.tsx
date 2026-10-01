@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -28,7 +28,7 @@ import { Text } from './Text';
 type Stage =
   | { kind: 'write' }
   | { kind: 'confirm-let-go' }
-  | { kind: 'done'; kept: boolean; care: boolean }
+  | { kind: 'done'; kept: boolean; care: boolean; reflecting?: boolean }
   | { kind: 'read'; page: VentPage; confirmDelete: boolean };
 
 const DRAFT_DELAY_MS = 700;
@@ -51,7 +51,6 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
   const [text, setText] = useState('');
   const [pages, setPages] = useState<VentPage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const lastKept = useRef('');
 
   const refresh = useCallback(() => {
     listVents()
@@ -79,7 +78,6 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
 
   const keep = async () => {
     const tier = screenText(text);
-    lastKept.current = text;
     try {
       const kept = await keepVent(text);
       if (reflections) requestReflection(kept.id, kept.body).then(refresh).catch(() => undefined);
@@ -90,7 +88,7 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
     }
     setText('');
     setError(null);
-    setView({ kind: 'done', kept: true, care: tier !== 'none' });
+    setView({ kind: 'done', kept: true, care: tier !== 'none', reflecting: reflections && mayReflect(text) });
     answerConcern(tier, 'vent');
     refresh();
   };
@@ -111,7 +109,7 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
         <Text tone="soft">
           {view.kept ? 'On this phone, and nowhere else.' : 'Nothing was saved, anywhere.'}
         </Text>
-        {view.kept && reflections && mayReflect(lastKept.current) && (
+        {view.reflecting && (
           <Text variant="bodyItalic">A quiet reflection on it will be here in a few hours.</Text>
         )}
         {view.care && <CareLine />}
