@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import { mayReflect, requestReflection, visibleReflection } from '@/lib/reflections';
 import { answerConcern } from '@/lib/safety/respond';
 import { screenText } from '@/lib/safety/screen';
 import { deleteVent, draft, firstLine, keepVent, listVents, type Vent as VentPage } from '@/lib/vents';
@@ -42,13 +43,15 @@ function pageDate(page: VentPage): string {
   });
 }
 
-export function Vent() {
+/** `reflections`: the AI-reflections consent is on; a kept page is sent once for one. */
+export function Vent({ reflections = false }: { reflections?: boolean }) {
   const { colors } = useTheme();
   const entering = useEntering();
   const [view, setView] = useState<Stage>({ kind: 'write' });
   const [text, setText] = useState('');
   const [pages, setPages] = useState<VentPage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const lastKept = useRef('');
 
   const refresh = useCallback(() => {
     listVents()
@@ -76,8 +79,10 @@ export function Vent() {
 
   const keep = async () => {
     const tier = screenText(text);
+    lastKept.current = text;
     try {
-      await keepVent(text);
+      const kept = await keepVent(text);
+      if (reflections) requestReflection(kept.id, kept.body).then(refresh).catch(() => undefined);
     } catch (err) {
       console.error('Vent save failed:', err);
       setError('That didn’t save. Your words are still here — try again.');
@@ -106,6 +111,9 @@ export function Vent() {
         <Text tone="soft">
           {view.kept ? 'On this phone, and nowhere else.' : 'Nothing was saved, anywhere.'}
         </Text>
+        {view.kept && reflections && mayReflect(lastKept.current) && (
+          <Text variant="bodyItalic">A quiet reflection on it will be here in a few hours.</Text>
+        )}
         {view.care && <CareLine />}
         <Button kind="link" label="write another" onPress={() => setView({ kind: 'write' })} />
       </Animated.View>
@@ -114,10 +122,24 @@ export function Vent() {
 
   if (view.kind === 'read') {
     const { page, confirmDelete } = view;
+    const later = visibleReflection({ reflection: page.reflection ?? null, reflectionAt: page.reflectionAt ?? null });
     return (
       <View style={styles.block}>
         <SectionLabel title={pageDate(page)} />
         <Text>{page.body}</Text>
+        {later.text && (
+          <View style={[styles.sheet, { backgroundColor: colors.tint }]}>
+            <Text variant="label" tone="soft">
+              hours later
+            </Text>
+            <Text variant="bodyItalic">{later.text}</Text>
+          </View>
+        )}
+        {later.waitingUntil && (
+          <Text variant="mono" tone="soft">
+            {`a reflection arrives around ${later.waitingUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+          </Text>
+        )}
         {confirmDelete ? (
           <View style={styles.block}>
             <Text tone="soft">Delete this page? It can’t be brought back.</Text>
@@ -194,7 +216,11 @@ export function Vent() {
             <Row
               key={page.id}
               title={firstLine(page.body)}
-              subtitle={pageDate(page)}
+              subtitle={
+                visibleReflection({ reflection: page.reflection ?? null, reflectionAt: page.reflectionAt ?? null }).text
+                  ? `${pageDate(page)} · a reflection is waiting`
+                  : pageDate(page)
+              }
               onPress={() => setView({ kind: 'read', page, confirmDelete: false })}
             />
           ))}

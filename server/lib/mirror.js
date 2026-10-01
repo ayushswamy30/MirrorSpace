@@ -41,3 +41,13 @@ export function parseTurns(messages) {
   }
   return turns;
 }
+
+/** A vent page sent for a delayed reflection: one page of text, nothing else. */
+export const MAX_PAGE_CHARS = 8000;
+
+export function parsePage(body) {
+  const text = body?.text;
+  if (typeof text !== 'string' || text.trim().length === 0) throw new MirrorValidationError('text is required');
+  if (text.length > MAX_PAGE_CHARS) throw new MirrorValidationError('that page is longer than a reflection can hold');
+  return text.trim();
+}

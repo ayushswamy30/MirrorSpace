@@ -29,6 +29,7 @@ import {
 import { QUADRANTS, findEmotion, wordsNearestFirst, type Emotion, type Quadrant } from '@/lib/emotions';
 import { answerConcern } from '@/lib/safety/respond';
 import { higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
+import { useProfile } from '@/lib/session';
 import { useEntering } from '@/theme/motion';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -69,6 +70,7 @@ function lastLine(checkIn: CheckInRecord, now: Date): string {
 }
 
 export default function CheckIn() {
+  const profile = useProfile();
   const { colors } = useTheme();
   // Today's "write something down" arrives with ?mode=vent.
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -164,7 +166,7 @@ export default function CheckIn() {
     return (
       <Screen header={<AppHeader />}>
         <Segmented options={MODES} value={mode} onChange={setMode} />
-        <Vent />
+        <Vent reflections={profile.consents.ai_reflections?.granted === true} />
       </Screen>
     );
   }
