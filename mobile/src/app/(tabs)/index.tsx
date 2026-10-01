@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -39,6 +39,16 @@ export default function Today() {
   const { weekStart } = usePreferences();
   const [selected, setSelected] = useState(() => startOfDay(new Date()));
   const [open, setOpen] = useState(false);
+  // Search (and anything else) can open a particular day: /?day=YYYY-MM-DD.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+  const [seenDay, setSeenDay] = useState<string | undefined>(undefined);
+  if (day !== seenDay) {
+    setSeenDay(day);
+    if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
+      setSelected(startOfDay(new Date(`${day}T12:00:00`)));
+      setOpen(true);
+    }
+  }
   // Low-day mode stays out of the way once the person asks for the whole day.
   const [wholeDay, setWholeDay] = useState(false);
   const { lowDay: lowDayMode } = usePreferences();

@@ -8,7 +8,8 @@ import Today from '@/app/(tabs)/index';
 const mockNavigate = jest.fn();
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: (...a: unknown[]) => mockPush(...a) }
+  router: { navigate: (...a: unknown[]) => mockNavigate(...a), push: (...a: unknown[]) => mockPush(...a) },
+  useLocalSearchParams: () => ({})
 }));
 const mockAllSleep = jest.fn();
 jest.mock('@/lib/sleep', () => ({
