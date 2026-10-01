@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import { allCheckIns } from '@/lib/checkIns';
+import { composePage, dailyPrompt, TEMPLATES, type PageKind, type Prompt } from '@/lib/prompts';
 import { mayReflect, requestReflection, visibleReflection } from '@/lib/reflections';
 import { answerConcern } from '@/lib/safety/respond';
 import { screenText } from '@/lib/safety/screen';
@@ -12,7 +14,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
 import { Art } from './Art';
-import { Row, SectionLabel } from './Blocks';
+import { Row, SectionLabel, Segmented } from './Blocks';
 import { Button } from './Button';
 import { CareLine } from './CareLine';
 import { Text } from './Text';
@@ -33,6 +35,9 @@ type Stage =
 
 const DRAFT_DELAY_MS = 700;
 
+const KINDS = TEMPLATES.map(t => ({ key: t.kind, label: t.label }));
+const KIND_LABEL = Object.fromEntries(TEMPLATES.map(t => [t.kind, t.label])) as Record<PageKind, string>;
+
 function pageDate(page: VentPage): string {
   return new Date(page.createdAt).toLocaleString([], {
     weekday: 'short',
@@ -49,7 +54,13 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
   const entering = useEntering();
   const [view, setView] = useState<Stage>({ kind: 'write' });
   const [text, setText] = useState('');
+  const [kind, setKind] = useState<PageKind>('page');
+  const [lines, setLines] = useState(['', '', '']);
+  const [to, setTo] = useState('');
+  const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [pages, setPages] = useState<VentPage[]>([]);
+  const template = TEMPLATES.find(t => t.kind === kind)!;
+  const composed = composePage(template, { text, lines, to });
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
@@ -65,6 +76,9 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
         if (saved) setText(t => t || saved);
       })
       .catch(() => undefined);
+    allCheckIns()
+      .then(checkIns => setPrompt(dailyPrompt(checkIns)))
+      .catch(() => setPrompt(dailyPrompt([])));
     refresh();
   }, [refresh]);
 
@@ -76,27 +90,34 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
     return () => clearTimeout(id);
   }, [text]);
 
+  const clear = () => {
+    setText('');
+    setLines(['', '', '']);
+    setTo('');
+  };
+
   const keep = async () => {
-    const tier = screenText(text);
+    const tier = screenText(composed);
     try {
-      const kept = await keepVent(text);
+      const kept = await keepVent(composed, new Date(), kind);
       if (reflections) requestReflection(kept.id, kept.body).then(refresh).catch(() => undefined);
     } catch (err) {
       console.error('Vent save failed:', err);
       setError('That didn’t save. Your words are still here — try again.');
       return;
     }
-    setText('');
+    clear();
+    draft.clear().catch(() => undefined);
     setError(null);
-    setView({ kind: 'done', kept: true, care: tier !== 'none', reflecting: reflections && mayReflect(text) });
+    setView({ kind: 'done', kept: true, care: tier !== 'none', reflecting: reflections && mayReflect(composed) });
     answerConcern(tier, 'vent');
     refresh();
   };
 
   const letGo = () => {
-    const tier = screenText(text);
+    const tier = screenText(composed);
     draft.clear().catch(() => undefined);
-    setText('');
+    clear();
     setView({ kind: 'done', kept: false, care: tier !== 'none' });
     answerConcern(tier, 'vent');
   };
@@ -164,7 +185,8 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
     );
   }
 
-  const empty = text.trim().length === 0;
+  const empty = composed.length === 0;
+  const sheetInput = [styles.input, { color: colors.ink }];
 
   return (
     <View style={styles.block}>
@@ -173,17 +195,65 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
       <Text variant="reading">Put it down here.</Text>
       <Text tone="soft">No one reads this. Keep it, or let it go when you’re done.</Text>
 
+      <Segmented options={KINDS} value={kind} onChange={setKind} bleed={false} />
+
+      {/* The question the sheet asks: today's prompt, or the template's own. */}
+      {kind === 'page' ? (
+        prompt && (
+          <View style={styles.prompt}>
+            <Text variant="bodyItalic">{prompt.text}</Text>
+            <Text variant="mono" tone="soft">
+              {prompt.because}
+            </Text>
+          </View>
+        )
+      ) : (
+        <Text variant="bodyItalic">{template.prompt}</Text>
+      )}
+
       <View style={[styles.sheet, { backgroundColor: colors.tint }]}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="start anywhere"
-          placeholderTextColor={colors.inkSoft}
-          accessibilityLabel="vent page"
-          multiline
-          maxFontSizeMultiplier={2}
-          style={[styles.input, { color: colors.ink }]}
-        />
+        {template.lines ? (
+          lines.map((line, i) => (
+            <View key={i} style={styles.line}>
+              <Text variant="heading">{`${i + 1}.`}</Text>
+              <TextInput
+                value={line}
+                onChangeText={t => setLines(ls => ls.map((l, j) => (j === i ? t : l)))}
+                accessibilityLabel={`good thing ${i + 1}`}
+                placeholderTextColor={colors.inkSoft}
+                maxFontSizeMultiplier={2}
+                style={[sheetInput, styles.lineInput]}
+              />
+            </View>
+          ))
+        ) : (
+          <>
+            {template.salutation && (
+              <View style={styles.line}>
+                <Text variant="heading">Dear</Text>
+                <TextInput
+                  value={to}
+                  onChangeText={setTo}
+                  placeholder="whoever it is"
+                  placeholderTextColor={colors.inkSoft}
+                  accessibilityLabel="who the letter is to"
+                  maxFontSizeMultiplier={2}
+                  style={[sheetInput, styles.lineInput]}
+                />
+              </View>
+            )}
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder={template.placeholder}
+              placeholderTextColor={colors.inkSoft}
+              accessibilityLabel="vent page"
+              multiline
+              maxFontSizeMultiplier={2}
+              style={sheetInput}
+            />
+          </>
+        )}
       </View>
 
       {error && (
@@ -214,11 +284,15 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
             <Row
               key={page.id}
               title={firstLine(page.body)}
-              subtitle={
+              subtitle={[
+                page.kind && page.kind !== 'page' ? KIND_LABEL[page.kind] : null,
+                pageDate(page),
                 visibleReflection({ reflection: page.reflection ?? null, reflectionAt: page.reflectionAt ?? null }).text
-                  ? `${pageDate(page)} · a reflection is waiting`
-                  : pageDate(page)
-              }
+                  ? 'a reflection is waiting'
+                  : null
+              ]
+                .filter(Boolean)
+                .join(' · ')}
               onPress={() => setView({ kind: 'read', page, confirmDelete: false })}
             />
           ))}
@@ -231,7 +305,10 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
 const styles = StyleSheet.create({
   art: { alignSelf: 'flex-end' },
   block: { gap: space.md },
-  sheet: { padding: space.md },
+  sheet: { padding: space.md, gap: space.sm },
+  prompt: { gap: space.xs },
+  line: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  lineInput: { flex: 1, minHeight: 0 },
   input: {
     fontFamily: fonts.sans,
     fontSize: 15,
