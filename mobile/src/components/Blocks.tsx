@@ -156,12 +156,21 @@ export function Row({ title, subtitle, leading, onPress, accessibilityHint, arro
 }
 
 /** Two columns, a small grey mono heading over serif items. */
-export function DoDont({ dos, donts }: { dos: readonly string[]; donts: readonly string[] }) {
+export function DoDont({
+  dos,
+  donts,
+  titles = ['Do', 'Don’t']
+}: {
+  dos: readonly string[];
+  donts: readonly string[];
+  /** The two small headings; the week uses "lightest" and "heaviest". */
+  titles?: [string, string];
+}) {
   return (
     <View style={styles.doDont}>
       {[
-        { title: 'Do', items: dos },
-        { title: 'Don’t', items: donts }
+        { title: titles[0], items: dos },
+        { title: titles[1], items: donts }
       ].map(col => (
         <View key={col.title} style={styles.column} accessible accessibilityLabel={`${col.title}: ${col.items.join(', ')}`}>
           <Text variant="mono" tone="soft">
