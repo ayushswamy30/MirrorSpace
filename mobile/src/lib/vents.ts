@@ -16,14 +16,31 @@ export type Vent = {
   createdAt: string;
   localDate: string;
   body: string;
+  /** The delayed reflection, once it has come back (shown from `reflectionAt`). */
+  reflection?: string | null;
+  reflectionAt?: string | null;
 };
 
-type Row = { id: string; created_at: string; local_date: string; body: string };
+type Row = {
+  id: string;
+  created_at: string;
+  local_date: string;
+  body: string;
+  reflection?: string | null;
+  reflection_at?: string | null;
+};
 
 const DRAFT_KEY = 'vent.draft';
 
 function fromRow(row: Row): Vent {
-  return { id: row.id, createdAt: row.created_at, localDate: row.local_date, body: row.body };
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    localDate: row.local_date,
+    body: row.body,
+    reflection: row.reflection ?? null,
+    reflectionAt: row.reflection_at ?? null
+  };
 }
 
 export async function keepVent(body: string, now: Date = new Date()): Promise<Vent> {
