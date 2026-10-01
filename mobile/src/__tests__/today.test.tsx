@@ -90,6 +90,8 @@ test('a low, heavy few days read as fog, with the facts behind it', async () => 
   mocked.allCheckIns.mockResolvedValue([checkIn(30, -4, -4), checkIn(20, -3, -3), checkIn(0, -4, -3)]);
   await renderToday();
 
+  // Heavy days open on the gentle screen; the whole day is one tap away.
+  fireEvent.press(screen.getByRole('button', { name: 'show the whole day' }));
   expect(screen.getByText('Small steps count.')).toBeTruthy();
   expect(screen.getByText('fog')).toBeTruthy();
   expect(screen.getByText('behind this reading')).toBeTruthy();
@@ -104,6 +106,7 @@ test('readings consent off: the same check-ins give the general reading', async 
   mocked.allCheckIns.mockResolvedValue([checkIn(30, -4, -4), checkIn(20, -3, -3), checkIn(0, -4, -3)]);
   await renderToday();
 
+  fireEvent.press(screen.getByRole('button', { name: 'show the whole day' }));
   expect(screen.getByText('Notice one thing today.')).toBeTruthy();
   expect(screen.queryByText('fog')).toBeNull();
 });
@@ -146,4 +149,23 @@ test('TODAY opens the week, and an earlier day shows what was written then', asy
   expect(screen.getByText('“the walk helped”')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'back to today' }));
   expect(screen.getByText('The end')).toBeTruthy();
+});
+
+test('after heavy days, Today asks for nothing: breathe, check in, or just be here', async () => {
+  mocked.allCheckIns.mockResolvedValue([checkIn(30, -4, -4), checkIn(20, -3, -3), checkIn(0, -4, -3)]);
+  await renderToday();
+
+  expect(screen.getByText('Just this, for now.')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: /^Breathe:/ }));
+  expect(mockPush).toHaveBeenCalledWith('/calm');
+  fireEvent.press(screen.getByRole('button', { name: /^Just be here:/ }));
+  expect(screen.getByText('You don’t have to do anything.')).toBeTruthy();
+});
+
+test('an ordinary day shows the day by area, each with its receipt', async () => {
+  mocked.allCheckIns.mockResolvedValue([checkIn(1, 2, 3)]);
+  await renderToday();
+  expect(screen.getByText('by area')).toBeTruthy();
+  expect(screen.getByLabelText(/^mind: \d of 5\. how 1 check-in felt/)).toBeTruthy();
+  expect(screen.getByLabelText(/^focus: not enough yet\. tag work or study/)).toBeTruthy();
 });
