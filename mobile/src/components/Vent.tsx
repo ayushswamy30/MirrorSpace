@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -280,6 +281,7 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
       {pages.length > 0 && (
         <View style={styles.pages}>
           <SectionLabel title="kept pages" />
+          <Button kind="link" label="search everything you’ve written" onPress={() => router.push('/search')} />
           {pages.map(page => (
             <Row
               key={page.id}
