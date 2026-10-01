@@ -10,6 +10,7 @@ import { AppHeader, shortDate } from '@/components/Header';
 import { Loader } from '@/components/Loader';
 import { Glance, LowDay } from '@/components/LowDay';
 import { Screen } from '@/components/Screen';
+import { ReadingCard, ShareButton } from '@/components/ShareCard';
 import { Text } from '@/components/Text';
 import { ArtRule, DateControl, FloatingDisc, WeatherMark, WeekStrip, sameDay } from '@/components/TodayParts';
 import { addDays, startOfDay, useDayRecord, useDays, weekMarks, weekOf, type DayRecord } from '@/lib/days';
@@ -108,6 +109,10 @@ function TodayPage({ data, areas }: { data: NonNullable<ReturnType<typeof useTod
 
       <View style={styles.block}>
         <DoDont dos={reading.dos} donts={reading.donts} />
+        <ShareButton
+          label="share today’s reading"
+          card={<ReadingCard reading={reading} art={picture === 'daily' ? artOfTheDay() : picture} date={shortDate()} />}
+        />
         {!checkedInToday && (
           <Button label="check in" arrow onPress={() => router.navigate('/check-in')} style={styles.cta} />
         )}

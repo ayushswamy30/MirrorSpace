@@ -18,6 +18,7 @@ import { Button } from '@/components/Button';
 import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
+import { MonthCard, ShareButton } from '@/components/ShareCard';
 import { Text } from '@/components/Text';
 import {
   dailyWeather,
@@ -127,6 +128,7 @@ function ChartPage() {
       <Section title="weather, day by day">
         <Wheel days={days} centre={mostly?.weather ?? null} wordsOn={wordsOn} />
         <Legend />
+        <ShareButton label="share the month" card={<MonthCard days={days} mostly={mostly?.weather ?? null} />} />
       </Section>
 
       <Art name="beetle" size={128} style={styles.margin} />
