@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -13,6 +14,7 @@ import Svg, { Circle, Line } from 'react-native-svg';
 
 import { Art } from '@/components/Art';
 import { Box, Lede, Section } from '@/components/Blocks';
+import { Button } from '@/components/Button';
 import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
@@ -113,6 +115,7 @@ function ChartPage() {
 
   return (
     <Screen header={<AppHeader />}>
+      <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">
           {mostly

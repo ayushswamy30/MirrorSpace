@@ -17,6 +17,7 @@ import { glance, isLowDay, type AreaReading } from '@/lib/glance';
 import { usePreferences } from '@/lib/preferences';
 import { clockOf, formatClock, formatDuration } from '@/lib/sleep';
 import { useToday } from '@/lib/useToday';
+import { isWeekEnd } from '@/lib/week';
 import { firstLine } from '@/lib/vents';
 import { useEntering } from '@/theme/motion';
 import { space } from '@/theme/tokens';
@@ -89,7 +90,7 @@ export default function Today() {
 
 function TodayPage({ data, areas }: { data: NonNullable<ReturnType<typeof useToday>>; areas: AreaReading[] | null }) {
   const { signal } = useTheme();
-  const { picture } = usePreferences();
+  const { picture, weekStart } = usePreferences();
   const { reading, facts, weather, checkedInToday, lastNight } = data;
   const receipts = facts.slice(0, 3);
 
@@ -111,6 +112,13 @@ function TodayPage({ data, areas }: { data: NonNullable<ReturnType<typeof useTod
           <Button label="check in" arrow onPress={() => router.navigate('/check-in')} style={styles.cta} />
         )}
       </View>
+
+      {/* The week's last day offers its reflection, as the reference's long read. */}
+      {isWeekEnd(new Date(), weekStart) && (
+        <Section title="this week">
+          <Row title="Your week in reflection" subtitle="seven days, laid out" onPress={() => router.push('/week')} />
+        </Section>
+      )}
 
       {areas && (
         <Section title="by area">
