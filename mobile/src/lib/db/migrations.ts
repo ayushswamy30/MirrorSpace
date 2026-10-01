@@ -81,7 +81,19 @@ export const migrations: readonly string[] = [
 
   // 9 — what shape a page was written in: a free page, or a guided one.
   `ALTER TABLE vents ADD COLUMN kind TEXT NOT NULL DEFAULT 'page'
-     CHECK (kind IN ('page', 'worry', 'thanks', 'unsent'));`
+     CHECK (kind IN ('page', 'worry', 'thanks', 'unsent'));`,
+
+  // 10 — letters to future self. Sealed until deliver_at; a heavy stretch
+  // moves deliver_at on by a week.
+  `CREATE TABLE letters (
+     id           TEXT PRIMARY KEY,
+     created_at   TEXT NOT NULL,
+     body         TEXT NOT NULL,
+     deliver_at   TEXT NOT NULL,
+     delivered_at TEXT,
+     opened_at    TEXT
+   );
+   CREATE INDEX letters_deliver_at_idx ON letters (deliver_at);`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

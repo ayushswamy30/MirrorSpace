@@ -17,6 +17,7 @@ jest.mock('@/lib/sleep', () => ({
   allSleep: () => mockAllSleep(),
   onSleepChanged: () => () => undefined
 }));
+jest.mock('@/lib/letters', () => ({ listLetters: () => Promise.resolve([]), deliverDue: () => Promise.resolve([]) }));
 jest.mock('@/lib/vents', () => ({
   ...jest.requireActual('@/lib/vents'),
   listVents: () => Promise.resolve([])
