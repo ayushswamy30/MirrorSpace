@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { localDate } from './checkIns';
 import { getDatabase } from './db/database';
 import { kv } from './db/kv';
+import type { PageKind } from './prompts';
 
 /**
  * Vent (report §5, §7): a blank page, then "keep" or "let go". Kept pages live
@@ -16,6 +17,8 @@ export type Vent = {
   createdAt: string;
   localDate: string;
   body: string;
+  /** A free page, or one of the guided shapes. */
+  kind?: PageKind;
   /** The delayed reflection, once it has come back (shown from `reflectionAt`). */
   reflection?: string | null;
   reflectionAt?: string | null;
@@ -26,6 +29,7 @@ type Row = {
   created_at: string;
   local_date: string;
   body: string;
+  kind?: PageKind;
   reflection?: string | null;
   reflection_at?: string | null;
 };
@@ -38,25 +42,28 @@ function fromRow(row: Row): Vent {
     createdAt: row.created_at,
     localDate: row.local_date,
     body: row.body,
+    kind: row.kind ?? 'page',
     reflection: row.reflection ?? null,
     reflectionAt: row.reflection_at ?? null
   };
 }
 
-export async function keepVent(body: string, now: Date = new Date()): Promise<Vent> {
+export async function keepVent(body: string, now: Date = new Date(), kind: PageKind = 'page'): Promise<Vent> {
   const vent: Vent = {
     id: Crypto.randomUUID(),
     createdAt: now.toISOString(),
     localDate: localDate(now),
-    body: body.trim()
+    body: body.trim(),
+    kind
   };
   const db = await getDatabase();
   await db.runAsync(
-    'INSERT INTO vents (id, created_at, local_date, body) VALUES (?, ?, ?, ?)',
+    'INSERT INTO vents (id, created_at, local_date, body, kind) VALUES (?, ?, ?, ?, ?)',
     vent.id,
     vent.createdAt,
     vent.localDate,
-    vent.body
+    vent.body,
+    kind
   );
   await clearDraft();
   return vent;
