@@ -6,6 +6,7 @@ import Animated from 'react-native-reanimated';
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
 import { Chip } from '@/components/Chip';
+import { Letters } from '@/components/Letters';
 import { Vent } from '@/components/Vent';
 import { Art, type ArtName } from '@/components/Art';
 import { Lede, Section, Segmented } from '@/components/Blocks';
@@ -53,11 +54,16 @@ type Stage =
 const defaultTagOrder = CONTEXT_TAGS.map(t => t.key);
 
 /** Naming a feeling is the default; vent is the page beside it. */
-type Mode = 'name' | 'vent';
+type Mode = 'name' | 'vent' | 'letter';
 const MODES = [
   { key: 'name', label: 'check in' },
-  { key: 'vent', label: 'vent' }
+  { key: 'vent', label: 'vent' },
+  { key: 'letter', label: 'letters' }
 ] as const;
+
+function asMode(value: string | undefined): Mode | null {
+  return value === 'vent' || value === 'name' || value === 'letter' ? value : null;
+}
 
 function lastLine(checkIn: CheckInRecord, now: Date): string {
   const at = new Date(checkIn.createdAt);
@@ -73,14 +79,15 @@ export default function CheckIn() {
   const profile = useProfile();
   const { colors } = useTheme();
   // Today's "write something down" arrives with ?mode=vent.
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; open?: string }>();
   const [stage, setStage] = useState<Stage>({ kind: 'choose', replacing: null });
-  const [mode, setMode] = useState<Mode>(params.mode === 'vent' ? 'vent' : 'name');
+  const [mode, setMode] = useState<Mode>(asMode(params.mode) ?? 'name');
   // A new ?mode= (the tab is already mounted) switches to it once.
   const [seenMode, setSeenMode] = useState(params.mode);
   if (params.mode !== seenMode) {
     setSeenMode(params.mode);
-    if (params.mode === 'vent' || params.mode === 'name') setMode(params.mode);
+    const next = asMode(params.mode);
+    if (next) setMode(next);
   }
   const [latest, setLatest] = useState<CheckInRecord | null>(null);
   const [tagOrder, setTagOrder] = useState<ContextTag[]>(defaultTagOrder);
@@ -161,6 +168,15 @@ export default function CheckIn() {
   }
 
   const replacing = stage.replacing;
+
+  if (mode === 'letter' && !replacing) {
+    return (
+      <Screen header={<AppHeader />}>
+        <Segmented options={MODES} value={mode} onChange={setMode} />
+        <Letters open={params.open} />
+      </Screen>
+    );
+  }
 
   if (mode === 'vent' && !replacing) {
     return (

@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
 jest.mock('@/lib/safety/log', () => ({ recordSafetyEvent: jest.fn(() => Promise.resolve()) }));
+jest.mock('@/lib/checkIns', () => ({ ...jest.requireActual('@/lib/checkIns'), allCheckIns: () => Promise.resolve([]) }));
 jest.mock('@/lib/reflections', () => ({ ...jest.requireActual('@/lib/reflections'), requestReflection: jest.fn(() => Promise.resolve()) }));
 jest.mock('@/lib/api', () => ({ api: {}, ApiError: class extends Error {}, NetworkError: class extends Error {} }));
 jest.mock('@/lib/vents', () => {
@@ -62,7 +63,7 @@ test('a kept page is saved on the phone and the page clears', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'keep' }));
 
   await screen.findByText('It’s kept.');
-  expect(mocked.keepVent).toHaveBeenCalledWith('work was a lot today');
+  expect(mocked.keepVent).toHaveBeenCalledWith('work was a lot today', expect.any(Date), 'page');
   expect(logged).not.toHaveBeenCalled();
   expect(mockPush).not.toHaveBeenCalled();
 });
@@ -137,4 +138,31 @@ test('with reflections on, a kept page is sent once for a reflection', async () 
   fireEvent.press(screen.getByRole('button', { name: 'keep' }));
   await waitFor(() => expect(requestReflection).toHaveBeenCalledWith('v9', 'a long day'));
   expect(await screen.findByText(/reflection on it will be here in a few hours/)).toBeTruthy();
+});
+
+test('three good things fold into one numbered page', async () => {
+  mocked.keepVent.mockResolvedValue({ id: 'g1', createdAt: new Date().toISOString(), localDate: '2026-10-02', body: '' });
+  render(
+    <ThemeProvider>
+      <Vent />
+    </ThemeProvider>
+  );
+  await act(async () => {});
+  fireEvent.press(screen.getByRole('tab', { name: 'three good things' }));
+  fireEvent.changeText(screen.getByLabelText('good thing 1'), 'tea in the sun');
+  fireEvent.changeText(screen.getByLabelText('good thing 2'), 'a call with Ma');
+  fireEvent.press(screen.getByRole('button', { name: 'keep' }));
+  await waitFor(() =>
+    expect(mocked.keepVent).toHaveBeenCalledWith(['1. tea in the sun', '2. a call with Ma'].join('\n'), expect.any(Date), 'thanks')
+  );
+});
+
+test('a free page offers today’s prompt, and says why', async () => {
+  render(
+    <ThemeProvider>
+      <Vent />
+    </ThemeProvider>
+  );
+  await act(async () => {});
+  expect(screen.getByText('a prompt to begin with')).toBeTruthy();
 });
