@@ -10,7 +10,7 @@ import { fonts } from '@/theme/typography';
 
 import { ArtDisc, isArtName, type ArtName } from './Art';
 import { Avatar, IconPicker } from './Avatar';
-import { Segmented, SettingGroup, SettingLink } from './Blocks';
+import { Segmented, SettingGroup, SettingLink, SettingRow } from './Blocks';
 import { Button } from './Button';
 import { Text } from './Text';
 
@@ -150,6 +150,15 @@ export function Personalisation() {
               ? 'The same, at half the pace.'
               : 'Nothing moves. Pages simply appear.'}
         </Text>
+      </SettingGroup>
+
+      <SettingGroup title="Heavy days">
+        <SettingRow
+          title="Low-day mode"
+          subtitle="After a few heavy days, Today asks for nothing: breathe, check in, or just be here"
+          value={prefs.lowDay}
+          onValueChange={lowDay => prefs.set({ lowDay })}
+        />
       </SettingGroup>
 
       <SettingGroup title="Week starts on">

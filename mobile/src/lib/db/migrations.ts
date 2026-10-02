@@ -70,7 +70,14 @@ export const migrations: readonly string[] = [
   // 7 — where a night came from. A night logged by hand always wins over one
   // read from Health Connect.
   `ALTER TABLE sleep_logs ADD COLUMN source TEXT NOT NULL DEFAULT 'hand'
-     CHECK (source IN ('hand', 'health'));`
+     CHECK (source IN ('hand', 'health'));`,
+
+  // 8 — a kept page's delayed reflection: the text, when it may be shown,
+  // and where the request stands ('pending' retries on the next open;
+  // 'never' for pages that must not be sent, or without consent).
+  `ALTER TABLE vents ADD COLUMN reflection TEXT;
+   ALTER TABLE vents ADD COLUMN reflection_at TEXT;
+   ALTER TABLE vents ADD COLUMN reflection_state TEXT CHECK (reflection_state IN ('pending', 'ready', 'never'));`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

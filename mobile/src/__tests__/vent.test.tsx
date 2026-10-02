@@ -8,6 +8,8 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
 jest.mock('@/lib/safety/log', () => ({ recordSafetyEvent: jest.fn(() => Promise.resolve()) }));
+jest.mock('@/lib/reflections', () => ({ ...jest.requireActual('@/lib/reflections'), requestReflection: jest.fn(() => Promise.resolve()) }));
+jest.mock('@/lib/api', () => ({ api: {}, ApiError: class extends Error {}, NetworkError: class extends Error {} }));
 jest.mock('@/lib/vents', () => {
   const actual = jest.requireActual('@/lib/vents');
   return {
@@ -120,4 +122,19 @@ test('first line trims long pages for the list', () => {
   expect(vents.firstLine('a short one')).toBe('a short one');
   expect(vents.firstLine('x'.repeat(80), 20)).toHaveLength(20);
   expect(vents.firstLine('top\nrest')).toBe('top');
+});
+
+test('with reflections on, a kept page is sent once for a reflection', async () => {
+  const { requestReflection } = jest.requireMock('@/lib/reflections');
+  mocked.keepVent.mockResolvedValue({ id: 'v9', createdAt: new Date().toISOString(), localDate: '2026-10-02', body: 'a long day' });
+  render(
+    <ThemeProvider>
+      <Vent reflections />
+    </ThemeProvider>
+  );
+  await act(async () => {});
+  fireEvent.changeText(screen.getByLabelText('vent page'), 'a long day');
+  fireEvent.press(screen.getByRole('button', { name: 'keep' }));
+  await waitFor(() => expect(requestReflection).toHaveBeenCalledWith('v9', 'a long day'));
+  expect(await screen.findByText(/reflection on it will be here in a few hours/)).toBeTruthy();
 });

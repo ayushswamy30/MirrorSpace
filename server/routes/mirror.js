@@ -1,11 +1,11 @@
 import express from 'express';
 
 import * as consents from '../db/consents.js';
-import { MirrorValidationError, parseTurns } from '../lib/mirror.js';
+import { MirrorValidationError, parsePage, parseTurns } from '../lib/mirror.js';
 import auth from '../middleware/auth.js';
 import { chatLimiter } from '../middleware/rateLimit.js';
 import { canReflectOnPersonalText, generateText } from '../services/ai.js';
-import { CHATBOT_PROMPT, MIRROR_ROOM_PROMPT, PERSONALITY_PROMPT } from '../prompts/personality.js';
+import { CHATBOT_PROMPT, MIRROR_ROOM_PROMPT, PERSONALITY_PROMPT, VENT_REFLECTION_PROMPT } from '../prompts/personality.js';
 
 const router = express.Router();
 
@@ -55,6 +55,41 @@ router.post('/reply', auth, chatLimiter, async (req, res, next) => {
     if (error instanceof MirrorValidationError) {
       return res.status(400).json({ message: error.message });
     }
+    next(error);
+  }
+});
+
+// POST /api/mirror/reflect — { text }: a quiet observation on one vent page.
+// The phone shows it hours later. Stateless like the room: nothing is kept.
+router.post('/reflect', auth, chatLimiter, async (req, res, next) => {
+  try {
+    const text = parsePage(req.body);
+
+    if (!(await reflectionsAllowed(req.userId))) {
+      return res.status(403).json({ message: 'AI reflections are turned off', code: 'no_consent' });
+    }
+    if (!canReflectOnPersonalText()) {
+      return res.status(503).json({ message: 'Reflections are not switched on yet', code: 'unavailable' });
+    }
+
+    const reflection = await generateText({
+      system: `${PERSONALITY_PROMPT}
+
+${VENT_REFLECTION_PROMPT}
+
+You see only this one page — no history, no patterns from other days. Never claim to know anything beyond it.`,
+      prompt: `The page:
+${text}
+
+The reflection:`,
+      personal: true,
+      maxTokens: 300
+    });
+
+    if (!reflection) return res.status(503).json({ message: 'No reflection just now', code: 'no_reply' });
+    res.json({ reflection });
+  } catch (error) {
+    if (error instanceof MirrorValidationError) return res.status(400).json({ message: error.message });
     next(error);
   }
 });
