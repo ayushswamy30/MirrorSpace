@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MAX_CHARS, MAX_TURNS, MirrorValidationError, parseTurns } from '../../lib/mirror.js';
+import { MAX_CHARS, MAX_TURNS, MirrorValidationError, parsePage, parseTurns } from '../../lib/mirror.js';
 
 test('keeps roles and trimmed text', () => {
   assert.deepEqual(parseTurns([{ role: 'user', content: '  hi  ' }]), [{ role: 'user', content: 'hi' }]);
@@ -25,4 +25,11 @@ test('rejects empty lists, unknown roles, blank and oversized text', () => {
   assert.throws(() => parseTurns([{ role: 'system', content: 'x' }]), MirrorValidationError);
   assert.throws(() => parseTurns([{ role: 'user', content: '   ' }]), MirrorValidationError);
   assert.throws(() => parseTurns([{ role: 'user', content: 'x'.repeat(MAX_CHARS + 1) }]), MirrorValidationError);
+});
+
+test('a page for reflection is one non-empty page, within reason', () => {
+  assert.equal(parsePage({ text: '  a long day  ' }), 'a long day');
+  assert.throws(() => parsePage({ text: '   ' }), MirrorValidationError);
+  assert.throws(() => parsePage({}), MirrorValidationError);
+  assert.throws(() => parsePage({ text: 'x'.repeat(8001) }), MirrorValidationError);
 });

@@ -26,6 +26,9 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams
 }));
 jest.mock('@/lib/safety/log', () => ({ recordSafetyEvent: jest.fn() }));
+jest.mock('@/lib/session', () => ({ useProfile: () => ({ consents: { ai_reflections: { granted: false } } }) }));
+jest.mock('@/lib/reflections', () => ({ ...jest.requireActual('@/lib/reflections'), requestReflection: jest.fn(() => Promise.resolve()) }));
+jest.mock('@/lib/api', () => ({ api: {}, ApiError: class extends Error {}, NetworkError: class extends Error {} }));
 jest.mock('@/lib/vents', () => ({
   ...jest.requireActual('@/lib/vents'),
   listVents: jest.fn(() => Promise.resolve([])),

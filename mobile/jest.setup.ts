@@ -32,3 +32,6 @@ jest.mock('react-native-reanimated', () => ({
   // Not in the shipped mock; the app's motion helpers depend on it.
   useReducedMotion: () => false
 }));
+
+// Capturing a view as an image is native; tests only need to know it was asked.
+jest.mock('react-native-view-shot', () => ({ captureRef: jest.fn(() => Promise.resolve('file:///card.png')) }));

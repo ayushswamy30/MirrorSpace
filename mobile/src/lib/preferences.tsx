@@ -15,9 +15,9 @@ export type WeekStart = 'sunday' | 'monday';
 /** Today's picture: a new one each day, or always the same one. */
 export type Picture = 'daily' | ArtName;
 
-export type Preferences = { motion: Motion; weekStart: WeekStart; picture: Picture };
+export type Preferences = { motion: Motion; weekStart: WeekStart; picture: Picture; /** Today collapses on heavy days. */ lowDay: boolean };
 
-export const DEFAULT_PREFERENCES: Preferences = { motion: 'full', weekStart: 'monday', picture: 'daily' };
+export const DEFAULT_PREFERENCES: Preferences = { motion: 'full', weekStart: 'monday', picture: 'daily', lowDay: true };
 
 const KEY = 'mirrorspace.preferences.v1';
 
@@ -37,7 +37,8 @@ function parse(raw: string | null): Preferences {
     return {
       motion: saved.motion === 'gentle' || saved.motion === 'still' ? saved.motion : 'full',
       weekStart: saved.weekStart === 'sunday' ? 'sunday' : 'monday',
-      picture: typeof saved.picture === 'string' ? saved.picture : 'daily'
+      picture: typeof saved.picture === 'string' ? saved.picture : 'daily',
+      lowDay: saved.lowDay !== false
     };
   } catch {
     return DEFAULT_PREFERENCES;

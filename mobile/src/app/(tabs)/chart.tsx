@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -13,9 +14,11 @@ import Svg, { Circle, Line } from 'react-native-svg';
 
 import { Art } from '@/components/Art';
 import { Box, Lede, Section } from '@/components/Blocks';
+import { Button } from '@/components/Button';
 import { AppHeader } from '@/components/Header';
 import { Locked } from '@/components/Locked';
 import { Screen } from '@/components/Screen';
+import { MonthCard, ShareButton } from '@/components/ShareCard';
 import { Text } from '@/components/Text';
 import {
   dailyWeather,
@@ -113,6 +116,7 @@ function ChartPage() {
 
   return (
     <Screen header={<AppHeader />}>
+      <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">
           {mostly
@@ -124,6 +128,7 @@ function ChartPage() {
       <Section title="weather, day by day">
         <Wheel days={days} centre={mostly?.weather ?? null} wordsOn={wordsOn} />
         <Legend />
+        <ShareButton label="share the month" card={<MonthCard days={days} mostly={mostly?.weather ?? null} />} />
       </Section>
 
       <Art name="beetle" size={128} style={styles.margin} />

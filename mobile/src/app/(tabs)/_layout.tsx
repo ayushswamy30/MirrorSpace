@@ -9,6 +9,7 @@ import { TabBar } from '@/components/TabBar';
 import { CircleSync } from '@/components/CircleSync';
 import { HealthSync } from '@/components/HealthSync';
 import { PushSync } from '@/components/PushSync';
+import { ReflectionSync } from '@/components/ReflectionSync';
 import { ReminderSync } from '@/components/ReminderSync';
 import { WeatherSync } from '@/components/WeatherSync';
 import { Text } from '@/components/Text';
@@ -52,6 +53,7 @@ export default function TabsLayout() {
       <HealthSync />
       <CircleSync />
       <PushSync />
+      <ReflectionSync />
       {/* Tabs cross-fade: one page gives way to the next, like turning a leaf. */}
       <Tabs tabBar={props => <TabBar {...props} />} screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Tabs.Screen name="index" options={{ title: 'today' }} />
