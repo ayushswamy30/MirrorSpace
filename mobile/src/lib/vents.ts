@@ -75,6 +75,13 @@ export async function listVents(limit = 50): Promise<Vent[]> {
   return rows.map(fromRow);
 }
 
+/** The day of every kept page, oldest first — counts only, never the words. */
+export async function pageDates(): Promise<string[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{ local_date: string }>('SELECT local_date FROM vents ORDER BY created_at ASC');
+  return rows.map(r => r.local_date);
+}
+
 export async function deleteVent(id: string): Promise<void> {
   const db = await getDatabase();
   await db.runAsync('DELETE FROM vents WHERE id = ?', id);

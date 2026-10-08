@@ -40,7 +40,7 @@ import { config } from '@/lib/config';
 import { useMotion } from '@/lib/preferences';
 import { useProfile } from '@/lib/session';
 import { allSleep, formatDuration, onSleepChanged } from '@/lib/sleep';
-import { daysUntil, isUnlocked } from '@/lib/unlocks';
+import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 import { gutter, MAX_WIDTH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Weather } from '@/theme/tokens';
@@ -50,8 +50,8 @@ import type { Weather } from '@/theme/tokens';
  * last thirty days drawn as a wheel of weather, the words reached for set
  * like type, what surrounds the days, and a skyline of nights. The person's
  * own data, laid out; no reading written over it. Monochrome, with the one
- * signal mark on today. The Mind Chart (day 14) is its own page, linked at
- * the top.
+ * signal mark on today, and the year as a mosaic. The Mind Chart (day 14)
+ * and Wrapped (day 30) are their own pages, linked at the top.
  */
 
 type Data = {
@@ -126,7 +126,8 @@ function ChartPage() {
     <Screen header={<AppHeader />}>
       <View style={styles.links}>
         <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
-        <MindChartLink />
+        <UnlockLink feature="mindChart" label="your mind chart" name="Your mind chart" href="/mind" />
+        <UnlockLink feature="wrapped" label="wrapped" name="Wrapped" href="/wrapped" />
       </View>
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">
@@ -181,18 +182,18 @@ function ChartPage() {
   );
 }
 
-/** The Mind Chart opens on day 14; until then, a quiet line about when. */
-function MindChartLink() {
+/** A page that opens on a later day; until then, a quiet line about when. */
+function UnlockLink({ feature, label, name, href }: { feature: Feature; label: string; name: string; href: '/mind' | '/wrapped' }) {
   const profile = useProfile();
   const createdAt = new Date(profile.createdAt);
 
-  if (isUnlocked('mindChart', createdAt, new Date(), config.unlockAll)) {
-    return <Button kind="link" label="your mind chart" onPress={() => router.push('/mind')} />;
+  if (isUnlocked(feature, createdAt, new Date(), config.unlockAll)) {
+    return <Button kind="link" label={label} onPress={() => router.push(href)} />;
   }
-  const days = daysUntil('mindChart', createdAt);
+  const days = daysUntil(feature, createdAt);
   return (
     <Text variant="mono" tone="soft">
-      {days === 1 ? 'Your mind chart opens tomorrow.' : `Your mind chart opens in ${days} days.`}
+      {days === 1 ? `${name} opens tomorrow.` : `${name} opens in ${days} days.`}
     </Text>
   );
 }
