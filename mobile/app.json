@@ -72,6 +72,7 @@
         "expo-audio",
         {
           "recordAudioAndroid": false,
+        "microphonePermission": "Lowkei listens only while you tap speak in the Mirror, and turns your words into text on the phone. Nothing is recorded.",
           "enableBackgroundPlayback": true
         }
       ],
@@ -86,6 +87,14 @@
       "expo-sharing",
       "expo-asset",
       "react-native-health-connect",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Lowkei listens only while you tap speak in the Mirror, and turns your words into text on the phone. Nothing is recorded.",
+          "speechRecognitionPermission": "Lowkei turns what you say to the Mirror into words on this phone.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox", "com.google.android.tts", "com.google.android.as"]
+        }
+      ],
       [
         "expo-build-properties",
         {

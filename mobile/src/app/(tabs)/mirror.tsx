@@ -24,6 +24,7 @@ import {
 import { citations, memoryForMirror } from '@/lib/memory';
 import { reflectionsPaused } from '@/lib/safety/log';
 import { useProfile } from '@/lib/session';
+import { downloadVoiceModel, readAloudOn, setReadAloud, speak, stopSpeaking, useListening, voiceReadiness } from '@/lib/voice';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
 import { dark, gutter, hitTarget, space } from '@/theme/tokens';
@@ -60,6 +61,30 @@ function Room() {
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<Note>(null);
   const scroll = useRef<ScrollView>(null);
+  const [readAloud, setReadAloudState] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<{ text: string; download?: boolean } | null>(null);
+  const hearing = useListening(words => setText(t => (t.trim() ? `${t.trim()} ${words}` : words)));
+
+  useEffect(() => {
+    readAloudOn()
+      .then(setReadAloudState)
+      .catch(() => undefined);
+    return stopSpeaking;
+  }, []);
+
+  const speakInstead = async () => {
+    setVoiceNote(null);
+    if (hearing.listening) {
+      hearing.stop();
+      return;
+    }
+    const ready = await voiceReadiness().catch(() => 'unavailable' as const);
+    if (ready === 'ready') hearing.start();
+    else if (ready === 'needs-model') setVoiceNote({ text: 'Voice works on the phone itself, so it needs Android’s English speech model first.', download: true });
+    else if (ready === 'no-permission') setVoiceNote({ text: 'Voice needs the microphone. You can allow it in your phone’s settings.' });
+    else if (ready === 'needs-app-build') setVoiceNote({ text: 'Voice needs Lowkei’s own app build — not Expo Go or the preview.' });
+    else setVoiceNote({ text: 'This phone can’t turn speech into words on the device itself, so voice stays off rather than send your voice anywhere.' });
+  };
 
   const refresh = useCallback(() => {
     mirrorStatus()
@@ -105,6 +130,7 @@ function Room() {
       const { text: reply, sources } = citations(await askMirror(history, memory), memory);
       const theirs = await addMessage('mirror', reply, new Date(), sources);
       setMessages(m => [...m, theirs]);
+      if (readAloud) speak(reply);
     } catch (error) {
       if (error instanceof MirrorUnavailable) setStatus(error.status);
       else setNote({ kind: 'error', text: 'Mirror couldn’t answer just now. Your words are still here.' });
@@ -139,6 +165,16 @@ function Room() {
             software, not a person · not a therapist
           </Text>
           <VoidLink label="what the mirror knows" onPress={() => router.push('/memory')} />
+          {open && (
+            <VoidLink
+              label={readAloud ? 'reading answers aloud · stop' : 'read answers aloud'}
+              onPress={() => {
+                const next = !readAloud;
+                setReadAloudState(next);
+                setReadAloud(next).catch(() => undefined);
+              }}
+            />
+          )}
 
           {status && !open && <Closed status={status} onRetry={refresh} />}
 
@@ -179,6 +215,24 @@ function Room() {
             </Text>
           )}
 
+          {(voiceNote || hearing.error) && (
+            <View style={styles.closed}>
+              <Text variant="mono" style={[styles.centre, { color: SOFT }]} accessibilityRole="alert">
+                {voiceNote?.text ?? hearing.error}
+              </Text>
+              {voiceNote?.download && (
+                <VoidLink
+                  label="get the speech model"
+                  onPress={() => {
+                    downloadVoiceModel()
+                      .then(ok => setVoiceNote({ text: ok ? 'Once it has downloaded, tap speak again.' : 'The download didn’t start. You can type instead.' }))
+                      .catch(() => undefined);
+                  }}
+                />
+              )}
+            </View>
+          )}
+
           {messages.length > 0 && !sending && (
             <VoidLink
               label="start over"
@@ -193,8 +247,21 @@ function Room() {
 
         {open && (
           <View style={[styles.inputBar, { borderTopColor: dark.inkFaint }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={hearing.listening ? 'stop listening' : 'speak'}
+              accessibilityHint="Turns what you say into words here, on the phone"
+              onPress={speakInstead}
+              disabled={sending}
+              hitSlop={6}
+              style={({ pressed }) => [styles.speak, { borderColor: LIGHT, opacity: sending ? 0.4 : pressed ? 0.7 : 1 }]}
+            >
+              <Text variant="action" style={{ color: LIGHT }}>
+                {hearing.listening ? 'stop' : 'speak'}
+              </Text>
+            </Pressable>
             <TextInput
-              value={text}
+              value={hearing.listening && hearing.partial ? `${text}${text ? ' ' : ''}${hearing.partial}` : text}
               onChangeText={setText}
               placeholder="ASK ANYTHING…"
               placeholderTextColor={SOFT}
@@ -342,5 +409,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm + 4,
     textAlignVertical: 'center'
   },
-  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' }
+  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' },
+  speak: { minHeight: 36, paddingHorizontal: space.sm, justifyContent: 'center', borderWidth: 1 }
 });

@@ -11,6 +11,18 @@ jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(
 jest.mock('@/lib/session', () => ({
   useProfile: () => ({ createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), consents: {} })
 }));
+const mockSpeak = jest.fn();
+const mockReadiness = jest.fn(async (): Promise<string> => 'needs-app-build');
+const mockListenStart = jest.fn();
+jest.mock('@/lib/voice', () => ({
+  readAloudOn: async () => true,
+  setReadAloud: async () => undefined,
+  speak: (t: string) => mockSpeak(t),
+  stopSpeaking: () => undefined,
+  voiceReadiness: () => mockReadiness(),
+  downloadVoiceModel: async () => true,
+  useListening: () => ({ listening: false, partial: '', start: mockListenStart, stop: jest.fn(), error: null })
+}));
 const mockMemory = jest.fn((): Promise<unknown> => Promise.resolve(null));
 jest.mock('@/lib/memory', () => ({
   ...jest.requireActual('@/lib/memory'),
@@ -79,6 +91,19 @@ test('a question is kept on the phone and answered', async () => {
   expect(mocked.addMessage).toHaveBeenCalledWith('mirror', 'It sounds like the week has been long.', expect.any(Date), []);
   expect(mocked.askMirror).toHaveBeenCalledWith(expect.any(Array), null);
   expect(recordSafetyEvent).not.toHaveBeenCalled();
+  // Reading aloud was left on.
+  expect(mockSpeak).toHaveBeenCalledWith('It sounds like the week has been long.');
+});
+
+test('speaking listens on the phone when it can, and says plainly when it can’t', async () => {
+  await renderMirror();
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'speak' })));
+  expect(screen.getByText('Voice needs Lowkei’s own app build — not Expo Go or the preview.')).toBeTruthy();
+  expect(mockListenStart).not.toHaveBeenCalled();
+
+  mockReadiness.mockResolvedValueOnce('ready');
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'speak' })));
+  expect(mockListenStart).toHaveBeenCalled();
 });
 
 test('with "what the mirror knows" on, an answer shows what it drew on', async () => {
