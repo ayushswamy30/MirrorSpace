@@ -2,25 +2,31 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { allCheckIns, localDate, onCheckInsChanged } from './checkIns';
+import { forecast, type Forecast } from './forecast';
 import { today, type Today } from './patterns';
 import { useProfile } from './session';
 import { allSleep, onSleepChanged } from './sleep';
 
 /**
  * Today, recomputed on the phone whenever a check-in or a night changes, or
- * the app comes back to the front (the day may have turned). Readings are
- * personal only with the readings consent.
+ * the app comes back to the front (the day may have turned). Readings — and
+ * tomorrow's forecast — are personal only with the readings consent.
  */
-export function useToday(): Today | null {
+export type TodayView = Today & { forecast: Forecast | null };
+
+export function useToday(): TodayView | null {
   const profile = useProfile();
   const personal = profile.consents.readings?.granted === true;
-  const [value, setValue] = useState<Today | null>(null);
+  const [value, setValue] = useState<TodayView | null>(null);
 
   const load = useCallback(() => {
     Promise.all([allCheckIns(), allSleep()])
       .then(([checkIns, sleep]) => {
         const now = new Date();
-        setValue(today(checkIns, { personal, todayDate: localDate(now), now, sleep }));
+        setValue({
+          ...today(checkIns, { personal, todayDate: localDate(now), now, sleep }),
+          forecast: personal ? forecast(checkIns, sleep, now) : null
+        });
       })
       .catch(err => console.warn('Today unavailable:', err));
   }, [personal]);

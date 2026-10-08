@@ -120,7 +120,7 @@ function TodayPage({
 }) {
   const { signal } = useTheme();
   const { picture, weekStart } = usePreferences();
-  const { reading, facts, weather, checkedInToday, lastNight } = data;
+  const { reading, facts, weather, checkedInToday, lastNight, forecast } = data;
   const receipts = facts.slice(0, 3);
 
   return (
@@ -163,6 +163,21 @@ function TodayPage({
       {isWeekEnd(new Date(), weekStart) && (
         <Section title="this week">
           <Row title="Your week in reflection" subtitle="seven days, laid out" onPress={() => router.push('/week')} />
+        </Section>
+      )}
+
+      {forecast && (
+        <Section title="tomorrow">
+          <View style={styles.forecast}>
+            <Text variant="heading">{forecast.title}</Text>
+            <Text tone="soft">{forecast.line}</Text>
+          </View>
+          {forecast.signals.map(s => (
+            <Row key={s.text} title={s.text} subtitle={s.receipt} arrow={false} />
+          ))}
+          <Text variant="caption" tone="soft">
+            An outlook from your own patterns, like weather — not a prediction about you.
+          </Text>
         </Section>
       )}
 
@@ -290,5 +305,6 @@ const styles = StyleSheet.create({
   block: { gap: space.lg },
   cta: { marginTop: space.sm },
   weather: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
-  entry: { gap: 2, paddingVertical: space.sm }
+  entry: { gap: 2, paddingVertical: space.sm },
+  forecast: { gap: space.xs, paddingTop: space.sm }
 });
