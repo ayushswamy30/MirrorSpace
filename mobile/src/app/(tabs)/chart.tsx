@@ -128,6 +128,7 @@ function ChartPage() {
         <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
         <UnlockLink feature="mindChart" label="your mind chart" name="Your mind chart" href="/mind" />
         <UnlockLink feature="wrapped" label="wrapped" name="Wrapped" href="/wrapped" />
+        <Button kind="link" label="experiments" onPress={() => router.push('/experiments')} />
       </View>
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">

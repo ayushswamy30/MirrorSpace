@@ -14,8 +14,10 @@ import { Screen } from '@/components/Screen';
 import { ReadingCard, ShareButton } from '@/components/ShareCard';
 import { Text } from '@/components/Text';
 import { ArtRule, DateControl, FloatingDisc, WeatherMark, WeekStrip, sameDay } from '@/components/TodayParts';
+import { localDate } from '@/lib/checkIns';
 import { addDays, startOfDay, useDayRecord, useDays, weekMarks, weekOf, type DayRecord } from '@/lib/days';
 import { glance, isLowDay, type AreaReading } from '@/lib/glance';
+import { dayOf, EXPERIMENT_DAYS, listExperiments, onExperimentsChanged, stateOf, type Experiment } from '@/lib/experiments';
 import { listLetters, type Letter } from '@/lib/letters';
 import { usePreferences } from '@/lib/preferences';
 import { clockOf, formatClock, formatDuration } from '@/lib/sleep';
@@ -62,6 +64,17 @@ export default function Today() {
       .catch(() => undefined);
   }, []);
   useEffect(loadLetters, [loadLetters]);
+  const [experiment, setExperiment] = useState<Experiment | null>(null);
+  useEffect(() => {
+    const load = () => {
+      const today = localDate(new Date());
+      listExperiments()
+        .then(all => setExperiment(all.find(e => stateOf(e, today) === 'running') ?? null))
+        .catch(() => undefined);
+    };
+    load();
+    return onExperimentsChanged(load);
+  }, []);
   const content = useEntering();
 
   const week = weekOf(selected, weekStart);
@@ -101,7 +114,12 @@ export default function Today() {
           lowDayMode && !wholeDay && days && isLowDay(days.checkIns) ? (
             <LowDay onShowDay={() => setWholeDay(true)} />
           ) : (
-            <TodayPage data={data} areas={days ? glance(days.checkIns, days.sleep) : null} letters={letters} />
+            <TodayPage
+              data={data}
+              areas={days ? glance(days.checkIns, days.sleep) : null}
+              letters={letters}
+              experiment={experiment}
+            />
           )
         ) : record ? <PastDay record={record} onToday={() => setSelected(startOfDay(new Date()))} /> : <Loader />}
       </Animated.View>
@@ -112,11 +130,13 @@ export default function Today() {
 function TodayPage({
   data,
   areas,
-  letters
+  letters,
+  experiment
 }: {
   data: NonNullable<ReturnType<typeof useToday>>;
   areas: AreaReading[] | null;
   letters: Letter[];
+  experiment: Experiment | null;
 }) {
   const { signal } = useTheme();
   const { picture, weekStart } = usePreferences();
@@ -156,6 +176,18 @@ function TodayPage({
               onPress={() => router.navigate(`/check-in?mode=letter&open=${l.id}`)}
             />
           ))}
+        </Section>
+      )}
+
+      {experiment && (
+        <Section title="your experiment">
+          <Row
+            title={experiment.title}
+            subtitle={`day ${dayOf(experiment, localDate(new Date()))} of ${EXPERIMENT_DAYS}${
+              experiment.kept.includes(localDate(new Date())) ? ' · kept today' : ''
+            }`}
+            onPress={() => router.push('/experiments')}
+          />
         </Section>
       )}
 

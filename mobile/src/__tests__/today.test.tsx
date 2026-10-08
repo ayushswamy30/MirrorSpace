@@ -18,6 +18,12 @@ jest.mock('@/lib/sleep', () => ({
   onSleepChanged: () => () => undefined
 }));
 jest.mock('@/lib/letters', () => ({ listLetters: () => Promise.resolve([]), deliverDue: () => Promise.resolve([]) }));
+const mockExperiments = jest.fn((): Promise<unknown[]> => Promise.resolve([]));
+jest.mock('@/lib/experiments', () => ({
+  ...jest.requireActual('@/lib/experiments'),
+  listExperiments: () => mockExperiments(),
+  onExperimentsChanged: () => () => undefined
+}));
 jest.mock('@/lib/vents', () => ({
   ...jest.requireActual('@/lib/vents'),
   listVents: () => Promise.resolve([])
@@ -188,4 +194,19 @@ test('no outlook without the readings consent', async () => {
   mocked.allCheckIns.mockResolvedValue([...days(0, 2, -1), ...days(4, 8, 3)]);
   await renderToday();
   expect(screen.queryByText('Tomorrow may run heavier.')).toBeNull();
+});
+
+test('a running experiment shows on Today, with its day', async () => {
+  mocked.allCheckIns.mockResolvedValue([]);
+  const today = checkIns.localDate(new Date());
+  const start = new Date();
+  start.setDate(start.getDate() - 2);
+  const end = new Date();
+  end.setDate(end.getDate() + 4);
+  mockExperiments.mockResolvedValueOnce([
+    { id: 'e', title: 'In bed by 23:30', startsOn: checkIns.localDate(start), endsOn: checkIns.localDate(end), kept: [today], stoppedOn: null }
+  ]);
+  await renderToday();
+  expect(screen.getByText('In bed by 23:30')).toBeTruthy();
+  expect(screen.getByText('day 3 of 7 · kept today')).toBeTruthy();
 });

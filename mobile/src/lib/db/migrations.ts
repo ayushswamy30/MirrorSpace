@@ -93,7 +93,19 @@ export const migrations: readonly string[] = [
      delivered_at TEXT,
      opened_at    TEXT
    );
-   CREATE INDEX letters_deliver_at_idx ON letters (deliver_at);`
+   CREATE INDEX letters_deliver_at_idx ON letters (deliver_at);`,
+
+  // 11 — personal experiments: seven days of one small change. kept is the
+  // JSON list of days the person said they kept it.
+  `CREATE TABLE experiments (
+     id         TEXT PRIMARY KEY,
+     created_at TEXT NOT NULL,
+     title      TEXT NOT NULL,
+     starts_on  TEXT NOT NULL,
+     ends_on    TEXT NOT NULL,
+     kept       TEXT NOT NULL DEFAULT '[]',
+     stopped_on TEXT
+   );`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {
