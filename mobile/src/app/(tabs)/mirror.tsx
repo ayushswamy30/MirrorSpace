@@ -21,7 +21,9 @@ import {
   type MirrorMessage,
   type MirrorStatus
 } from '@/lib/mirror';
+import { citations, memoryForMirror } from '@/lib/memory';
 import { reflectionsPaused } from '@/lib/safety/log';
+import { useProfile } from '@/lib/session';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
 import { dark, gutter, hitTarget, space } from '@/theme/tokens';
@@ -51,6 +53,7 @@ export default function Mirror() {
 
 function Room() {
   const { colors } = useTheme();
+  const personal = useProfile().consents.readings?.granted === true;
   const [status, setStatus] = useState<MirrorStatus | null>(null);
   const [messages, setMessages] = useState<MirrorMessage[]>([]);
   const [text, setText] = useState('');
@@ -98,8 +101,9 @@ function Room() {
       answerConcern(tier, 'chat');
       if (tier === 'low') setNote({ kind: 'care', text: 'That sounds heavy. If it gets heavier, help is under calm.' });
 
-      const reply = await askMirror(history);
-      const theirs = await addMessage('mirror', reply);
+      const memory = await memoryForMirror(personal).catch(() => null);
+      const { text: reply, sources } = citations(await askMirror(history, memory), memory);
+      const theirs = await addMessage('mirror', reply, new Date(), sources);
       setMessages(m => [...m, theirs]);
     } catch (error) {
       if (error instanceof MirrorUnavailable) setStatus(error.status);
@@ -134,19 +138,33 @@ function Room() {
           <Text variant="mono" style={[styles.centre, { color: SOFT }]}>
             software, not a person · not a therapist
           </Text>
+          <VoidLink label="what the mirror knows" onPress={() => router.push('/memory')} />
 
           {status && !open && <Closed status={status} onRetry={refresh} />}
 
           {open && messages.length === 0 && <Topics onAsk={setText} />}
 
           {messages.map(m => (
-            <Text
-              key={m.id}
-              variant={m.role === 'user' ? 'mono' : 'heading'}
-              style={[{ color: m.role === 'user' ? SOFT : LIGHT }, m.role === 'user' && styles.mine]}
-            >
-              {m.content}
-            </Text>
+            <View key={m.id} style={styles.message}>
+              <Text
+                variant={m.role === 'user' ? 'mono' : 'heading'}
+                style={[{ color: m.role === 'user' ? SOFT : LIGHT }, m.role === 'user' && styles.mine]}
+              >
+                {m.content}
+              </Text>
+              {m.sources && m.sources.length > 0 && (
+                <View style={styles.sources} accessible accessibilityLabel={`Drawn from: ${m.sources.map(s => s.text).join('; ')}`}>
+                  <Text variant="mono" style={{ color: SOFT }}>
+                    drawn from
+                  </Text>
+                  {m.sources.map(s => (
+                    <Text key={s.id} variant="mono" style={{ color: SOFT }}>
+                      {`· ${s.text}${s.receipt ? ` (${s.receipt})` : ''}`}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
           ))}
 
           {sending && (
@@ -303,6 +321,8 @@ const styles = StyleSheet.create({
   topic: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm, width: '23%', borderWidth: 1 },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },
+  message: { gap: space.sm },
+  sources: { gap: 2, borderLeftWidth: 1, borderLeftColor: dark.inkFaint, paddingLeft: space.sm },
   link: { minHeight: hitTarget, justifyContent: 'center', alignSelf: 'center' },
   underline: { textDecorationLine: 'underline' },
   inputBar: {

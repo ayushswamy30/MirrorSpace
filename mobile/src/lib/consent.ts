@@ -11,7 +11,7 @@
  * the first time they start a circle.
  */
 
-export const CONSENT_POLICY_VERSION = '2026-10-02';
+export const CONSENT_POLICY_VERSION = '2026-10-08';
 
 export type ConsentPurpose = 'readings' | 'ai_reflections' | 'health' | 'circle';
 
@@ -39,7 +39,8 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
       // any plan, nothing retained by default (up to 30 days only for abuse
       // checks, off with Zero Data Retention). Change the provider, change
       // this line — and CONSENT_POLICY_VERSION with it.
-      'It passes through our server to Groq, the AI service that writes reflections. Groq doesn’t train on it or keep it, and our server doesn’t keep it either — only the reflection is saved.'
+      'It passes through our server to Groq, the AI service that writes reflections. Groq doesn’t train on it or keep it, and our server doesn’t keep it either — only the reflection is saved.',
+      'Only if you switch it on under “What the Mirror knows”: the patterns and notes on that page, with each Mirror message.'
     ],
     neverSends: ['Anything you keep only on this phone without asking for a reflection.'],
     declined: 'Vent still works and stays private; you won’t get reflections, and Mirror chat stays closed.'
