@@ -94,6 +94,39 @@ export function mostlyWeather(days: readonly ChartDay[]): { weather: Weather; da
   return best;
 }
 
+export type YearMonth = {
+  /** YYYY-MM */
+  month: string;
+  /** One per calendar day of the month; null weather for a quiet day, and `ahead` for days still to come. */
+  days: { date: string; weather: Weather | null; ahead: boolean }[];
+};
+
+/**
+ * The Year in Weather (report: "a 'Year in Weather' mosaic"): a row per month,
+ * a mark per day, from the month of the first check-in — at most the last
+ * twelve — through this one.
+ */
+export function yearInWeather(checkIns: readonly CheckIn[], now: Date = new Date()): YearMonth[] {
+  const byDate = new Map<string, CheckIn[]>();
+  for (const c of checkIns) byDate.set(c.localDate, [...(byDate.get(c.localDate) ?? []), c]);
+
+  const today = localDate(now);
+  const earliest = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const first = checkIns.length ? new Date(`${checkIns.reduce((a, c) => (c.localDate < a ? c.localDate : a), today)}T12:00:00`) : now;
+  const start = first > earliest ? new Date(first.getFullYear(), first.getMonth(), 1) : earliest;
+
+  const out: YearMonth[] = [];
+  for (let m = new Date(start); m <= now; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)) {
+    const length = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    const days = Array.from({ length }, (_, i) => {
+      const date = localDate(new Date(m.getFullYear(), m.getMonth(), i + 1));
+      return { date, weather: weatherOf(byDate.get(date) ?? []), ahead: date > today };
+    });
+    out.push({ month: days[0].date.slice(0, 7), days });
+  }
+  return out;
+}
+
 /** Weather as ink density, lightest to heaviest — the chart stays monochrome. */
 export const WEATHER_INK: Record<Weather, number> = {
   clear: 0,
