@@ -8,7 +8,7 @@ import type { Weather } from '@/theme/tokens';
  * evidence and needs a minimum amount of it; nothing here predicts, diagnoses
  * or claims a cause — "tended to", never "because".
  *
- * Check-ins and hand-logged sleep feed it; health data joins later.
+ * Check-ins and sleep feed it; body signals join through `extra` (body.ts).
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -274,7 +274,14 @@ export type Today = {
  */
 export function today(
   checkIns: readonly CheckIn[],
-  opts: { personal: boolean; todayDate: string; now?: Date; sleep?: readonly SleepLog[] }
+  opts: {
+    personal: boolean;
+    todayDate: string;
+    now?: Date;
+    sleep?: readonly SleepLog[];
+    /** Facts found elsewhere on the phone — the body's, from Health Connect. */
+    extra?: readonly Fact[];
+  }
 ): Today {
   const now = opts.now ?? new Date();
   const sleep = opts.sleep ?? [];
@@ -283,6 +290,8 @@ export function today(
   if (!opts.personal) return { weather: null, reading: GENERAL_READING, facts: [], checkedInToday, lastNight };
 
   const weather = innerWeather(checkIns, now);
-  const found = [...facts(checkIns, now), ...sleepFacts(sleep, checkIns, now)].sort((a, b) => b.weight - a.weight);
+  const found = [...facts(checkIns, now), ...sleepFacts(sleep, checkIns, now), ...(opts.extra ?? [])].sort(
+    (a, b) => b.weight - a.weight
+  );
   return { weather, reading: buildReading(weather, found[0]), facts: found, checkedInToday, lastNight };
 }

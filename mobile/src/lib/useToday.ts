@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { allBodyDays, bodyConnected, bodyFacts } from './body';
 import { allCheckIns, localDate, onCheckInsChanged } from './checkIns';
 import { forecast, type Forecast } from './forecast';
 import { today, type Today } from './patterns';
@@ -20,11 +21,13 @@ export function useToday(): TodayView | null {
   const [value, setValue] = useState<TodayView | null>(null);
 
   const load = useCallback(() => {
-    Promise.all([allCheckIns(), allSleep()])
-      .then(([checkIns, sleep]) => {
+    const body = bodyConnected().then(on => (on ? allBodyDays() : []));
+    Promise.all([allCheckIns(), allSleep(), body.catch(() => [])])
+      .then(([checkIns, sleep, days]) => {
         const now = new Date();
+        const extra = days.length ? bodyFacts(days, checkIns, now) : [];
         setValue({
-          ...today(checkIns, { personal, todayDate: localDate(now), now, sleep }),
+          ...today(checkIns, { personal, todayDate: localDate(now), now, sleep, extra }),
           forecast: personal ? forecast(checkIns, sleep, now) : null
         });
       })

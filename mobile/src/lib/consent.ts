@@ -47,8 +47,11 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
   },
   health: {
     title: 'May Lowkei read your sleep from your phone’s health data?',
-    sends: ['Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.'],
-    neverSends: ['Anything else in your health record.'],
+    sends: [
+      'Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.',
+      'Only if you also allow it, as a second step: daily steps, resting heart rate and heart-rate variability. These stay on this phone and are never sent anywhere.'
+    ],
+    neverSends: ['Anything else in your health record — workouts, weight, medicines, anything not named here.'],
     declined: 'You can log sleep by hand instead.'
   },
   circle: {
