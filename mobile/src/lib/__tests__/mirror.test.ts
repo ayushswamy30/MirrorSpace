@@ -62,3 +62,13 @@ test('refusals become a status the room can show', async () => {
   jest.mocked(api.post).mockRejectedValueOnce(new ApiError(503, 'none', { code: 'no_reply' }));
   await expect(askMirror([msg(1, 'user', 'hi')])).rejects.toBeInstanceOf(ApiError);
 });
+
+test('"what the mirror knows" goes with a turn only when there is some', async () => {
+  jest.mocked(api.post).mockResolvedValue({ reply: 'ok' });
+  await askMirror([msg(1, 'user', 'hi')]);
+  expect(jest.mocked(api.post).mock.calls[0][1]).toEqual({ messages: [{ role: 'user', content: 'hi' }] });
+
+  const memory = [{ id: 'n1', text: 'I work nights' }];
+  await askMirror([msg(1, 'user', 'hi')], memory);
+  expect(jest.mocked(api.post).mock.calls[1][1]).toEqual({ messages: [{ role: 'user', content: 'hi' }], memory });
+});

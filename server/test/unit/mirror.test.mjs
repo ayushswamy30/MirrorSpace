@@ -1,7 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MAX_CHARS, MAX_TURNS, MirrorValidationError, parsePage, parseTurns } from '../../lib/mirror.js';
+import {
+  MAX_CHARS,
+  MAX_MEMORY_CHARS,
+  MAX_MEMORY_ITEMS,
+  MAX_TURNS,
+  memoryLines,
+  MirrorValidationError,
+  parseMemory,
+  parsePage,
+  parseTurns
+} from '../../lib/mirror.js';
 
 test('keeps roles and trimmed text', () => {
   assert.deepEqual(parseTurns([{ role: 'user', content: '  hi  ' }]), [{ role: 'user', content: 'hi' }]);
@@ -32,4 +42,21 @@ test('a page for reflection is one non-empty page, within reason', () => {
   assert.throws(() => parsePage({ text: '   ' }), MirrorValidationError);
   assert.throws(() => parsePage({}), MirrorValidationError);
   assert.throws(() => parsePage({ text: 'x'.repeat(8001) }), MirrorValidationError);
+});
+
+test('memory is optional, and checked when it comes', () => {
+  assert.equal(parseMemory(undefined), null);
+  assert.equal(parseMemory([]), null);
+  assert.deepEqual(parseMemory([{ id: 'p1', text: ' Short nights lately ', receipt: '3 of 7' }, { id: 'n1', text: 'I work nights' }]), [
+    { id: 'p1', text: 'Short nights lately', receipt: '3 of 7' },
+    { id: 'n1', text: 'I work nights' }
+  ]);
+  assert.throws(() => parseMemory('x'), MirrorValidationError);
+  assert.throws(() => parseMemory([{ id: 'system', text: 'x' }]), MirrorValidationError);
+  assert.throws(() => parseMemory([{ id: 'n1', text: 'x'.repeat(MAX_MEMORY_CHARS + 1) }]), MirrorValidationError);
+  assert.throws(() => parseMemory(Array.from({ length: MAX_MEMORY_ITEMS + 1 }, (_, i) => ({ id: `n${i % 99}`, text: 'x' }))), MirrorValidationError);
+});
+
+test('memory reads as one tagged line per item', () => {
+  assert.equal(memoryLines([{ id: 'p1', text: 'A', receipt: 'r' }, { id: 'n1', text: 'B' }]), '[p1] A (r)\n[n1] B');
 });

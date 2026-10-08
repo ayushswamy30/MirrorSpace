@@ -81,3 +81,14 @@ export const MIRROR_ROOM_PROMPT = `In this conversation you have NO data about t
 - Never claim to know their habits, patterns, past or what they "often" do.
 - Reflect back only what they said in this conversation, in your own quiet words.
 - If they ask what you notice about them over time, say plainly that this room only sees what they write here.`;
+
+/**
+ * When the person has switched on "What the Mirror knows", the room also
+ * sees the items on that page — and must cite them, so every claim about the
+ * person can be traced to its source on the phone.
+ */
+export const MIRROR_MEMORY_PROMPT = `In this conversation you know two things: what the person has written here, and the items below, which they chose to let you see. Items tagged p are patterns the app found in their own check-ins and sleep; items tagged n are notes they wrote for you.
+- Use an item only when it truly helps; never list them back.
+- When a sentence draws on an item, end that sentence with its tag in square brackets, like [p1] or [n2]. Only use tags that appear below.
+- Patterns are tendencies, not causes: say "tended to", never "because". Never diagnose.
+- You know nothing beyond these items and this conversation. If they ask about something that isn't here, say so plainly.`;

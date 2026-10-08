@@ -51,3 +51,36 @@ export function parsePage(body) {
   if (text.length > MAX_PAGE_CHARS) throw new MirrorValidationError('that page is longer than a reflection can hold');
   return text.trim();
 }
+
+/**
+ * What the Mirror may know, sent by the phone with a turn only when the
+ * person has switched it on under "What the Mirror knows": patterns the
+ * phone found ("p1") and notes they wrote for it ("n1"). Checked and
+ * trimmed; never stored. Absent or empty means the room knows nothing else.
+ */
+export const MAX_MEMORY_ITEMS = 40;
+export const MAX_MEMORY_CHARS = 300;
+
+export function parseMemory(memory) {
+  if (memory === undefined || memory === null) return null;
+  if (!Array.isArray(memory)) throw new MirrorValidationError('memory must be a list');
+  if (memory.length > MAX_MEMORY_ITEMS) throw new MirrorValidationError('memory holds too many items');
+  const items = memory.map(item => {
+    if (!item || typeof item.id !== 'string' || !/^[pn]\d{1,2}$/.test(item.id)) {
+      throw new MirrorValidationError("each memory item needs an id like 'p1' or 'n1'");
+    }
+    if (typeof item.text !== 'string' || item.text.trim().length === 0 || item.text.length > MAX_MEMORY_CHARS) {
+      throw new MirrorValidationError('each memory item needs some text, within reason');
+    }
+    if (item.receipt !== undefined && (typeof item.receipt !== 'string' || item.receipt.length > MAX_MEMORY_CHARS)) {
+      throw new MirrorValidationError('a memory receipt is too long');
+    }
+    return { id: item.id, text: item.text.trim(), ...(item.receipt ? { receipt: item.receipt.trim() } : {}) };
+  });
+  return items.length ? items : null;
+}
+
+/** The memory as the model reads it: one tagged line per item. */
+export function memoryLines(items) {
+  return items.map(i => `[${i.id}] ${i.text}${i.receipt ? ` (${i.receipt})` : ''}`).join('\n');
+}

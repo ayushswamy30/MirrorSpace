@@ -105,7 +105,18 @@ export const migrations: readonly string[] = [
      ends_on    TEXT NOT NULL,
      kept       TEXT NOT NULL DEFAULT '[]',
      stopped_on TEXT
-   );`
+   );`,
+
+  // 12 — "What the Mirror knows": notes the person wrote for the Mirror, and
+  // on each Mirror answer, the items it drew on (JSON), so its citations
+  // still read true after the notes change.
+  `CREATE TABLE mirror_notes (
+     id         TEXT PRIMARY KEY,
+     created_at TEXT NOT NULL,
+     updated_at TEXT NOT NULL,
+     body       TEXT NOT NULL
+   );
+   ALTER TABLE mirror_messages ADD COLUMN sources TEXT;`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

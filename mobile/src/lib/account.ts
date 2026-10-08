@@ -7,6 +7,7 @@ import { CONSENT_POLICY_VERSION, type ConsentPurpose } from './consent';
 import { destroyLocalData } from './db/database';
 import { listExperiments } from './experiments';
 import { listLetters } from './letters';
+import { listNotes } from './memory';
 import { listMessages } from './mirror';
 import { listSafetyEvents } from './safety/log';
 import { loadPlan } from './safetyPlan';
@@ -36,6 +37,8 @@ export type ExportFile = {
     letters: unknown[];
     /** Seven-day experiments, with the days marked kept. */
     experiments: unknown[];
+    /** Notes written for the Mirror under "What the Mirror knows". */
+    mirrorNotes: unknown[];
   };
   /** Everything the server holds, or null if it couldn't be reached. */
   server: unknown;
@@ -43,7 +46,7 @@ export type ExportFile = {
 };
 
 export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
-  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments] = await Promise.all([
+  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes] = await Promise.all([
     allCheckIns(),
     listVents(100_000),
     allSleep(),
@@ -51,7 +54,8 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
     loadPlan(),
     listSafetyEvents(),
     listLetters(),
-    listExperiments()
+    listExperiments(),
+    listNotes()
   ]);
 
   let server: unknown = null;
@@ -64,7 +68,7 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 
   return {
     exportedAt: now.toISOString(),
-    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments },
+    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes },
     server,
     ...(serverError ? { serverError } : {})
   };
