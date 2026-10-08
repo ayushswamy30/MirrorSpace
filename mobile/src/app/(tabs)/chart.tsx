@@ -34,8 +34,11 @@ import {
   type WordCount
 } from '@/lib/chart';
 import { allCheckIns, onCheckInsChanged } from '@/lib/checkIns';
+import { config } from '@/lib/config';
 import { useMotion } from '@/lib/preferences';
+import { useProfile } from '@/lib/session';
 import { allSleep, formatDuration, onSleepChanged } from '@/lib/sleep';
+import { daysUntil, isUnlocked } from '@/lib/unlocks';
 import { gutter, MAX_WIDTH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Weather } from '@/theme/tokens';
@@ -45,7 +48,8 @@ import type { Weather } from '@/theme/tokens';
  * last thirty days drawn as a wheel of weather, the words reached for set
  * like type, what surrounds the days, and a skyline of nights. The person's
  * own data, laid out; no reading written over it. Monochrome, with the one
- * signal mark on today. The Mind Chart (day 14) and Year in Weather are v1.
+ * signal mark on today. The Mind Chart (day 14) is its own page, linked at
+ * the top.
  */
 
 type Data = {
@@ -116,7 +120,10 @@ function ChartPage() {
 
   return (
     <Screen header={<AppHeader />}>
-      <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
+      <View style={styles.links}>
+        <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
+        <MindChartLink />
+      </View>
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">
           {mostly
@@ -163,6 +170,22 @@ function ChartPage() {
         )}
       </Section>
     </Screen>
+  );
+}
+
+/** The Mind Chart opens on day 14; until then, a quiet line about when. */
+function MindChartLink() {
+  const profile = useProfile();
+  const createdAt = new Date(profile.createdAt);
+
+  if (isUnlocked('mindChart', createdAt, new Date(), config.unlockAll)) {
+    return <Button kind="link" label="your mind chart" onPress={() => router.push('/mind')} />;
+  }
+  const days = daysUntil('mindChart', createdAt);
+  return (
+    <Text variant="mono" tone="soft">
+      {days === 1 ? 'Your mind chart opens tomorrow.' : `Your mind chart opens in ${days} days.`}
+    </Text>
   );
 }
 
@@ -452,6 +475,7 @@ function Skyline({ nights }: { nights: (number | null)[] }) {
 }
 
 const styles = StyleSheet.create({
+  links: { gap: space.sm, alignItems: 'flex-start' },
   wheel: { alignSelf: 'center', marginTop: space.md },
   wheelCentre: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 2 },
   legendWrap: { gap: space.sm, alignItems: 'center', marginTop: space.md },
