@@ -50,6 +50,7 @@ test('lays out the month, the words and what surrounds the days', async () => {
   expect(screen.getByText('2×')).toBeTruthy();
   expect(screen.getByText('friends')).toBeTruthy();
   expect(screen.getByText(/No nights logged yet/)).toBeTruthy();
+  expect(screen.getByText('Your mind chart opens in 3 days.')).toBeTruthy();
 });
 
 test('stays closed before day 7', async () => {
