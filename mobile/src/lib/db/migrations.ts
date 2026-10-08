@@ -116,7 +116,17 @@ export const migrations: readonly string[] = [
      updated_at TEXT NOT NULL,
      body       TEXT NOT NULL
    );
-   ALTER TABLE mirror_messages ADD COLUMN sources TEXT;`
+   ALTER TABLE mirror_messages ADD COLUMN sources TEXT;`,
+
+  // 13 — body signals from Health Connect, one row per local day. Kept on
+  // the phone only; any of the three may be missing.
+  `CREATE TABLE body_days (
+     date       TEXT PRIMARY KEY NOT NULL,
+     steps      INTEGER,
+     resting_hr INTEGER,
+     hrv        INTEGER,
+     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

@@ -2,6 +2,7 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import { api } from './api';
+import { allBodyDays } from './body';
 import { allCheckIns } from './checkIns';
 import { CONSENT_POLICY_VERSION, type ConsentPurpose } from './consent';
 import { destroyLocalData } from './db/database';
@@ -39,6 +40,8 @@ export type ExportFile = {
     experiments: unknown[];
     /** Notes written for the Mirror under "What the Mirror knows". */
     mirrorNotes: unknown[];
+    /** Steps, resting heart rate and HRV by day, if read from Health Connect. */
+    body: unknown[];
   };
   /** Everything the server holds, or null if it couldn't be reached. */
   server: unknown;
@@ -46,7 +49,7 @@ export type ExportFile = {
 };
 
 export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
-  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes] = await Promise.all([
+  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes, body] = await Promise.all([
     allCheckIns(),
     listVents(100_000),
     allSleep(),
@@ -55,7 +58,8 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
     listSafetyEvents(),
     listLetters(),
     listExperiments(),
-    listNotes()
+    listNotes(),
+    allBodyDays()
   ]);
 
   let server: unknown = null;
@@ -68,7 +72,7 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 
   return {
     exportedAt: now.toISOString(),
-    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes },
+    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes, body },
     server,
     ...(serverError ? { serverError } : {})
   };

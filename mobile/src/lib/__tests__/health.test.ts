@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 
 import { setConsent } from '../account';
 import { kv } from '../db/kv';
-import { connectHealth, disconnectHealth, healthPlatform, nightsFromSessions, syncHealthSleep } from '../health';
+import { deleteBodyDays, setBodyConnected } from '../body';
+import { connectBody, connectHealth, disconnectHealth, healthPlatform, nightsFromSessions, syncHealthSleep } from '../health';
 import { deleteHealthNights, saveHealthNights } from '../sleep';
 
 const mockHC = {
@@ -20,6 +21,12 @@ jest.mock('../runtime', () => ({ inExpoGo: false }));
 jest.mock('../account', () => ({ setConsent: jest.fn() }));
 jest.mock('../db/kv', () => ({ kv: { get: jest.fn(), set: jest.fn() } }));
 jest.mock('../sleep', () => ({ saveHealthNights: jest.fn(), deleteHealthNights: jest.fn() }));
+jest.mock('../body', () => ({
+  ...jest.requireActual('../body'),
+  syncBody: jest.fn(async () => 0),
+  setBodyConnected: jest.fn(async () => undefined),
+  deleteBodyDays: jest.fn(async () => undefined)
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -89,7 +96,19 @@ describe('connecting', () => {
     await disconnectHealth();
     expect(kv.set).toHaveBeenCalledWith('health.connected', '0');
     expect(deleteHealthNights).toHaveBeenCalled();
+    expect(deleteBodyDays).toHaveBeenCalled();
     expect(setConsent).toHaveBeenCalledWith('health', false);
+  });
+
+  test('steps and heart are a second ask, for those three only', async () => {
+    mockHC.requestPermission.mockResolvedValueOnce([{ accessType: 'read', recordType: 'Steps' }]);
+    expect(await connectBody()).toBe('connected');
+    expect(mockHC.requestPermission).toHaveBeenLastCalledWith([
+      { accessType: 'read', recordType: 'Steps' },
+      { accessType: 'read', recordType: 'RestingHeartRate' },
+      { accessType: 'read', recordType: 'HeartRateVariabilityRmssd' }
+    ]);
+    expect(setBodyConnected).toHaveBeenCalledWith(true);
   });
 
   test('not connected, nothing is read', async () => {

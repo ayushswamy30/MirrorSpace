@@ -15,6 +15,7 @@ jest.mock('../safety/log', () => ({ listSafetyEvents: jest.fn(async () => [{ tie
 jest.mock('../sleep', () => ({ allSleep: jest.fn(async () => [{ wakeDate: '2026-09-29', minutes: 420 }]) }));
 jest.mock('../mirror', () => ({ listMessages: jest.fn(async () => [{ id: 1, role: 'user', content: 'hi' }]) }));
 jest.mock('../letters', () => ({ listLetters: jest.fn(async () => [{ id: 'l1', body: 'dear me' }]) }));
+jest.mock('../body', () => ({ allBodyDays: jest.fn(async () => [{ date: '2026-10-01', steps: 4000, restingHr: 60, hrv: 40 }]) }));
 jest.mock('../memory', () => ({ listNotes: jest.fn(async () => [{ id: 'n1', body: 'I work nights' }]) }));
 jest.mock('../experiments', () => ({ listExperiments: jest.fn(async () => [{ id: 'e1', title: 'In bed by 23:30' }]) }));
 
@@ -34,6 +35,7 @@ test('the export holds what is on the phone and what the server holds', async ()
   expect(data.onThisPhone.letters).toEqual([{ id: 'l1', body: 'dear me' }]);
   expect(data.onThisPhone.experiments).toEqual([{ id: 'e1', title: 'In bed by 23:30' }]);
   expect(data.onThisPhone.mirrorNotes).toEqual([{ id: 'n1', body: 'I work nights' }]);
+  expect(data.onThisPhone.body).toEqual([{ date: '2026-10-01', steps: 4000, restingHr: 60, hrv: 40 }]);
   expect(data.server).toEqual({ account: { id: 'u1' } });
   expect(data.serverError).toBeUndefined();
 });
