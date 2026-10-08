@@ -8,9 +8,10 @@ import Mirror from '@/app/(tabs)/mirror';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
-jest.mock('@/lib/session', () => ({
-  useProfile: () => ({ createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), consents: {} })
-}));
+jest.mock('@/lib/session', () => {
+  const profile = { createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), consents: {} };
+  return { useProfile: () => profile, useSession: () => ({ status: 'ready', profile }) };
+});
 const mockSpeak = jest.fn();
 const mockReadiness = jest.fn(async (): Promise<string> => 'needs-app-build');
 const mockListenStart = jest.fn();

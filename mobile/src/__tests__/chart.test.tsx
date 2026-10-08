@@ -8,7 +8,10 @@ import Chart from '@/app/(tabs)/chart';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 let mockCreated = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-jest.mock('@/lib/session', () => ({ useProfile: () => ({ createdAt: mockCreated }) }));
+jest.mock('@/lib/session', () => ({
+  useProfile: () => ({ createdAt: mockCreated }),
+  useSession: () => ({ status: 'ready', profile: { createdAt: mockCreated } })
+}));
 jest.mock('@/lib/checkIns', () => ({
   ...jest.requireActual('@/lib/checkIns'),
   allCheckIns: jest.fn(),

@@ -75,7 +75,7 @@ export function nightsSignal(sleep: readonly SleepLog[], now: Date): Signal | nu
 
   const usual = median(month.map(bedAround));
   const recent = mean(lastThree.map(bedAround));
-  const clock = (around: number) => formatClock(Math.round((around + 1440) % 1440));
+  const clock = (around: number) => formatClock(((Math.round(around / 5) * 5) + 1440) % 1440);
   if (recent - usual >= LATE_BY_MIN) {
     return {
       lean: 'heavier',

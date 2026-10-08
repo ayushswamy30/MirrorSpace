@@ -148,7 +148,8 @@ function topWordOf(list: readonly CheckIn[]): Wrapped['word'] {
   const counts = new Map<string, number>();
   for (const c of list) counts.set(c.emotion, (counts.get(c.emotion) ?? 0) + 1);
   const [best] = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  return best ? { word: best[0], count: best[1] } : null;
+  // A word chosen once isn't something reached for.
+  return best && best[1] >= 2 ? { word: best[0], count: best[1] } : null;
 }
 
 export type StoryLine = { key: string; label: string; title: string; line?: string };
@@ -175,7 +176,7 @@ export function storyOf(w: Wrapped): StoryLine[] {
       key: 'word',
       label: 'your word',
       title: `“${w.word.word}”`,
-      line: w.word.count === 1 ? 'Reached for once.' : `Reached for ${w.word.count} times.`
+      line: `Reached for ${w.word.count} times.`
     });
   }
   if (w.lightestWeekday) {

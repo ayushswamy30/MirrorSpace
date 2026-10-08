@@ -9,7 +9,7 @@ const DAY = 24 * 60 * 60 * 1000;
 let mockCreated = new Date(Date.now() - 40 * DAY).toISOString();
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
-jest.mock('@/lib/session', () => ({ useProfile: () => ({ createdAt: mockCreated }) }));
+jest.mock('@/lib/session', () => ({ useSession: () => ({ status: 'ready', profile: { createdAt: mockCreated } }) }));
 jest.mock('@/lib/checkIns', () => ({ ...jest.requireActual('@/lib/checkIns'), allCheckIns: jest.fn() }));
 jest.mock('@/lib/sleep', () => ({ ...jest.requireActual('@/lib/sleep'), allSleep: () => Promise.resolve([]) }));
 jest.mock('@/lib/vents', () => ({ pageDates: () => Promise.resolve([]) }));
@@ -30,7 +30,7 @@ async function renderWrapped() {
 
 beforeEach(() => {
   mockCreated = new Date(Date.now() - 40 * DAY).toISOString();
-  jest.mocked(checkIns.allCheckIns).mockResolvedValue([todayAt(4, 'glad')]);
+  jest.mocked(checkIns.allCheckIns).mockResolvedValue([todayAt(4, 'glad'), { ...todayAt(3, 'glad'), id: 'glad-2' }]);
 });
 
 test('tells this month back, and moves between periods', async () => {

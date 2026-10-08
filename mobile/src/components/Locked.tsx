@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { config } from '@/lib/config';
-import { useProfile } from '@/lib/session';
+import { useSession } from '@/lib/session';
 import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 
 import { StyleSheet } from 'react-native';
@@ -11,6 +11,7 @@ import { space } from '@/theme/tokens';
 import { Art } from './Art';
 import { Lede } from './Blocks';
 import { AppHeader } from './Header';
+import { Loader } from './Loader';
 import { Screen } from './Screen';
 import { Text } from './Text';
 
@@ -27,8 +28,19 @@ type Props = {
  * calendar days since the account began, whether or not the app was opened.
  */
 export function Locked({ feature, promise, children }: Props) {
-  const profile = useProfile();
-  const createdAt = new Date(profile.createdAt);
+  const session = useSession();
+
+  // Pages opened straight from a link or a notification can arrive before
+  // the account has loaded; they wait for it rather than guess.
+  if (session.status !== 'ready') {
+    return (
+      <Screen header={<AppHeader />} scroll={false}>
+        {session.status === 'error' ? <Text tone="soft">{session.message}</Text> : <Loader fill />}
+      </Screen>
+    );
+  }
+
+  const createdAt = new Date(session.profile.createdAt);
 
   if (isUnlocked(feature, createdAt, new Date(), config.unlockAll)) return <>{children}</>;
 
