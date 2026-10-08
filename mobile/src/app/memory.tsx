@@ -23,7 +23,7 @@ import {
   type Note,
   type Pattern
 } from '@/lib/memory';
-import { useProfile } from '@/lib/session';
+import { useSession } from '@/lib/session';
 import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
@@ -38,7 +38,9 @@ import { fonts } from '@/theme/typography';
 type Data = { on: boolean; patterns: Pattern[]; hidden: string[]; notes: Note[] };
 
 export default function Memory() {
-  const personal = useProfile().consents.readings?.granted === true;
+  // Outside the session gate: until the account loads, no patterns.
+  const session = useSession();
+  const personal = session.status === 'ready' && session.profile.consents.readings?.granted === true;
   const [data, setData] = useState<Data | null>(null);
 
   const load = useCallback(() => {

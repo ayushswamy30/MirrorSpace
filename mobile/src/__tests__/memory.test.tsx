@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import Memory from '@/app/memory';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn(), navigate: jest.fn() } }));
-jest.mock('@/lib/session', () => ({ useProfile: () => ({ consents: { readings: { granted: true } } }) }));
+jest.mock('@/lib/session', () => ({ useSession: () => ({ status: 'ready', profile: { consents: { readings: { granted: true } } } }) }));
 jest.mock('@/lib/memory', () => ({
   ...jest.requireActual('@/lib/memory'),
   memoryEnabled: jest.fn(async () => false),

@@ -10,7 +10,7 @@ const DAY = 24 * 60 * 60 * 1000;
 let mockCreated = new Date(Date.now() - 20 * DAY).toISOString();
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }));
-jest.mock('@/lib/session', () => ({ useProfile: () => ({ createdAt: mockCreated }) }));
+jest.mock('@/lib/session', () => ({ useSession: () => ({ status: 'ready', profile: { createdAt: mockCreated } }) }));
 jest.mock('@/lib/db/kv', () => ({ kv: { get: () => Promise.resolve(null), set: () => Promise.resolve() } }));
 jest.mock('@/lib/checkIns', () => ({ ...jest.requireActual('@/lib/checkIns'), allCheckIns: jest.fn() }));
 jest.mock('@/lib/sleep', () => ({ ...jest.requireActual('@/lib/sleep'), allSleep: jest.fn() }));
@@ -60,4 +60,13 @@ test('stays closed before day 14', async () => {
   await renderMind();
   expect(screen.getByText('Your mind chart, drawn from your own rhythm.')).toBeTruthy();
   expect(screen.queryByText('Your placements.')).toBeNull();
+});
+
+test('opened before the account has loaded, it waits instead of breaking', async () => {
+  const session = jest.requireMock('@/lib/session') as { useSession: () => unknown };
+  const real = session.useSession;
+  session.useSession = () => ({ status: 'loading' });
+  await renderMind();
+  expect(screen.queryByText('Your placements.')).toBeNull();
+  session.useSession = real;
 });

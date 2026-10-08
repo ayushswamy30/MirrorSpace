@@ -89,8 +89,9 @@ function clockAround(iso: string): number {
   return m >= 12 * 60 ? m - 1440 : m;
 }
 
+/** To the nearest five minutes: "around 23:25" reads truer than 23:27. */
 function clock(around: number): string {
-  return formatClock(Math.round(((around % 1440) + 1440) % 1440));
+  return formatClock((((Math.round(around / 5) * 5) % 1440) + 1440) % 1440);
 }
 
 // ---------------------------------------------------------------------------
