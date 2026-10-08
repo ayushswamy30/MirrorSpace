@@ -38,6 +38,7 @@ function Navigator() {
         <Stack.Screen name="week" options={{ presentation: 'modal' }} />
         <Stack.Screen name="mind" options={{ presentation: 'modal' }} />
         <Stack.Screen name="wrapped" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="experiments" options={{ presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ presentation: 'modal' }} />
         {/* Outside the session gate: signing in must work on a fresh phone. */}
         <Stack.Screen name="account" options={{ animation: 'fade' }} />
