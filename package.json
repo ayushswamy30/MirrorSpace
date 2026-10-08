@@ -2,7 +2,7 @@
   "name": "mirrorspace",
   "private": true,
   "version": "1.0.0",
-  "description": "MirrorSpace \u2014 deployed as one origin: a static front end with the API as a serverless function",
+  "description": "Lowkei \u2014 deployed as one origin: a static front end with the API as a serverless function",
   "type": "module",
   "engines": {
     "node": ">=20"

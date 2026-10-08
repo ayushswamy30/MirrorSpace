@@ -1,4 +1,4 @@
-# MirrorSpace
+# Lowkei
 
 A quiet, local-first mental-health companion. Log sleep, vent into a journal,
 talk to the Mirror, and get pattern-based reflections — no scores, no
@@ -12,7 +12,7 @@ diagnoses.
 
 ## Accounts
 
-MirrorSpace is **anonymous-first**. Opening the app signs you in
+Lowkei is **anonymous-first**. Opening the app signs you in
 anonymously through Supabase Auth — no email, no password, no signup wall —
 and every feature works from that first second.
 

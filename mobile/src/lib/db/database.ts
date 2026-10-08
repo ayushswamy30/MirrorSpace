@@ -19,7 +19,7 @@ import { migrate } from './migrations';
  *
  * SQLCipher needs a development build; it is not in Expo Go. There, plain
  * SQLite quietly ignores the key, so the database is checked after keying:
- * in MirrorSpace's own build an unencrypted database is refused outright
+ * in Lowkei's own build an unencrypted database is refused outright
  * rather than written to; in Expo Go it opens, and You says it isn't
  * encrypted.
  */

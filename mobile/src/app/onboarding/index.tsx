@@ -15,12 +15,12 @@ export default function Welcome() {
       }
     >
       <ArtDisc name="eye" size={104} style={{ alignSelf: 'flex-end' }} />
-      <Text variant="label" accessibilityLabel="MirrorSpace">
-        mirror – space
+      <Text variant="label" accessibilityLabel="Lowkei">
+        lowkei
       </Text>
       <Text variant="reading">A quiet room, not a clinic.</Text>
       <Text>
-        MirrorSpace notices your patterns — sleep, rhythm, how you write — and reflects them back, one short
+        Lowkei notices your patterns — sleep, rhythm, how you write — and reflects them back, one short
         reading a day. Every line can show what it was built from.
       </Text>
     </OnboardingStep>

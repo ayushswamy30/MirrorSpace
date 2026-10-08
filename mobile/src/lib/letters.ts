@@ -66,7 +66,7 @@ export async function writeLetter(body: string, months: Wait, now: Date = new Da
   const N = notifications();
   if (N && (await N.getPermissionsAsync()).granted) {
     await N.scheduleNotificationAsync({
-      content: { title: 'MirrorSpace', body: 'A letter you wrote is ready, when you are.', data: { url: '/check-in?mode=letter' } },
+      content: { title: 'Lowkei', body: 'A letter you wrote is ready, when you are.', data: { url: '/check-in?mode=letter' } },
       trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: new Date(letter.deliverAt), channelId: 'reminders' }
     });
   }

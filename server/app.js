@@ -90,7 +90,7 @@ app.get('/api/health', async (req, res) => {
   const database = await verifyConnection();
 
   res.status(database.ok ? 200 : 503).json({
-    status: database.ok ? 'MirrorSpace is breathing' : 'MirrorSpace is holding its breath',
+    status: database.ok ? 'Lowkei is breathing' : 'Lowkei is holding its breath',
     database,
     timestamp: new Date().toISOString()
   });

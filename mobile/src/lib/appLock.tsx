@@ -29,7 +29,7 @@ export async function lockAvailability(): Promise<LockAvailability> {
 
 export async function authenticate(): Promise<boolean> {
   const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: 'Unlock MirrorSpace',
+    promptMessage: 'Unlock Lowkei',
     cancelLabel: 'Not now',
     // Falling back to the passcode keeps people who can’t use biometrics — or
     // whose face or finger isn’t reading today — from being locked out.

@@ -16,7 +16,7 @@ import { listVents } from './vents';
 
 /**
  * The person's control over their own data (report §9: one-tap export, one-tap
- * delete). Most of what MirrorSpace holds is on this phone, so both reach the
+ * delete). Most of what Lowkei holds is on this phone, so both reach the
  * phone as well as the server — an export that left out the journal, or a
  * delete that left it behind, would be a false promise.
  */
@@ -69,14 +69,14 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 /** Writes the export to the app's cache and opens the share sheet for it. */
 export async function shareExport(): Promise<ExportFile> {
   const data = await buildExport();
-  const file = new File(Paths.cache, `mirrorspace-${data.exportedAt.slice(0, 10)}.json`);
+  const file = new File(Paths.cache, `lowkei-${data.exportedAt.slice(0, 10)}.json`);
   if (file.exists) file.delete();
   file.create();
   file.write(JSON.stringify(data, null, 2));
 
   await Sharing.shareAsync(file.uri, {
     mimeType: 'application/json',
-    dialogTitle: 'Your MirrorSpace data',
+    dialogTitle: 'Your Lowkei data',
     UTI: 'public.json'
   });
   return data;

@@ -105,7 +105,7 @@ router.get('/export', auth, accountLimiter, async (req, res, next) => {
     };
 
     const stamp = new Date().toISOString().slice(0, 10);
-    res.setHeader('Content-Disposition', `attachment; filename="mirrorspace-${stamp}.json"`);
+    res.setHeader('Content-Disposition', `attachment; filename="lowkei-${stamp}.json"`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     // An export of someone's journals should not sit in any shared cache.
     res.setHeader('Cache-Control', 'no-store');

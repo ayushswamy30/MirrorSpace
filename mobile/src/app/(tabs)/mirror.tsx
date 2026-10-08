@@ -198,7 +198,7 @@ function Closed({ status, onRetry }: { status: MirrorStatus; onRetry: () => void
   const line: Record<Exclude<MirrorStatus['kind'], 'open'>, string> = {
     'no-consent': 'Mirror reflects on what you write, using an AI. That needs AI reflections turned on.',
     unavailable:
-      'Mirror is resting for now. It opens once reflections are switched on for MirrorSpace — nothing you type here is sent until then.',
+      'Mirror is resting for now. It opens once reflections are switched on for Lowkei — nothing you type here is sent until then.',
     offline: 'Mirror needs a connection. Anything already said is still here.'
   };
   if (status.kind === 'open') return null;

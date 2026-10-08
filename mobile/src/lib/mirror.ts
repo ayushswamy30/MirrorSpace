@@ -30,7 +30,7 @@ export const SUGGESTIONS = [
 
 /**
  * The reference's Void offers questions by theme, each with a picture. These
- * are MirrorSpace's own: about the person, never about the stars.
+ * are Lowkei's own: about the person, never about the stars.
  */
 export const TOPICS = [
   {

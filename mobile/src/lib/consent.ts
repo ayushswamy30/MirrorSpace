@@ -24,7 +24,7 @@ export type ConsentCopy = {
 
 export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
   readings: {
-    title: 'May MirrorSpace use your numbers to write your daily reading?',
+    title: 'May Lowkei use your numbers to write your daily reading?',
     sends: [
       'Counts and averages from your check-ins and sleep — for example “slept 5h 40m” or “energy low three days running”.'
     ],
@@ -32,7 +32,7 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
     declined: 'Your reading will be a general one, not built from your patterns.'
   },
   ai_reflections: {
-    title: 'May MirrorSpace send what you write in Vent and Mirror to an AI, to reflect it back?',
+    title: 'May Lowkei send what you write in Vent and Mirror to an AI, to reflect it back?',
     sends: [
       'The text of an entry or message, once, to write a reflection on it.',
       // True of Groq's terms as of 2026-10: no training on inputs or outputs on
@@ -45,13 +45,13 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
     declined: 'Vent still works and stays private; you won’t get reflections, and Mirror chat stays closed.'
   },
   health: {
-    title: 'May MirrorSpace read your sleep from your phone’s health data?',
+    title: 'May Lowkei read your sleep from your phone’s health data?',
     sends: ['Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.'],
     neverSends: ['Anything else in your health record.'],
     declined: 'You can log sleep by hand instead.'
   },
   circle: {
-    title: 'May MirrorSpace show the people in your circle how your days are going?',
+    title: 'May Lowkei show the people in your circle how your days are going?',
     sends: [
       'Today’s Inner Weather — one word, like “fog” or “clear”.',
       'That you’re “running low”, when you say so. It clears itself after a day.',
