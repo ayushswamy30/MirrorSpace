@@ -30,7 +30,7 @@ function Card({ children }: { children: ReactNode }) {
   return (
     <View style={styles.card}>
       <Text variant="label" style={{ color: ink }}>
-        mirror – space
+        lowkei
       </Text>
       {children}
       <Text variant="mono" style={[styles.foot, { color: soft }]}>
