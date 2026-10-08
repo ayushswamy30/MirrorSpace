@@ -71,7 +71,7 @@ Dynamic Type up to 200% everywhere.
 
 ## Layout
 
-- **App header** (every tab): wordmark `MIRROR – SPACE` with the weather dot
+- **App header** (every tab): wordmark `LOWKEI` with the weather dot
   on the left, `CALM` alone on the right (where the reference keeps its date).
   No rule. Fixed; content scrolls beneath. Onboarding shows the `CALM` link alone.
 - **Sub-screen header**: back arrow left, mono title centred (`Crush Report`
