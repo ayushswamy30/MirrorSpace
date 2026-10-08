@@ -49,7 +49,7 @@ test('with reminders on, exactly one is scheduled, and it says nothing personal'
   expect(when).toEqual(new Date(2026, 8, 30, 21, 0));
   expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
   const [request] = jest.mocked(Notifications.scheduleNotificationAsync).mock.calls[0];
-  expect(request.content).toEqual({ title: 'MirrorSpace', body: 'A word for today, if you have one.' });
+  expect(request.content).toEqual({ title: 'Lowkei', body: 'A word for today, if you have one.' });
 });
 
 test('a test reminder arrives in a few seconds, only once reminders are on', async () => {

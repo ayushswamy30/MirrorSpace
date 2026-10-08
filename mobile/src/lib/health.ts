@@ -13,7 +13,7 @@ import { deleteHealthNights, saveHealthNights, type SleepLog } from './sleep';
  * phone, fill only the nights not logged by hand, and are deleted again if
  * it is turned off.
  *
- * Needs MirrorSpace's own build: Health Connect is not in Expo Go. Apple
+ * Needs Lowkei's own build: Health Connect is not in Expo Go. Apple
  * Health (HealthKit) needs a paid Apple developer account and comes later.
  */
 

@@ -5,7 +5,7 @@ import { OnboardingStep } from '@/components/OnboardingStep';
 import { Text } from '@/components/Text';
 
 /**
- * AI disclosure and what MirrorSpace is not (California SB 243, Oregon
+ * AI disclosure and what Lowkei is not (California SB 243, Oregon
  * SB 1546, Utah; report §8). Worded in the product's voice but never softened:
  * software, not a person; not therapy; cannot get help for you.
  */

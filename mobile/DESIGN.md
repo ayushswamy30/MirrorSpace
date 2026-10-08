@@ -1,7 +1,7 @@
-# MirrorSpace design system
+# Lowkei design system
 
 The reference for every screen is a screen recording of the Co-Star app
-(kept outside git). MirrorSpace follows its **design language** — layout,
+(kept outside git). Lowkei follows its **design language** — layout,
 type, components, pacing — with its own content, icons and copy. It never
 copies Co-Star's logo, illustrations, typeface or text, and it keeps WCAG 2.2
 AA where the reference does not.
@@ -111,9 +111,9 @@ Dynamic Type up to 200% everywhere.
 600–900 ms eases, no bounce. Reduced motion → plain fades. A thin circular
 spinner centred on paper while loading.
 
-## Mapping to MirrorSpace
+## Mapping to Lowkei
 
-| reference | MirrorSpace |
+| reference | Lowkei |
 |---|---|
 | Home: "Your day at a glance", Do/Don't, "Dive deeper" | Today: reading, receipts, Do/Don't |
 | Void (dark room, suggested questions, ask anything) | Mirror chat |

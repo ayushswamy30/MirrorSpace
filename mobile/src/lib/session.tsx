@@ -140,7 +140,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         } else {
           setState({
             status: 'error',
-            message: 'MirrorSpace needs a connection the first time it opens.'
+            message: 'Lowkei needs a connection the first time it opens.'
           });
         }
       }

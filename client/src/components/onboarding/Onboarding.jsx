@@ -166,7 +166,7 @@ export default function Onboarding({ onComplete }) {
             <div className="onboarding-actions">
               <button className="btn-ghost" onClick={() => setStep(1)}>Back</button>
               <button className="btn-primary onboarding-btn" onClick={handleFinish}>
-                Enter MirrorSpace
+                Enter Lowkei
               </button>
             </div>
           </motion.div>

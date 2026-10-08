@@ -27,7 +27,7 @@ import { space } from '@/theme/tokens';
 
 const UNAVAILABLE: Partial<Record<HealthAvailability, string>> = {
   'not-android': 'Apple Health comes later. For now, sleep can be logged by hand on Today.',
-  'needs-app-build': 'Health Connect needs MirrorSpace’s own app build — Expo Go can’t reach it. Sleep can still be logged by hand on Today.',
+  'needs-app-build': 'Health Connect needs Lowkei’s own app build — Expo Go can’t reach it. Sleep can still be logged by hand on Today.',
   'needs-update': 'Health Connect needs an update from the Play Store first.',
   unavailable: 'Health Connect isn’t available on this phone. Sleep can still be logged by hand on Today.'
 };

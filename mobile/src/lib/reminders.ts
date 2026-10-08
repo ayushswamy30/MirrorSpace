@@ -15,7 +15,7 @@ import { inExpoGo } from './runtime';
  * never a streak or a guilt line.
  *
  * expo-notifications throws as soon as it loads in Expo Go on Android (it was
- * removed there in SDK 53), so it is loaded only in MirrorSpace's own build.
+ * removed there in SDK 53), so it is loaded only in Lowkei's own build.
  */
 
 const ENABLED_KEY = 'reminder.enabled';
@@ -110,7 +110,7 @@ export async function sendTestReminder(seconds = 5): Promise<boolean> {
   if (!N || !(await remindersEnabled())) return false;
   await ensureChannel(N);
   await N.scheduleNotificationAsync({
-    content: { title: 'MirrorSpace', body: 'A word for today, if you have one.', data: { test: true } },
+    content: { title: 'Lowkei', body: 'A word for today, if you have one.', data: { test: true } },
     trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: CHANNEL }
   });
   return true;
@@ -129,7 +129,7 @@ export async function syncReminder(now: Date = new Date()): Promise<Date | null>
   const at = nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
   await N.scheduleNotificationAsync({
     // Nothing personal on a lock screen: no feeling, no count, no streak.
-    content: { title: 'MirrorSpace', body: 'A word for today, if you have one.' },
+    content: { title: 'Lowkei', body: 'A word for today, if you have one.' },
     trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL }
   });
   return at;

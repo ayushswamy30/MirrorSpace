@@ -1,7 +1,7 @@
 {
   "name": "mirrorspace-server",
   "version": "1.0.0",
-  "description": "MirrorSpace Backend — Express + Supabase",
+  "description": "Lowkei Backend — Express + Supabase",
   "main": "server.js",
   "type": "module",
   "scripts": {

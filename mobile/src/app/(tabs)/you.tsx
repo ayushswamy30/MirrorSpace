@@ -28,7 +28,7 @@ import { space } from '@/theme/tokens';
 import { useAppearance } from '@/theme/ThemeProvider';
 
 /**
- * You — the last tab, the reference's settings page, for MirrorSpace: how the
+ * You — the last tab, the reference's settings page, for Lowkei: how the
  * app looks, the reminder, the lock, what may be used, and the person's own
  * data. Every control says plainly what it does; withdrawing a consent is
  * exactly as easy as giving it.
@@ -90,7 +90,7 @@ export default function You() {
       if (on) {
         const allowed = await enableReminders();
         setReminder(allowed);
-        if (!allowed) setNote('Notifications are off for MirrorSpace in your phone’s settings.');
+        if (!allowed) setNote('Notifications are off for Lowkei in your phone’s settings.');
       } else {
         await disableReminders();
         setReminder(false);
@@ -201,7 +201,7 @@ export default function You() {
           subtitle={
             remindersSupported
               ? 'Once a day at most, around when you usually check in — never after you have'
-              : 'Needs MirrorSpace’s own app build — Expo Go and the preview can’t send them'
+              : 'Needs Lowkei’s own app build — Expo Go and the preview can’t send them'
           }
           value={reminder}
           onValueChange={toggleReminder}
@@ -233,7 +233,7 @@ export default function You() {
             subtitle={
               encryption.encrypted
                 ? `SQLCipher ${encryption.cipher.split(' ')[0]} · the key never leaves this phone`
-                : 'MirrorSpace’s own build encrypts everything you write'
+                : 'Lowkei’s own build encrypts everything you write'
             }
           />
         )}
@@ -296,7 +296,7 @@ export default function You() {
       <View style={styles.about}>
         <Art name="cat" size={72} />
         <Text variant="caption" tone="soft" style={styles.aboutText}>
-          The Mirror is software, not a person, and not a therapist. MirrorSpace can’t call anyone for you — crisis lines
+          The Mirror is software, not a person, and not a therapist. Lowkei can’t call anyone for you — crisis lines
           are under calm, then help.
         </Text>
       </View>

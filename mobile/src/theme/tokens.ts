@@ -1,5 +1,5 @@
 /**
- * MirrorSpace design tokens — see DESIGN.md.
+ * Lowkei design tokens — see DESIGN.md.
  *
  * A printed almanac: near-white paper and black ink, inverted at night.
  * Surfaces are separated by rules and space rather than fills, and a selected

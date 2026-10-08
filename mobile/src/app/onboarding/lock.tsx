@@ -46,7 +46,7 @@ export default function Lock() {
         </>
       }
     >
-      <Text variant="title">Lock MirrorSpace with Face ID, your fingerprint or your passcode?</Text>
+      <Text variant="title">Lock Lowkei with Face ID, your fingerprint or your passcode?</Text>
       <Text>What you write here stays on this phone. A lock keeps it yours even when someone else picks it up.</Text>
       {failed && <Text tone="soft">That didn’t go through. You can try again, or leave it for now.</Text>}
     </OnboardingStep>
