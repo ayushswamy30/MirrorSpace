@@ -12,3 +12,7 @@ build/
 # Supabase CLI local state
 supabase/.branches/
 supabase/.temp/
+
+# Design exports and screenshots dropped in the root
+/Untitled design*.zip
+/image.png
