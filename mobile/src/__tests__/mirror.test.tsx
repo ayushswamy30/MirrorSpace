@@ -8,8 +8,26 @@ import Mirror from '@/app/(tabs)/mirror';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
-jest.mock('@/lib/session', () => ({
-  useProfile: () => ({ createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() })
+jest.mock('@/lib/session', () => {
+  const profile = { createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), consents: {} };
+  return { useProfile: () => profile, useSession: () => ({ status: 'ready', profile }) };
+});
+const mockSpeak = jest.fn();
+const mockReadiness = jest.fn(async (): Promise<string> => 'needs-app-build');
+const mockListenStart = jest.fn();
+jest.mock('@/lib/voice', () => ({
+  readAloudOn: async () => true,
+  setReadAloud: async () => undefined,
+  speak: (t: string) => mockSpeak(t),
+  stopSpeaking: () => undefined,
+  voiceReadiness: () => mockReadiness(),
+  downloadVoiceModel: async () => true,
+  useListening: () => ({ listening: false, partial: '', start: mockListenStart, stop: jest.fn(), error: null })
+}));
+const mockMemory = jest.fn((): Promise<unknown> => Promise.resolve(null));
+jest.mock('@/lib/memory', () => ({
+  ...jest.requireActual('@/lib/memory'),
+  memoryForMirror: () => mockMemory()
 }));
 jest.mock('@/lib/safety/log', () => ({
   recordSafetyEvent: jest.fn(() => Promise.resolve()),
@@ -42,7 +60,14 @@ beforeEach(() => {
   nextId = 1;
   mocked.mirrorStatus.mockResolvedValue({ kind: 'open' });
   mocked.listMessages.mockResolvedValue([]);
-  mocked.addMessage.mockImplementation(async (role, content) => ({ id: nextId++, role, content, createdAt: 'now' }));
+  mocked.addMessage.mockImplementation(async (role, content, _now, sources = []) => ({
+    id: nextId++,
+    role,
+    content,
+    createdAt: 'now',
+    ...(sources.length ? { sources: [...sources] } : {})
+  }));
+  mockMemory.mockResolvedValue(null);
   mocked.askMirror.mockResolvedValue('It sounds like the week has been long.');
   jest.mocked(reflectionsPaused).mockResolvedValue(false);
 });
@@ -64,8 +89,36 @@ test('a question is kept on the phone and answered', async () => {
 
   expect(await screen.findByText('It sounds like the week has been long.')).toBeTruthy();
   expect(mocked.addMessage).toHaveBeenCalledWith('user', 'why am I so tired');
-  expect(mocked.addMessage).toHaveBeenCalledWith('mirror', 'It sounds like the week has been long.');
+  expect(mocked.addMessage).toHaveBeenCalledWith('mirror', 'It sounds like the week has been long.', expect.any(Date), []);
+  expect(mocked.askMirror).toHaveBeenCalledWith(expect.any(Array), null);
   expect(recordSafetyEvent).not.toHaveBeenCalled();
+  // Reading aloud was left on.
+  expect(mockSpeak).toHaveBeenCalledWith('It sounds like the week has been long.');
+});
+
+test('speaking listens on the phone when it can, and says plainly when it can’t', async () => {
+  await renderMirror();
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'speak' })));
+  expect(screen.getByText('Voice needs Lowkei’s own app build — not Expo Go or the preview.')).toBeTruthy();
+  expect(mockListenStart).not.toHaveBeenCalled();
+
+  mockReadiness.mockResolvedValueOnce('ready');
+  await act(async () => fireEvent.press(screen.getByRole('button', { name: 'speak' })));
+  expect(mockListenStart).toHaveBeenCalled();
+});
+
+test('with "what the mirror knows" on, an answer shows what it drew on', async () => {
+  const memory = [{ id: 'p1', text: 'Your nights run late.', receipt: 'midpoint 05:00' }, { id: 'n1', text: 'I work nights' }];
+  mockMemory.mockResolvedValue(memory);
+  mocked.askMirror.mockResolvedValue('Late nights have been the rule lately [p1].');
+  await renderMirror();
+  fireEvent.changeText(screen.getByLabelText('Ask Mirror'), 'why am I tired');
+  fireEvent.press(screen.getByRole('button', { name: 'send' }));
+
+  expect(await screen.findByText('Late nights have been the rule lately.')).toBeTruthy();
+  expect(mocked.askMirror).toHaveBeenCalledWith(expect.any(Array), memory);
+  expect(screen.getByText('· Your nights run late. (midpoint 05:00)')).toBeTruthy();
+  expect(screen.queryByText(/I work nights/)).toBeNull();
 });
 
 test('anything acute is never sent: the crisis screen answers instead', async () => {

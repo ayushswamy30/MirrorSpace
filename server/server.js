@@ -7,7 +7,7 @@ import { config } from './config/env.js';
 import { verifyConnection } from './config/health.js';
 
 const server = app.listen(config.port, async () => {
-  console.log(`🪞 MirrorSpace server listening on port ${config.port}`);
+  console.log(`🪞 Lowkei server listening on port ${config.port}`);
 
   const database = await verifyConnection();
   if (database.ok) {

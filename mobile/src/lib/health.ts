@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import type * as HealthConnectModule from 'react-native-health-connect';
 
 import { setConsent } from './account';
+import { BODY_PERMISSIONS, deleteBodyDays, setBodyConnected, syncBody } from './body';
 import { localDate } from './checkIns';
 import { kv } from './db/kv';
 import { inExpoGo } from './runtime';
@@ -9,11 +10,12 @@ import { deleteHealthNights, saveHealthNights, type SleepLog } from './sleep';
 
 /**
  * Sleep from Health Connect (Android). Asked in context, with the "health"
- * consent screen, and only for sleep sessions. Nights read here stay on the
+ * consent screen, and only for sleep sessions — steps and heart are a
+ * second, separate ask (body.ts). Nights read here stay on the
  * phone, fill only the nights not logged by hand, and are deleted again if
  * it is turned off.
  *
- * Needs MirrorSpace's own build: Health Connect is not in Expo Go. Apple
+ * Needs Lowkei's own build: Health Connect is not in Expo Go. Apple
  * Health (HealthKit) needs a paid Apple developer account and comes later.
  */
 
@@ -86,6 +88,7 @@ export async function syncHealthSleep(now: Date = new Date()): Promise<number> {
   });
   const nights = nightsFromSessions(result.records);
   await saveHealthNights(nights);
+  await syncBody(H, now).catch(err => console.warn('Body sync failed:', err));
   return nights.length;
 }
 
@@ -114,10 +117,33 @@ export async function connectHealth(): Promise<ConnectResult> {
   return 'connected';
 }
 
+/**
+ * Steps, resting heart rate and HRV: a second ask, on top of sleep, for
+ * these three only. Android may grant some and not others; whatever is
+ * granted is read.
+ */
+export async function connectBody(): Promise<'connected' | 'declined' | 'unavailable'> {
+  const H = module();
+  if (!H || !(await healthConnected()) || !(await H.initialize())) return 'unavailable';
+  const granted = await H.requestPermission([...BODY_PERMISSIONS]);
+  const ok = granted.some(p => 'recordType' in p && BODY_PERMISSIONS.some(b => b.recordType === p.recordType));
+  if (!ok) return 'declined';
+  await setBodyConnected(true);
+  await syncBody(H).catch(err => console.warn('First body sync failed:', err));
+  return 'connected';
+}
+
+/** Stop reading the body, and forget what was read. Sleep stays connected. */
+export async function disconnectBody(): Promise<void> {
+  await setBodyConnected(false);
+  await deleteBodyDays();
+}
+
 /** Withdraw: stop reading, forget what was read, and say so to the consent log. */
 export async function disconnectHealth(): Promise<void> {
   await kv.set(CONNECTED_KEY, '0');
   await deleteHealthNights();
+  await disconnectBody();
   await module()?.revokeAllPermissions().catch(() => undefined);
   await setConsent('health', false).catch(err => console.warn('Health withdrawal not recorded yet:', err));
 }

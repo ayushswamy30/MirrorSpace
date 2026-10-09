@@ -1,4 +1,4 @@
-import { dailyWeather, mostlyWeather, nightly, nightsSummary, tagTable, topWords, WEATHER_INK } from '../chart';
+import { dailyWeather, mostlyWeather, nightly, nightsSummary, tagTable, topWords, WEATHER_INK, yearInWeather } from '../chart';
 import { localDate, type CheckIn } from '../checkIns';
 import { night } from '../sleep';
 
@@ -69,4 +69,19 @@ test('the month is named for its most common weather, ties to the lighter sky', 
   expect(mostlyWeather(dailyWeather([], NOW))).toBeNull();
   const days = dailyWeather([on(0, 3), on(1, -3, -3), on(2, 3), on(3, -3, -3)], NOW);
   expect(mostlyWeather(days)).toEqual({ weather: 'clear', days: 2 });
+});
+
+test('the year runs from the first check-in’s month to this one, a mark a day', () => {
+  // NOW is 29 September; 40 days back is 20 August.
+  const year = yearInWeather([on(0, 3), on(40, -3, -3)], NOW);
+  expect(year.map(m => m.month)).toEqual(['2026-08', '2026-09']);
+  expect(year[0].days).toHaveLength(31);
+  expect(year[0].days[19]).toMatchObject({ date: '2026-08-20', weather: 'fog', ahead: false });
+  expect(year[1].days[28]).toMatchObject({ weather: 'clear', ahead: false });
+  expect(year[1].days[29]).toMatchObject({ weather: null, ahead: true });
+});
+
+test('the year shows twelve months at most, and this month alone before any check-in', () => {
+  expect(yearInWeather([on(500, 2)], NOW)).toHaveLength(12);
+  expect(yearInWeather([], NOW).map(m => m.month)).toEqual(['2026-09']);
 });

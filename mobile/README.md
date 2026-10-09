@@ -1,4 +1,4 @@
-# MirrorSpace mobile
+# Lowkei mobile
 
 The iOS and Android app described in *MirrorSpace New Direction Report*
 (repo root): Expo (React Native, TypeScript), Expo Router, Reanimated, on top
@@ -140,7 +140,7 @@ npm run doctor
 - Health Connect (sleep) needs a Health Connect data declaration in the Play
   Console before a Play Store release (approval up to a week, then the
   allow-list takes another 5–7 business days), and the permissions-rationale
-  intent should open a proper "why MirrorSpace reads sleep" screen rather
+  intent should open a proper "why Lowkei reads sleep" screen rather
   than the app's home. Apple Health (HealthKit) needs the paid Apple
   developer account and isn't built yet.
 - Two requested calm sounds, Café and Morning Birds, need licence-clean

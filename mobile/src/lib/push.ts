@@ -10,7 +10,7 @@ import { remindersSupported } from './reminders';
  * The phone hands the API its Expo push token so those can reach it; what
  * they say is decided on the server, and never names anyone on a lock screen.
  *
- * Like reminders, this needs MirrorSpace's own build — not Expo Go, not the
+ * Like reminders, this needs Lowkei's own build — not Expo Go, not the
  * browser preview. On Android it also needs Firebase set up for the project
  * (google-services.json and an FCM key in EAS); without that, asking for a
  * token fails and alerts simply stay off.

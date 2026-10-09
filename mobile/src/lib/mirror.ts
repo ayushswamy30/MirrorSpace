@@ -1,4 +1,5 @@
 import { api, ApiError, NetworkError } from './api';
+import type { MemoryItem } from './memory';
 import { isPreview } from './preview';
 import { getDatabase } from './db/database';
 
@@ -8,7 +9,14 @@ import { getDatabase } from './db/database';
  * stored there. Mirror is software, and says so.
  */
 
-export type MirrorMessage = { id: number; role: 'user' | 'mirror'; content: string; createdAt: string };
+export type MirrorMessage = {
+  id: number;
+  role: 'user' | 'mirror';
+  content: string;
+  createdAt: string;
+  /** What a Mirror answer drew on from "What the Mirror knows", as it stood then. */
+  sources?: MemoryItem[];
+};
 
 export type MirrorStatus =
   | { kind: 'open' }
@@ -30,7 +38,7 @@ export const SUGGESTIONS = [
 
 /**
  * The reference's Void offers questions by theme, each with a picture. These
- * are MirrorSpace's own: about the person, never about the stars.
+ * are Lowkei's own: about the person, never about the stars.
  */
 export const TOPICS = [
   {
@@ -80,12 +88,15 @@ export class MirrorUnavailable extends Error {
   }
 }
 
-/** Mirror's answer to the conversation so far (which ends on the person's turn). */
-export async function askMirror(history: readonly MirrorMessage[]): Promise<string> {
+/**
+ * Mirror's answer to the conversation so far (which ends on the person's
+ * turn) — with "What the Mirror knows" when the person has switched it on.
+ */
+export async function askMirror(history: readonly MirrorMessage[], memory: readonly MemoryItem[] | null = null): Promise<string> {
   if (isPreview) return 'This is the browser preview, so nothing was sent anywhere. On the phone, Mirror answers here.';
   const messages = history.slice(-TURNS_SENT).map(m => ({ role: m.role, content: m.content }));
   try {
-    const { reply } = await api.post<{ reply: string }>('/mirror/reply', { messages });
+    const { reply } = await api.post<{ reply: string }>('/mirror/reply', memory ? { messages, memory } : { messages });
     return reply;
   } catch (error) {
     if (error instanceof NetworkError) throw new MirrorUnavailable({ kind: 'offline' });
@@ -101,7 +112,7 @@ export async function askMirror(history: readonly MirrorMessage[]): Promise<stri
 // ---------------------------------------------------------------------------
 // The conversation, on the phone
 
-type Row = { id: number; role: 'user' | 'mirror'; content: string; created_at: string };
+type Row = { id: number; role: 'user' | 'mirror'; content: string; created_at: string; sources?: string | null };
 
 export async function listMessages(limit = 200): Promise<MirrorMessage[]> {
   const db = await getDatabase();
@@ -109,19 +120,31 @@ export async function listMessages(limit = 200): Promise<MirrorMessage[]> {
     'SELECT * FROM (SELECT * FROM mirror_messages ORDER BY id DESC LIMIT ?) ORDER BY id ASC',
     limit
   );
-  return rows.map(r => ({ id: r.id, role: r.role, content: r.content, createdAt: r.created_at }));
+  return rows.map(r => ({
+    id: r.id,
+    role: r.role,
+    content: r.content,
+    createdAt: r.created_at,
+    ...(r.sources ? { sources: JSON.parse(r.sources) as MemoryItem[] } : {})
+  }));
 }
 
-export async function addMessage(role: MirrorMessage['role'], content: string, now: Date = new Date()): Promise<MirrorMessage> {
+export async function addMessage(
+  role: MirrorMessage['role'],
+  content: string,
+  now: Date = new Date(),
+  sources: readonly MemoryItem[] = []
+): Promise<MirrorMessage> {
   const db = await getDatabase();
   const createdAt = now.toISOString();
   const result = await db.runAsync(
-    'INSERT INTO mirror_messages (role, content, created_at) VALUES (?, ?, ?)',
+    'INSERT INTO mirror_messages (role, content, created_at, sources) VALUES (?, ?, ?, ?)',
     role,
     content,
-    createdAt
+    createdAt,
+    sources.length ? JSON.stringify(sources) : null
   );
-  return { id: result.lastInsertRowId, role, content, createdAt };
+  return { id: result.lastInsertRowId, role, content, createdAt, ...(sources.length ? { sources: [...sources] } : {}) };
 }
 
 export async function clearConversation(): Promise<void> {

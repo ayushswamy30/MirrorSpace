@@ -93,7 +93,40 @@ export const migrations: readonly string[] = [
      delivered_at TEXT,
      opened_at    TEXT
    );
-   CREATE INDEX letters_deliver_at_idx ON letters (deliver_at);`
+   CREATE INDEX letters_deliver_at_idx ON letters (deliver_at);`,
+
+  // 11 — personal experiments: seven days of one small change. kept is the
+  // JSON list of days the person said they kept it.
+  `CREATE TABLE experiments (
+     id         TEXT PRIMARY KEY,
+     created_at TEXT NOT NULL,
+     title      TEXT NOT NULL,
+     starts_on  TEXT NOT NULL,
+     ends_on    TEXT NOT NULL,
+     kept       TEXT NOT NULL DEFAULT '[]',
+     stopped_on TEXT
+   );`,
+
+  // 12 — "What the Mirror knows": notes the person wrote for the Mirror, and
+  // on each Mirror answer, the items it drew on (JSON), so its citations
+  // still read true after the notes change.
+  `CREATE TABLE mirror_notes (
+     id         TEXT PRIMARY KEY,
+     created_at TEXT NOT NULL,
+     updated_at TEXT NOT NULL,
+     body       TEXT NOT NULL
+   );
+   ALTER TABLE mirror_messages ADD COLUMN sources TEXT;`,
+
+  // 13 — body signals from Health Connect, one row per local day. Kept on
+  // the phone only; any of the three may be missing.
+  `CREATE TABLE body_days (
+     date       TEXT PRIMARY KEY NOT NULL,
+     steps      INTEGER,
+     resting_hr INTEGER,
+     hrv        INTEGER,
+     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   );`
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

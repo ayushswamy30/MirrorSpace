@@ -40,7 +40,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="page-centered">
-        <p className="mono" style={{ opacity: 0.3 }}>entering mirrorspace...</p>
+        <p className="mono" style={{ opacity: 0.3 }}>entering lowkei...</p>
       </div>
     );
   }

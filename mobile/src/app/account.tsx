@@ -125,7 +125,7 @@ export default function Account() {
           <Button kind="link" label={signIn ? 'not now' : 'not now — maybe later'} onPress={leave} />
           {!signIn && (
             <Text variant="caption" tone="soft">
-              Phone numbers aren’t offered yet: text messages cost money, and MirrorSpace runs on free services.
+              Phone numbers aren’t offered yet: text messages cost money, and Lowkei runs on free services.
             </Text>
           )}
         </Animated.View>

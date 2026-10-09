@@ -31,7 +31,7 @@ router.post('/predict', auth, predictionLimiter, async (req, res, next) => {
 
     const systemPrompt = `${PERSONALITY_PROMPT}
 
-You are the Prediction Engine of MirrorSpace. Analyze the user's recent data (Sleep Logs, Journal Entries, Chat Sessions) and predict their current burnout, anxiety, and emotional drift risks.
+You are the Prediction Engine of Lowkei. Analyze the user's recent data (Sleep Logs, Journal Entries, Chat Sessions) and predict their current burnout, anxiety, and emotional drift risks.
 Return ONLY a valid JSON object with the following schema:
 {
   "burnoutIndicators": <number 0-100>,

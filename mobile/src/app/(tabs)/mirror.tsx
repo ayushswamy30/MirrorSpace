@@ -21,7 +21,10 @@ import {
   type MirrorMessage,
   type MirrorStatus
 } from '@/lib/mirror';
+import { citations, memoryForMirror } from '@/lib/memory';
 import { reflectionsPaused } from '@/lib/safety/log';
+import { useProfile } from '@/lib/session';
+import { downloadVoiceModel, readAloudOn, setReadAloud, speak, stopSpeaking, useListening, voiceReadiness } from '@/lib/voice';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
 import { dark, gutter, hitTarget, space } from '@/theme/tokens';
@@ -51,12 +54,37 @@ export default function Mirror() {
 
 function Room() {
   const { colors } = useTheme();
+  const personal = useProfile().consents.readings?.granted === true;
   const [status, setStatus] = useState<MirrorStatus | null>(null);
   const [messages, setMessages] = useState<MirrorMessage[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<Note>(null);
   const scroll = useRef<ScrollView>(null);
+  const [readAloud, setReadAloudState] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<{ text: string; download?: boolean } | null>(null);
+  const hearing = useListening(words => setText(t => (t.trim() ? `${t.trim()} ${words}` : words)));
+
+  useEffect(() => {
+    readAloudOn()
+      .then(setReadAloudState)
+      .catch(() => undefined);
+    return stopSpeaking;
+  }, []);
+
+  const speakInstead = async () => {
+    setVoiceNote(null);
+    if (hearing.listening) {
+      hearing.stop();
+      return;
+    }
+    const ready = await voiceReadiness().catch(() => 'unavailable' as const);
+    if (ready === 'ready') hearing.start();
+    else if (ready === 'needs-model') setVoiceNote({ text: 'Voice works on the phone itself, so it needs Android’s English speech model first.', download: true });
+    else if (ready === 'no-permission') setVoiceNote({ text: 'Voice needs the microphone. You can allow it in your phone’s settings.' });
+    else if (ready === 'needs-app-build') setVoiceNote({ text: 'Voice needs Lowkei’s own app build — not Expo Go or the preview.' });
+    else setVoiceNote({ text: 'This phone can’t turn speech into words on the device itself, so voice stays off rather than send your voice anywhere.' });
+  };
 
   const refresh = useCallback(() => {
     mirrorStatus()
@@ -98,9 +126,11 @@ function Room() {
       answerConcern(tier, 'chat');
       if (tier === 'low') setNote({ kind: 'care', text: 'That sounds heavy. If it gets heavier, help is under calm.' });
 
-      const reply = await askMirror(history);
-      const theirs = await addMessage('mirror', reply);
+      const memory = await memoryForMirror(personal).catch(() => null);
+      const { text: reply, sources } = citations(await askMirror(history, memory), memory);
+      const theirs = await addMessage('mirror', reply, new Date(), sources);
       setMessages(m => [...m, theirs]);
+      if (readAloud) speak(reply);
     } catch (error) {
       if (error instanceof MirrorUnavailable) setStatus(error.status);
       else setNote({ kind: 'error', text: 'Mirror couldn’t answer just now. Your words are still here.' });
@@ -134,19 +164,43 @@ function Room() {
           <Text variant="mono" style={[styles.centre, { color: SOFT }]}>
             software, not a person · not a therapist
           </Text>
+          <VoidLink label="what the mirror knows" onPress={() => router.push('/memory')} />
+          {open && (
+            <VoidLink
+              label={readAloud ? 'reading answers aloud · stop' : 'read answers aloud'}
+              onPress={() => {
+                const next = !readAloud;
+                setReadAloudState(next);
+                setReadAloud(next).catch(() => undefined);
+              }}
+            />
+          )}
 
           {status && !open && <Closed status={status} onRetry={refresh} />}
 
           {open && messages.length === 0 && <Topics onAsk={setText} />}
 
           {messages.map(m => (
-            <Text
-              key={m.id}
-              variant={m.role === 'user' ? 'mono' : 'heading'}
-              style={[{ color: m.role === 'user' ? SOFT : LIGHT }, m.role === 'user' && styles.mine]}
-            >
-              {m.content}
-            </Text>
+            <View key={m.id} style={styles.message}>
+              <Text
+                variant={m.role === 'user' ? 'mono' : 'heading'}
+                style={[{ color: m.role === 'user' ? SOFT : LIGHT }, m.role === 'user' && styles.mine]}
+              >
+                {m.content}
+              </Text>
+              {m.sources && m.sources.length > 0 && (
+                <View style={styles.sources} accessible accessibilityLabel={`Drawn from: ${m.sources.map(s => s.text).join('; ')}`}>
+                  <Text variant="mono" style={{ color: SOFT }}>
+                    drawn from
+                  </Text>
+                  {m.sources.map(s => (
+                    <Text key={s.id} variant="mono" style={{ color: SOFT }}>
+                      {`· ${s.text}${s.receipt ? ` (${s.receipt})` : ''}`}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
           ))}
 
           {sending && (
@@ -159,6 +213,24 @@ function Room() {
             <Text variant="bodyItalic" style={{ color: LIGHT }} accessibilityRole="alert">
               {note.text}
             </Text>
+          )}
+
+          {(voiceNote || hearing.error) && (
+            <View style={styles.closed}>
+              <Text variant="mono" style={[styles.centre, { color: SOFT }]} accessibilityRole="alert">
+                {voiceNote?.text ?? hearing.error}
+              </Text>
+              {voiceNote?.download && (
+                <VoidLink
+                  label="get the speech model"
+                  onPress={() => {
+                    downloadVoiceModel()
+                      .then(ok => setVoiceNote({ text: ok ? 'Once it has downloaded, tap speak again.' : 'The download didn’t start. You can type instead.' }))
+                      .catch(() => undefined);
+                  }}
+                />
+              )}
+            </View>
           )}
 
           {messages.length > 0 && !sending && (
@@ -175,8 +247,21 @@ function Room() {
 
         {open && (
           <View style={[styles.inputBar, { borderTopColor: dark.inkFaint }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={hearing.listening ? 'stop listening' : 'speak'}
+              accessibilityHint="Turns what you say into words here, on the phone"
+              onPress={speakInstead}
+              disabled={sending}
+              hitSlop={6}
+              style={({ pressed }) => [styles.speak, { borderColor: LIGHT, opacity: sending ? 0.4 : pressed ? 0.7 : 1 }]}
+            >
+              <Text variant="action" style={{ color: LIGHT }}>
+                {hearing.listening ? 'stop' : 'speak'}
+              </Text>
+            </Pressable>
             <TextInput
-              value={text}
+              value={hearing.listening && hearing.partial ? `${text}${text ? ' ' : ''}${hearing.partial}` : text}
               onChangeText={setText}
               placeholder="ASK ANYTHING…"
               placeholderTextColor={SOFT}
@@ -198,7 +283,7 @@ function Closed({ status, onRetry }: { status: MirrorStatus; onRetry: () => void
   const line: Record<Exclude<MirrorStatus['kind'], 'open'>, string> = {
     'no-consent': 'Mirror reflects on what you write, using an AI. That needs AI reflections turned on.',
     unavailable:
-      'Mirror is resting for now. It opens once reflections are switched on for MirrorSpace — nothing you type here is sent until then.',
+      'Mirror is resting for now. It opens once reflections are switched on for Lowkei — nothing you type here is sent until then.',
     offline: 'Mirror needs a connection. Anything already said is still here.'
   };
   if (status.kind === 'open') return null;
@@ -303,6 +388,8 @@ const styles = StyleSheet.create({
   topic: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm, width: '23%', borderWidth: 1 },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },
+  message: { gap: space.sm },
+  sources: { gap: 2, borderLeftWidth: 1, borderLeftColor: dark.inkFaint, paddingLeft: space.sm },
   link: { minHeight: hitTarget, justifyContent: 'center', alignSelf: 'center' },
   underline: { textDecorationLine: 'underline' },
   inputBar: {
@@ -322,5 +409,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm + 4,
     textAlignVertical: 'center'
   },
-  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' }
+  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' },
+  speak: { minHeight: 36, paddingHorizontal: space.sm, justifyContent: 'center', borderWidth: 1 }
 });

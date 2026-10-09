@@ -2,10 +2,13 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import { api } from './api';
+import { allBodyDays } from './body';
 import { allCheckIns } from './checkIns';
 import { CONSENT_POLICY_VERSION, type ConsentPurpose } from './consent';
 import { destroyLocalData } from './db/database';
+import { listExperiments } from './experiments';
 import { listLetters } from './letters';
+import { listNotes } from './memory';
 import { listMessages } from './mirror';
 import { listSafetyEvents } from './safety/log';
 import { loadPlan } from './safetyPlan';
@@ -16,7 +19,7 @@ import { listVents } from './vents';
 
 /**
  * The person's control over their own data (report §9: one-tap export, one-tap
- * delete). Most of what MirrorSpace holds is on this phone, so both reach the
+ * delete). Most of what Lowkei holds is on this phone, so both reach the
  * phone as well as the server — an export that left out the journal, or a
  * delete that left it behind, would be a false promise.
  */
@@ -33,6 +36,12 @@ export type ExportFile = {
     safetyEvents: unknown[];
     /** Letters to future self, sealed ones included — they're the person's own. */
     letters: unknown[];
+    /** Seven-day experiments, with the days marked kept. */
+    experiments: unknown[];
+    /** Notes written for the Mirror under "What the Mirror knows". */
+    mirrorNotes: unknown[];
+    /** Steps, resting heart rate and HRV by day, if read from Health Connect. */
+    body: unknown[];
   };
   /** Everything the server holds, or null if it couldn't be reached. */
   server: unknown;
@@ -40,14 +49,17 @@ export type ExportFile = {
 };
 
 export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
-  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters] = await Promise.all([
+  const [checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes, body] = await Promise.all([
     allCheckIns(),
     listVents(100_000),
     allSleep(),
     listMessages(100_000),
     loadPlan(),
     listSafetyEvents(),
-    listLetters()
+    listLetters(),
+    listExperiments(),
+    listNotes(),
+    allBodyDays()
   ]);
 
   let server: unknown = null;
@@ -60,7 +72,7 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 
   return {
     exportedAt: now.toISOString(),
-    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters },
+    onThisPhone: { checkIns, ventPages, sleep, mirrorConversation, safetyPlan, safetyEvents, letters, experiments, mirrorNotes, body },
     server,
     ...(serverError ? { serverError } : {})
   };
@@ -69,14 +81,14 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 /** Writes the export to the app's cache and opens the share sheet for it. */
 export async function shareExport(): Promise<ExportFile> {
   const data = await buildExport();
-  const file = new File(Paths.cache, `mirrorspace-${data.exportedAt.slice(0, 10)}.json`);
+  const file = new File(Paths.cache, `lowkei-${data.exportedAt.slice(0, 10)}.json`);
   if (file.exists) file.delete();
   file.create();
   file.write(JSON.stringify(data, null, 2));
 
   await Sharing.shareAsync(file.uri, {
     mimeType: 'application/json',
-    dialogTitle: 'Your MirrorSpace data',
+    dialogTitle: 'Your Lowkei data',
     UTI: 'public.json'
   });
   return data;

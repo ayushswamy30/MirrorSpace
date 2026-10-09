@@ -30,7 +30,7 @@ export function LockScreen() {
   return (
     <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
       <Screen edges={['top', 'bottom']} contentStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-        <Text variant="title">MirrorSpace is locked.</Text>
+        <Text variant="title">Lowkei is locked.</Text>
         {failed && <Text tone="soft">That didn’t work. You can try again, or use your passcode.</Text>}
         <Button
           label="unlock"

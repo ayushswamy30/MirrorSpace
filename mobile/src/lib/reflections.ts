@@ -76,7 +76,7 @@ async function announce(at: Date): Promise<void> {
   const N = notifications();
   if (!N || !(await N.getPermissionsAsync()).granted) return;
   await N.scheduleNotificationAsync({
-    content: { title: 'MirrorSpace', body: 'A reflection on something you wrote is waiting.', data: { url: '/check-in?mode=vent' } },
+    content: { title: 'Lowkei', body: 'A reflection on something you wrote is waiting.', data: { url: '/check-in?mode=vent' } },
     trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at, channelId: 'reminders' }
   });
 }

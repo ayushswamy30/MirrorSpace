@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 /**
  * An account, by email — optional, and never needed to use the app.
  *
- * MirrorSpace starts every space anonymously. Keeping it with an email links
+ * Lowkei starts every space anonymously. Keeping it with an email links
  * that address to the same space (nothing moves, nothing is lost); signing in
  * on another phone reaches the same account there. Either way the person
  * types a six-digit code from their inbox — no password to forget.
@@ -33,7 +33,7 @@ function explain(error: { message?: string; status?: number } | null): string {
   const text = error?.message?.toLowerCase() ?? '';
   if (text.includes('rate') || error?.status === 429) return 'Too many codes asked for just now. Wait a minute, then try again.';
   if (text.includes('expired') || text.includes('invalid')) return 'That code didn’t match, or it has expired. Ask for a new one.';
-  if (text.includes('already') || text.includes('registered')) return 'That email already has a MirrorSpace account. Sign in with it instead.';
+  if (text.includes('already') || text.includes('registered')) return 'That email already has a Lowkei account. Sign in with it instead.';
   if (text.includes('signups not allowed') || text.includes('not found')) return 'There’s no account with that email yet.';
   return 'That didn’t go through. Check your connection and try again.';
 }
