@@ -23,7 +23,7 @@ export default function Age() {
       }
     >
       <Text variant="title">Are you 18 or older?</Text>
-      <Text tone="soft">MirrorSpace is only for adults for now.</Text>
+      <Text tone="soft">Lowkei is only for adults for now.</Text>
     </OnboardingStep>
   );
 }

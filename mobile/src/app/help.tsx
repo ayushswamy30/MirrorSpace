@@ -19,7 +19,7 @@ export default function Help() {
       <View style={{ gap: space.md }}>
         <Text variant="title">You don’t have to get through this moment alone.</Text>
         <Text>
-          These are free, confidential lines staffed by trained people. MirrorSpace is not one of them — it can’t
+          These are free, confidential lines staffed by trained people. Lowkei is not one of them — it can’t
           call anyone for you.
         </Text>
       </View>

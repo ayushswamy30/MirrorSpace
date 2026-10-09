@@ -39,7 +39,7 @@ export function buildBatches(tokens, kind) {
   if (!message) throw new Error(`unknown push kind: ${kind}`);
   const all = tokens.map(to => ({
     to,
-    title: 'MirrorSpace',
+    title: 'Lowkei',
     body: message.body,
     sound: 'default',
     channelId: 'circle',

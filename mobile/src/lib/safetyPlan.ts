@@ -5,7 +5,7 @@ import { kv } from './db/kv';
  * open"), following the steps of safety-planning practice: notice the signs,
  * cope alone, reach for distraction, then for people, then for
  * professionals, make the space safer, and remember why. The wording is
- * MirrorSpace's own and, like helplines.ts, must be reviewed by the clinical
+ * Lowkei's own and, like helplines.ts, must be reviewed by the clinical
  * advisory board before release.
  *
  * Stored only on this phone, in the encrypted database.

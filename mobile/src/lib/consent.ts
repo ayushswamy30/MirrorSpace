@@ -11,7 +11,7 @@
  * the first time they start a circle.
  */
 
-export const CONSENT_POLICY_VERSION = '2026-10-02';
+export const CONSENT_POLICY_VERSION = '2026-10-08';
 
 export type ConsentPurpose = 'readings' | 'ai_reflections' | 'health' | 'circle';
 
@@ -24,7 +24,7 @@ export type ConsentCopy = {
 
 export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
   readings: {
-    title: 'May MirrorSpace use your numbers to write your daily reading?',
+    title: 'May Lowkei use your numbers to write your daily reading?',
     sends: [
       'Counts and averages from your check-ins and sleep — for example “slept 5h 40m” or “energy low three days running”.'
     ],
@@ -32,26 +32,30 @@ export const consentCopy: Record<ConsentPurpose, ConsentCopy> = {
     declined: 'Your reading will be a general one, not built from your patterns.'
   },
   ai_reflections: {
-    title: 'May MirrorSpace send what you write in Vent and Mirror to an AI, to reflect it back?',
+    title: 'May Lowkei send what you write in Vent and Mirror to an AI, to reflect it back?',
     sends: [
       'The text of an entry or message, once, to write a reflection on it.',
       // True of Groq's terms as of 2026-10: no training on inputs or outputs on
       // any plan, nothing retained by default (up to 30 days only for abuse
       // checks, off with Zero Data Retention). Change the provider, change
       // this line — and CONSENT_POLICY_VERSION with it.
-      'It passes through our server to Groq, the AI service that writes reflections. Groq doesn’t train on it or keep it, and our server doesn’t keep it either — only the reflection is saved.'
+      'It passes through our server to Groq, the AI service that writes reflections. Groq doesn’t train on it or keep it, and our server doesn’t keep it either — only the reflection is saved.',
+      'Only if you switch it on under “What the Mirror knows”: the patterns and notes on that page, with each Mirror message.'
     ],
     neverSends: ['Anything you keep only on this phone without asking for a reflection.'],
     declined: 'Vent still works and stays private; you won’t get reflections, and Mirror chat stays closed.'
   },
   health: {
-    title: 'May MirrorSpace read your sleep from your phone’s health data?',
-    sends: ['Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.'],
-    neverSends: ['Anything else in your health record.'],
+    title: 'May Lowkei read your sleep from your phone’s health data?',
+    sends: [
+      'Sleep and wake times, turned into numbers like “in bed at 01:40” before they leave the phone.',
+      'Only if you also allow it, as a second step: daily steps, resting heart rate and heart-rate variability. These stay on this phone and are never sent anywhere.'
+    ],
+    neverSends: ['Anything else in your health record — workouts, weight, medicines, anything not named here.'],
     declined: 'You can log sleep by hand instead.'
   },
   circle: {
-    title: 'May MirrorSpace show the people in your circle how your days are going?',
+    title: 'May Lowkei show the people in your circle how your days are going?',
     sends: [
       'Today’s Inner Weather — one word, like “fog” or “clear”.',
       'That you’re “running low”, when you say so. It clears itself after a day.',

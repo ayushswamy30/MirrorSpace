@@ -8,8 +8,11 @@ import { SubHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { consentCopy, withdrawNote } from '@/lib/consent';
+import { bodyConnected } from '@/lib/body';
 import {
+  connectBody,
   connectHealth,
+  disconnectBody,
   disconnectHealth,
   healthAvailability,
   healthConnected,
@@ -27,7 +30,7 @@ import { space } from '@/theme/tokens';
 
 const UNAVAILABLE: Partial<Record<HealthAvailability, string>> = {
   'not-android': 'Apple Health comes later. For now, sleep can be logged by hand on Today.',
-  'needs-app-build': 'Health Connect needs MirrorSpace’s own app build — Expo Go can’t reach it. Sleep can still be logged by hand on Today.',
+  'needs-app-build': 'Health Connect needs Lowkei’s own app build — Expo Go can’t reach it. Sleep can still be logged by hand on Today.',
   'needs-update': 'Health Connect needs an update from the Play Store first.',
   unavailable: 'Health Connect isn’t available on this phone. Sleep can still be logged by hand on Today.'
 };
@@ -36,14 +39,16 @@ export default function Health() {
   const copy = consentCopy.health;
   const [availability, setAvailability] = useState<HealthAvailability | null>(null);
   const [connected, setConnected] = useState(false);
+  const [body, setBody] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
-    Promise.all([healthAvailability(), healthConnected()])
-      .then(([a, c]) => {
+    Promise.all([healthAvailability(), healthConnected(), bodyConnected().catch(() => false)])
+      .then(([a, c, b]) => {
         setAvailability(a);
         setConnected(c);
+        setBody(c && b);
       })
       .catch(() => setAvailability('unavailable'));
   }, []);
@@ -70,11 +75,32 @@ export default function Health() {
     }
   };
 
+  const toggleBody = async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      if (body) {
+        await disconnectBody();
+        setBody(false);
+        setNote('Steps and heart are off, and what was read is gone. Sleep is still connected.');
+      } else {
+        const result = await connectBody();
+        if (result === 'connected') {
+          setBody(true);
+          setNote('Connected. Steps and heart stay on this phone, and show up on Today when they say something.');
+        } else if (result === 'declined') setNote('Nothing more is read. Sleep is still connected.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const turnOff = async () => {
     setBusy(true);
     try {
       await disconnectHealth();
       setConnected(false);
+      setBody(false);
       setNote('Turned off. The nights read from Health Connect are gone; the ones you logged stay.');
     } finally {
       setBusy(false);
@@ -111,6 +137,14 @@ export default function Health() {
         <Text tone="soft">{blocked}</Text>
       ) : connected ? (
         <View style={styles.block}>
+          <SectionLabel title="steps and heart" />
+          <Text tone="soft">
+            {body
+              ? 'Reading daily steps, resting heart rate and heart-rate variability. Kept on this phone, never sent.'
+              : 'Also read daily steps, resting heart rate and heart-rate variability? They stay on this phone and are never sent anywhere — not even to the Mirror.'}
+          </Text>
+          <Button kind={body ? 'link' : 'outline'} label={body ? 'stop reading steps and heart' : 'allow steps and heart'} disabled={busy} onPress={toggleBody} />
+          <SectionLabel title="all of it" />
           <Button kind="outline" label="turn off" disabled={busy} onPress={turnOff} />
           <Button kind="link" label="health connect settings" onPress={openHealthSettings} />
         </View>

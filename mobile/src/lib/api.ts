@@ -2,7 +2,7 @@ import { config } from './config';
 import { supabase } from './supabase';
 
 /**
- * Client for the MirrorSpace Express API. Every call carries the current
+ * Client for the Lowkei Express API. Every call carries the current
  * Supabase access token; the API verifies it locally and scopes every query
  * to that user.
  */

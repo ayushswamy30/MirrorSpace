@@ -6,6 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { WEATHER_INK, type ChartDay } from '@/lib/chart';
 import type { Reading } from '@/lib/patterns';
+import type { StoryLine } from '@/lib/wrapped';
 import { light, radius, space } from '@/theme/tokens';
 import type { Weather } from '@/theme/tokens';
 
@@ -30,7 +31,7 @@ function Card({ children }: { children: ReactNode }) {
   return (
     <View style={styles.card}>
       <Text variant="label" style={{ color: ink }}>
-        mirror – space
+        lowkei
       </Text>
       {children}
       <Text variant="mono" style={[styles.foot, { color: soft }]}>
@@ -107,6 +108,33 @@ export function MonthCard({ days, mostly }: { days: ChartDay[]; mostly: Weather 
 }
 
 /**
+ * Wrapped, story-sized: the period and its first few plain statements. The
+ * feeling words and the tags (what drained, what restored) stay off the card —
+ * a share should never say more about someone than the weather does.
+ */
+const SHAREABLE = new Set(['days', 'weather', 'weekday', 'month', 'nights', 'rested', 'pages']);
+
+export function WrappedCard({ story, label }: { story: readonly StoryLine[]; label: string }) {
+  return (
+    <Card>
+      <View style={styles.body}>
+        <Text variant="label" style={{ color: soft }}>{`my ${label}, wrapped`}</Text>
+        {story.filter(s => SHAREABLE.has(s.key)).slice(0, 5).map(s => (
+          <View key={s.key} style={styles.storyLine}>
+            <Text variant="mono" style={{ color: soft }}>
+              {s.label}
+            </Text>
+            <Text variant="heading" style={{ color: ink }}>
+              {s.title}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Card>
+  );
+}
+
+/**
  * A "share" link that renders its card off screen, captures it and opens
  * the share sheet. In the browser preview it explains instead.
  */
@@ -173,5 +201,6 @@ const styles = StyleSheet.create({
   col: { flex: 1, gap: 2 },
   wheel: { alignItems: 'center', marginTop: space.md },
   foot: { textAlign: 'center' },
+  storyLine: { gap: 2, paddingTop: space.sm },
   offscreen: { position: 'absolute', left: -10000, top: 0 }
 });

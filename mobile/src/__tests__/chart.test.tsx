@@ -8,7 +8,10 @@ import Chart from '@/app/(tabs)/chart';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 let mockCreated = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-jest.mock('@/lib/session', () => ({ useProfile: () => ({ createdAt: mockCreated }) }));
+jest.mock('@/lib/session', () => ({
+  useProfile: () => ({ createdAt: mockCreated }),
+  useSession: () => ({ status: 'ready', profile: { createdAt: mockCreated } })
+}));
 jest.mock('@/lib/checkIns', () => ({
   ...jest.requireActual('@/lib/checkIns'),
   allCheckIns: jest.fn(),
@@ -50,6 +53,7 @@ test('lays out the month, the words and what surrounds the days', async () => {
   expect(screen.getByText('2×')).toBeTruthy();
   expect(screen.getByText('friends')).toBeTruthy();
   expect(screen.getByText(/No nights logged yet/)).toBeTruthy();
+  expect(screen.getByText('Your mind chart opens in 3 days.')).toBeTruthy();
 });
 
 test('stays closed before day 7', async () => {

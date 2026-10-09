@@ -10,7 +10,7 @@ import Animated, {
   withRepeat,
   withTiming
 } from 'react-native-reanimated';
-import Svg, { Circle, Line } from 'react-native-svg';
+import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
 import { Art } from '@/components/Art';
 import { Box, Lede, Section } from '@/components/Blocks';
@@ -28,14 +28,19 @@ import {
   tagTable,
   topWords,
   WEATHER_INK,
+  yearInWeather,
   type ChartDay,
   type NightsSummary,
   type TagRow,
-  type WordCount
+  type WordCount,
+  type YearMonth
 } from '@/lib/chart';
 import { allCheckIns, onCheckInsChanged } from '@/lib/checkIns';
+import { config } from '@/lib/config';
 import { useMotion } from '@/lib/preferences';
+import { useProfile } from '@/lib/session';
 import { allSleep, formatDuration, onSleepChanged } from '@/lib/sleep';
+import { daysUntil, isUnlocked, type Feature } from '@/lib/unlocks';
 import { gutter, MAX_WIDTH, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Weather } from '@/theme/tokens';
@@ -45,7 +50,8 @@ import type { Weather } from '@/theme/tokens';
  * last thirty days drawn as a wheel of weather, the words reached for set
  * like type, what surrounds the days, and a skyline of nights. The person's
  * own data, laid out; no reading written over it. Monochrome, with the one
- * signal mark on today. The Mind Chart (day 14) and Year in Weather are v1.
+ * signal mark on today, and the year as a mosaic. The Mind Chart (day 14)
+ * and Wrapped (day 30) are their own pages, linked at the top.
  */
 
 type Data = {
@@ -56,6 +62,7 @@ type Data = {
   perNight: (number | null)[];
   /** The words chosen each day, for the wheel's middle. */
   wordsOn: Record<string, string[]>;
+  year: YearMonth[];
 };
 
 const WEATHERS: Weather[] = ['clear', 'mild', 'overcast', 'fog', 'storm'];
@@ -75,6 +82,7 @@ function useChart(): Data | null {
           tags: tagTable(checkIns, now),
           nights: nightsSummary(sleep, now),
           perNight: nightly(sleep, now),
+          year: yearInWeather(checkIns, now),
           wordsOn: checkIns.reduce<Record<string, string[]>>((acc, c) => {
             (acc[c.localDate] ??= []).push(c.emotion);
             return acc;
@@ -110,13 +118,18 @@ function ChartPage() {
 
   if (!data) return <Screen header={<AppHeader />}>{null}</Screen>;
 
-  const { days, words, tags, nights, perNight, wordsOn } = data;
+  const { days, words, tags, nights, perNight, wordsOn, year } = data;
   const mostly = mostlyWeather(days);
   const checkedIn = days.filter(d => d.weather).length;
 
   return (
     <Screen header={<AppHeader />}>
-      <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
+      <View style={styles.links}>
+        <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
+        <UnlockLink feature="mindChart" label="your mind chart" name="Your mind chart" href="/mind" />
+        <UnlockLink feature="wrapped" label="wrapped" name="Wrapped" href="/wrapped" />
+        <Button kind="link" label="experiments" onPress={() => router.push('/experiments')} />
+      </View>
       <Lede label="your chart" title="The last thirty days.">
         <Text tone="soft">
           {mostly
@@ -162,7 +175,27 @@ function ChartPage() {
           <Text tone="soft">No nights logged yet — Today has a line for last night.</Text>
         )}
       </Section>
+
+      <Section title="year in weather">
+        <YearMosaic months={year} />
+      </Section>
     </Screen>
+  );
+}
+
+/** A page that opens on a later day; until then, a quiet line about when. */
+function UnlockLink({ feature, label, name, href }: { feature: Feature; label: string; name: string; href: '/mind' | '/wrapped' }) {
+  const profile = useProfile();
+  const createdAt = new Date(profile.createdAt);
+
+  if (isUnlocked(feature, createdAt, new Date(), config.unlockAll)) {
+    return <Button kind="link" label={label} onPress={() => router.push(href)} />;
+  }
+  const days = daysUntil(feature, createdAt);
+  return (
+    <Text variant="mono" tone="soft">
+      {days === 1 ? `${name} opens tomorrow.` : `${name} opens in ${days} days.`}
+    </Text>
   );
 }
 
@@ -395,6 +428,57 @@ function TagLine({ row, max }: { row: TagRow; max: number }) {
   );
 }
 
+/**
+ * The year as a mosaic: a row per month, a square per day, filled by its
+ * weather's ink. A quiet day is a speck; days still to come are left blank.
+ */
+function YearMosaic({ months }: { months: YearMonth[] }) {
+  const { colors } = useTheme();
+  const [w, setW] = useState(0);
+  const label = 30;
+  const cell = w > label ? (w - label) / 31 : 0;
+  const square = Math.max(2, cell - 2);
+  const known = months.flatMap(m => m.days).filter(d => d.weather);
+  const counts = WEATHERS.map(x => `${known.filter(d => d.weather === x).length} ${x}`).join(', ');
+
+  return (
+    <View
+      onLayout={e => setW(e.nativeEvent.layout.width)}
+      style={styles.year}
+      accessible
+      accessibilityLabel={`Year in weather, ${months.length} ${months.length === 1 ? 'month' : 'months'}: ${counts}.`}
+    >
+      {cell > 0 &&
+        months.map(m => (
+          <View key={m.month} style={styles.yearRow}>
+            <Text variant="mono" tone="soft" style={{ width: label }}>
+              {new Date(`${m.month}-15T12:00:00`).toLocaleDateString([], { month: 'short' }).slice(0, 3).toLowerCase()}
+            </Text>
+            <Svg width={cell * 31} height={cell}>
+              {m.days.map((d, i) =>
+                d.ahead ? null : d.weather ? (
+                  <Rect
+                    key={d.date}
+                    x={i * cell + 1}
+                    y={1}
+                    width={square}
+                    height={square}
+                    stroke={colors.ink}
+                    strokeWidth={0.75}
+                    fill={colors.ink}
+                    fillOpacity={WEATHER_INK[d.weather]}
+                  />
+                ) : (
+                  <Circle key={d.date} cx={i * cell + cell / 2} cy={cell / 2} r={0.9} fill={colors.inkSoft} />
+                )
+              )}
+            </Svg>
+          </View>
+        ))}
+    </View>
+  );
+}
+
 const EIGHT_HOURS = 8 * 60;
 const SKY_TOP = 11 * 60;
 
@@ -452,6 +536,7 @@ function Skyline({ nights }: { nights: (number | null)[] }) {
 }
 
 const styles = StyleSheet.create({
+  links: { gap: space.sm, alignItems: 'flex-start' },
   wheel: { alignSelf: 'center', marginTop: space.md },
   wheelCentre: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 2 },
   legendWrap: { gap: space.sm, alignItems: 'center', marginTop: space.md },
@@ -477,5 +562,7 @@ const styles = StyleSheet.create({
   bar: { height: 1.5 },
   nightsHead: { gap: 2, paddingTop: space.sm },
   skyline: { gap: space.xs, marginTop: space.md },
-  skyLabels: { flexDirection: 'row', justifyContent: 'space-between' }
+  skyLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  year: { gap: 2, marginTop: space.sm },
+  yearRow: { flexDirection: 'row', alignItems: 'center' }
 });

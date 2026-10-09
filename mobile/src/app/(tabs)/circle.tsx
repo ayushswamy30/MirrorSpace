@@ -72,7 +72,7 @@ export default function Circle() {
     return (
       <Screen header={<AppHeader />}>
         <Lede label="your circle" title="Your circle needs a connection." size="title">
-          <Text tone="soft">Nothing else in MirrorSpace does — check-ins, vent and calm all work offline.</Text>
+          <Text tone="soft">Nothing else in Lowkei does — check-ins, vent and calm all work offline.</Text>
         </Lede>
         <Button kind="link" label="try again" onPress={refresh} />
       </Screen>
@@ -439,7 +439,7 @@ function AddFriend({ code, onAdd }: { code: string | null; onAdd: (code: string)
             label="share it"
             style={styles.centred}
             onPress={() =>
-              Share.share({ message: `Join my circle on MirrorSpace — my code is ${code}. You’d see my weather, nothing else.` })
+              Share.share({ message: `Join my circle on Lowkei — my code is ${code}. You’d see my weather, nothing else.` })
             }
           />
         </Box>

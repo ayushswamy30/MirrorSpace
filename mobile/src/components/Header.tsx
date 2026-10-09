@@ -53,8 +53,8 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
   return (
     <View style={[styles.bar, onVoid && { backgroundColor: colors.void }]}>
       <View style={styles.brand}>
-        <Text variant="label" accessibilityRole="header" accessibilityLabel="MirrorSpace" style={{ color: ink }}>
-          mirror – space
+        <Text variant="label" accessibilityRole="header" accessibilityLabel="Lowkei" style={{ color: ink }}>
+          lowkei
         </Text>
         <View
           style={[styles.dot, { backgroundColor: dot }]}

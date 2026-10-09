@@ -1,7 +1,7 @@
 import Svg, { Circle, Ellipse, Line, Path } from 'react-native-svg';
 
 /**
- * MirrorSpace's own line icons — reflection and weather, never stars or
+ * Lowkei's own line icons — reflection and weather, never stars or
  * glyphs. Drawn on a 24-unit grid with one stroke weight so they read as a set.
  */
 

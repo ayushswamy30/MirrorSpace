@@ -1,4 +1,4 @@
-// End-to-end API tests. Point them at a running MirrorSpace server backed by
+// End-to-end API tests. Point them at a running Lowkei server backed by
 // a Supabase project you don't mind writing to — every run creates real rows.
 //
 //   API_BASE_URL=http://localhost:5000/api \

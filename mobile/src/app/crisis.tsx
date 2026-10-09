@@ -93,7 +93,7 @@ function Acute() {
 
       <PlanLink />
       <HelplineList />
-      <Button kind="link" label="back to mirrorspace" onPress={() => router.back()} />
+      <Button kind="link" label="back to lowkei" onPress={() => router.back()} />
     </Screen>
   );
 }
