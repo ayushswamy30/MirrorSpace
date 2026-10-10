@@ -17,7 +17,13 @@
   };
 
   const videos = [...document.querySelectorAll('video[data-auto]')];
-  if (!reduced && 'IntersectionObserver' in window) {
+  // Recordings wait until the page itself has loaded and the browser is idle,
+  // so they never compete with the text and type for the first paint.
+  const whenSettled = fn => {
+    const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 2500 }) : setTimeout(fn, 600));
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
+  };
+  if (!reduced && 'IntersectionObserver' in window) whenSettled(() => {
     const io = new IntersectionObserver(entries => {
       for (const e of entries) {
         const v = e.target;
@@ -25,7 +31,7 @@
       }
     }, { threshold: 0.35 });
     videos.forEach(v => io.observe(v));
-  }
+  });
 
   // With reduced motion, a recording plays only when asked.
   for (const b of document.querySelectorAll('.phone .play')) {
