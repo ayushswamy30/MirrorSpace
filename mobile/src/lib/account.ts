@@ -1,5 +1,6 @@
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 
 import { api } from './api';
 import { allBodyDays } from './body';
@@ -81,7 +82,20 @@ export async function buildExport(now: Date = new Date()): Promise<ExportFile> {
 /** Writes the export to the app's cache and opens the share sheet for it. */
 export async function shareExport(): Promise<ExportFile> {
   const data = await buildExport();
-  const file = new File(Paths.cache, `lowkei-${data.exportedAt.slice(0, 10)}.json`);
+  const name = `lowkei-${data.exportedAt.slice(0, 10)}.json`;
+
+  // A browser has no share sheet for files everywhere; it downloads instead.
+  if (Platform.OS === 'web') {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    return data;
+  }
+
+  const file = new File(Paths.cache, name);
   if (file.exists) file.delete();
   file.create();
   file.write(JSON.stringify(data, null, 2));

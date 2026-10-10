@@ -1,0 +1,163 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "dist",
+  "installCommand": "",
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei-sigma.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei-sigma.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/download/android",
+      "destination": "https://expo.dev/artifacts/eas/OpVuv-2yVcO1mbN-Eqo2xZz-9PLKVxdr84wnPT3BNx8.apk",
+      "permanent": false
+    },
+    {
+      "source": "/faq",
+      "destination": "/#faq",
+      "permanent": true
+    },
+    {
+      "source": "/features",
+      "destination": "/#features",
+      "permanent": true
+    },
+    {
+      "source": "/pricing",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/((?!app/|app$).*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        }
+      ]
+    },
+    {
+      "source": "/(fonts|art|media)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/app(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://kgsqewtdznpclcdwdqes.supabase.co wss://kgsqewtdznpclcdwdqes.supabase.co https://mirrorspace-api.onrender.com; frame-ancestors 'none'; base-uri 'self'; form-action 'none'"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), geolocation=(), interest-cohort=()"
+        }
+      ]
+    },
+    {
+      "source": "/app/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/app"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index"
+    },
+    {
+      "source": "/app",
+      "destination": "/app/index"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/app/index"
+    }
+  ]
+}

@@ -68,6 +68,37 @@ The preview profile talks to the hosted API on Render. EAS builds never see
 environment variables for the `preview` environment (`eas env:list`). Without
 them the app stops on launch.
 
+## Updates
+
+Builds carry EAS Update (`expo-updates`): on launch they fetch the newest
+JavaScript published to their channel and switch to it on the next launch.
+To ship a change to everyone with the APK, without a new build:
+
+```bash
+cd mobile
+npx eas-cli@latest update --channel preview --environment preview --message "what changed"
+```
+
+Only JavaScript and assets travel this way. A new native module, permission or
+plugin, or a change to `app.json` that affects the native app, needs a new
+build — and a new `version` in `app.json`, since the runtime version follows
+it and an update only reaches builds of the same runtime version. Builds made
+before updates were added (before October 10, 2026) never update.
+
+## The web app (iPhone)
+
+```bash
+cd mobile
+npm run build:web   # → dist-web/, served by the site at /app
+```
+
+The real app in a browser: signs in, talks to the API, keeps its database in
+the browser's private file system. That needs a cross-origin-isolated page,
+so the site sends COOP/COEP headers for `/app` (`site/vercel.json`), and the
+API must list the site in `CORS_ORIGINS`. There is no SQLCipher in a browser,
+so the copy isn't encrypted (You says so), and reminders, the app lock, voice
+and Health Connect don't run there. Deploy it with `sh site/deploy.sh`.
+
 ## Previewing it in a browser
 
 No phone needed to look at the screens:
@@ -127,8 +158,15 @@ npm run doctor
 
 ## Before a store build
 
-- `app.mirrorspace` is a **placeholder** bundle id / package name. It is
-  permanent once published — choose the real one first.
+- `app.mirrorspace` is a **placeholder** bundle id / package name, left over
+  from before the app was Lowkei. It is permanent once published — choose
+  the real one first. Changing it needs a new Android app in the Firebase
+  project and a fresh `google-services.json` for the new package, or Circle
+  alerts stop. The EAS slug (`mirrorspace`) is tied to the EAS project id and
+  never shown to anyone; it can stay.
+- The privacy policy and terms are served by the API at `/privacy` and
+  `/terms` (`server/legal/`). Fill in the operator name, grievance officer and
+  city before publishing, and keep them in step with `src/lib/consent.ts`.
 - The icon and splash image are still Expo’s template artwork.
 - The app ships SQLCipher, so Apple’s export-compliance question
   (`ITSAppUsesNonExemptEncryption`) needs a real answer from counsel; it is

@@ -44,8 +44,8 @@ test('tells this month back, and moves between periods', async () => {
   expect(screen.getByText(`${new Date().getFullYear()}, wrapped.`)).toBeTruthy();
 });
 
-test('stays closed before day 30', async () => {
-  mockCreated = new Date(Date.now() - 10 * DAY).toISOString();
+test('is open on the first day', async () => {
+  mockCreated = new Date().toISOString();
   await renderWrapped();
-  expect(screen.getByText('Your month, wrapped — once there’s a month of you.')).toBeTruthy();
+  expect(screen.queryByText('Your month, wrapped — once there’s a month of you.')).toBeNull();
 });

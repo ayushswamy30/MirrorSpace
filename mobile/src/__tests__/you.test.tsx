@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import * as account from '@/lib/account';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -155,4 +156,12 @@ test('your name and picture can be changed here', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'save' }));
   await waitFor(() => expect(mockSetCircleName).toHaveBeenCalledWith('Sam', 'swan'));
   expect(await screen.findByText('Sam')).toBeTruthy();
+});
+
+test('the privacy policy and terms open from the API host, outside /api', () => {
+  const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  renderYou();
+  fireEvent.press(screen.getByRole('button', { name: /^Privacy policy/ }));
+  fireEvent.press(screen.getByRole('button', { name: /^Terms of use/ }));
+  expect(open.mock.calls).toEqual([['https://api.test/privacy'], ['https://api.test/terms']]);
 });
