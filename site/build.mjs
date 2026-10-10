@@ -103,7 +103,12 @@ const org = {
   '@type': 'Organization',
   name: 'Lowkei',
   url: SITE,
-  logo: `${SITE}/icon-512.png`
+  logo: `${SITE}/icon-512.png`,
+  email: 'getlowkei@gmail.com',
+  founder: [
+    { '@type': 'Person', name: 'Shubh Jadiya', jobTitle: 'Developer' },
+    { '@type': 'Person', name: 'Ayush Swamy', jobTitle: 'Developer' }
+  ]
 };
 
 const app = {
@@ -248,8 +253,9 @@ const pages = [
     path: '/about',
     out: 'about.html',
     title: 'About — Lowkei',
-    description: 'Why Lowkei exists, who makes it, and the promises it keeps about your privacy.',
+    description: 'Lowkei is made by Shubh Jadiya and Ayush Swamy, two developers in India. Why it exists and the promises it keeps about your privacy.',
     body: fill(read('pages/about.html')),
+    schema: [org],
     trail: [['/about', 'About']]
   },
   {
