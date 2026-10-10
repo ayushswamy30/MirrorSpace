@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { dark, gutter, hitTarget, radius, room, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Icon } from './icons';
@@ -50,11 +50,9 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
   const ink = onVoid ? dark.ink : colors.ink;
   const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
 
-  const pill = { backgroundColor: onVoid ? room.glass : colors.glass, borderColor: onVoid ? room.glassEdge : colors.glassEdge };
-
   return (
-    <View style={styles.bar}>
-      <View style={[styles.brand, styles.pill, pill]}>
+    <View style={[styles.bar, onVoid && { backgroundColor: colors.void }]}>
+      <View style={styles.brand}>
         <Text variant="label" accessibilityRole="header" accessibilityLabel="Lowkei" style={{ color: ink }}>
           lowkei
         </Text>
@@ -64,7 +62,7 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
           importantForAccessibility="no-hide-descendants"
         />
       </View>
-      <View style={[styles.right, styles.pill, pill]}>
+      <View style={styles.right}>
         {extra}
         <CalmLink ink={ink} />
       </View>
@@ -86,7 +84,7 @@ export function SubHeader({ title, leading = 'back', onLeading, trailing }: SubH
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.bar, styles.subBar, { backgroundColor: colors.glass, borderColor: colors.glassEdge }]}>
+    <View style={styles.bar}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={leading === 'close' ? 'close' : 'back'}
@@ -113,9 +111,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between'
   },
-  subBar: { marginHorizontal: space.sm, marginTop: space.xs, paddingHorizontal: space.sm, borderWidth: 1, borderRadius: radius.pill },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  pill: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: hitTarget - 6 },
   right: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },

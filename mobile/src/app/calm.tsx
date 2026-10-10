@@ -47,7 +47,6 @@ export default function Calm() {
   return (
     <Screen
       edges={['top', 'bottom']}
-      scene="koi"
       header={
         <SubHeader
           title="calm"

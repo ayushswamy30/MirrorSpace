@@ -85,14 +85,14 @@ export default function Today() {
 
   if (!data) {
     return (
-      <Screen scene="weather" header={header} scroll={false}>
+      <Screen header={header} scroll={false}>
         <Loader fill label="Reading your day" />
       </Screen>
     );
   }
 
   return (
-    <Screen scene="weather" header={header}>
+    <Screen header={header}>
       <LetterSync onDelivered={loadLetters} />
       {open && (
         <WeekStrip

@@ -29,12 +29,6 @@ EAS. After a new `eas build --profile preview`, put the new artifact URL there
 and deploy. (Only native changes need a new APK — see “Updates” in
 `mobile/README.md`.)
 
-## Pictures and type
-
-The pictures are the app's: `design/images/` → `mobile/assets/pictures/`
-(`python mobile/scripts/pictures.py`), copied into the site at build time.
-Fraunces and DM Sans are subset and self-hosted in `fonts/` (SIL OFL).
-
 ## The recordings
 
 `media/` holds the app recorded from its browser preview (`npm --prefix

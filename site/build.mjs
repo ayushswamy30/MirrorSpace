@@ -32,9 +32,9 @@ const VIDEO_CAPTIONS = {
   wrapped: 'Wrapped: the month, told back'
 };
 
-function phone(name, { eager = false, cls = '', id = '' } = {}) {
+function phone(name, { eager = false, cls = '' } = {}) {
   const caption = VIDEO_CAPTIONS[name];
-  return `<div class="phone ${cls}"${id ? ` data-id="${id}"` : ''}>
+  return `<div class="phone ${cls}">
   <div class="screen">
     <video data-auto muted loop playsinline preload="none" width="600" height="1298" poster="/media/${name}.webp" aria-label="${esc(caption)}"${eager ? ' fetchpriority="high"' : ''}>
       <source data-src="/media/${name}.webm" type="video/webm">
@@ -45,27 +45,29 @@ function phone(name, { eager = false, cls = '', id = '' } = {}) {
 </div>`;
 }
 
-/** A picture slot (design/images, via mobile/assets/pictures) as a rounded sticker. */
-function sticker(slot, alt, cls = 'sticker') {
-  return `<img class="${cls}" src="/pictures/${slot}.webp" width="120" height="120" alt="${esc(alt)}" loading="lazy" decoding="async">`;
-}
-
-/** The settings that matter, as a strip of chips — twice, so it can loop. */
-const CHIPS = [
-  ['Your words leave this phone', 'Off'],
-  ['Ads', 'None'],
-  ['Trackers and analytics', 'None'],
-  ['AI reflections', 'Your call'],
-  ['Health data shared', 'Never'],
-  ['Encrypted on Android', 'On'],
-  ['Download everything', 'Any time'],
-  ['Erase everything', 'One tap']
-];
-const chipsHtml = () => {
-  const one = CHIPS.map(([k, v]) => `<span class="chip"><i aria-hidden="true"></i>${esc(k)} <b>${esc(v)}</b></span>`).join('');
-  return `${one}<span aria-hidden="true" style="display:contents">${one}</span>`;
+const ART = {
+  lily: [480, 455, 'A lily, drawn in ink'],
+  eye: [478, 480, 'An eye, drawn in ink'],
+  swan: [468, 318, 'A swan, drawn in ink'],
+  butterfly: [480, 465, 'A butterfly, drawn in ink'],
+  heart: [304, 445, 'An anatomical heart, drawn in ink'],
+  cat: [395, 435, 'A cat, drawn in ink'],
+  urchin: [480, 444, 'A sea urchin, drawn in ink'],
+  orchid: [480, 421, 'An orchid, drawn in ink'],
+  stamp: [348, 335, 'A postage stamp, drawn in ink'],
+  moka: [379, 480, 'A moka pot, drawn in ink'],
+  kittens: [418, 480, 'Two kittens, drawn in ink'],
+  king: [192, 480, 'A chess king, drawn in ink']
 };
 
+function art(name, cls = 'art', { eager = false } = {}) {
+  const [w, h, alt] = ART[name];
+  const dark = existsSync(join(ROOT, 'art', `${name}-dark.webp`));
+  const img = `<img class="${cls}" src="/art/${name}.webp" width="${w}" height="${h}" alt="${esc(alt)}" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
+  return dark ? `<picture><source srcset="/art/${name}-dark.webp" media="(prefers-color-scheme: dark)">${img}</picture>` : img;
+}
+
+const ARROW = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 const DOWNLOAD = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v9M4 7l4 4 4-4M2 14h12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 function download(cls = '') {
@@ -125,7 +127,7 @@ const app = {
 // ---------------------------------------------------------------------------
 // Layout
 
-const NAV = [['/#how', 'How it works'], ['/#features', 'Features'], ['/#privacy', 'Privacy'], ['/#faq', 'FAQ'], ['/about', 'About']];
+const NAV = [['/#features', 'Features'], ['/#privacy', 'Privacy'], ['/#faq', 'FAQ'], ['/about', 'About']];
 
 function crumbs(trail) {
   const items = [['/', 'Lowkei'], ...trail];
@@ -156,8 +158,8 @@ function layout({ path, title, description, body, schema = [], trail, preload = 
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${url}">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#F7F6FA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0C0B16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F6F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0E0E" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -169,10 +171,10 @@ function layout({ path, title, description, body, schema = [], trail, preload = 
 <meta property="og:image" content="${SITE}/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Lowkei — a soft place to notice how you are">
+<meta property="og:image:alt" content="Lowkei — a quiet place to notice how you are">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preload" href="/fonts/fraunces-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/dmsans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
 ${preload.map(p => `<link rel="preload" href="${p}" as="image" fetchpriority="high">`).join('\n')}
 <script>document.documentElement.classList.add('js')</script>
 <style>${CSS}</style>
@@ -182,24 +184,21 @@ ${ld.map(s => `<script type="application/ld+json">${JSON.stringify(s)}</script>`
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap">
-    <div class="pill">
-      <a class="brand" href="/" aria-label="Lowkei, home">lowkei<span class="dot" aria-hidden="true"></span></a>
-      <nav class="nav" aria-label="Main">${NAV.map(([h, l]) => `<a href="${h}"${h === path ? ' aria-current="page"' : ''}>${l}</a>`).join('')}</nav>
-    </div>
-    <div class="pill"><a class="btn small" href="/download">Download</a></div>
+    <a class="brand" href="/" aria-label="Lowkei, home">LOWKEI<span class="dot" aria-hidden="true"></span></a>
+    <nav class="nav" aria-label="Main">${NAV.map(([h, l]) => `<a href="${h}"${h === path ? ' aria-current="page"' : ''}>${l}</a>`).join('')}</nav>
+    <a class="btn small" href="/download">Download</a>
   </div>
 </header>
 ${bc ? bc.html : ''}
 <main id="main">
 ${body}
 </main>
-${path === '/' ? `<div class="sticky-cta">${download()}</div>` : ''}
 <footer>
   <div class="wrap">
     <div class="cols">
       <div>
-        <a class="brand" href="/" style="padding-left:0">lowkei<span class="dot" aria-hidden="true"></span></a>
-        <p style="margin-top:16px;color:var(--soft);max-width:22em">A soft place to notice how you are. Made in India by Shubh Jadiya and Ayush Swamy.</p>
+        <a class="brand" href="/">LOWKEI<span class="dot" aria-hidden="true"></span></a>
+        <p style="margin-top:16px;color:var(--soft);max-width:22em">A quiet place to notice how you are. Made in India.</p>
       </div>
       <div><h2>Product</h2><ul><li><a href="/#features">Features</a></li><li><a href="/download">Download</a></li><li><a href="/#faq">FAQ</a></li></ul></div>
       <div><h2>Company</h2><ul><li><a href="/about">About</a></li><li><a href="/about#contact">Contact</a></li></ul></div>
@@ -219,11 +218,11 @@ ${path === '/' ? `<div class="sticky-cta">${download()}</div>` : ''}
 
 const fill = html =>
   html
-    .replace(/<!--stack:([\w,]+)-->/g, (_, list) => list.split(',').map((n, i) => phone(n, { id: n, cls: i ? 'hidden-phone' : 'shown' })).join('\n'))
     .replace(/<!--phone:(\w+)(?::([\w ]+))?-->/g, (_, n, c) => phone(n, { cls: c || '' }))
-    .replace(/<!--chips-->/g, chipsHtml())
+    .replace(/<!--art:(\w+)(?::([\w ]+))?-->/g, (_, n, c) => art(n, c || 'art'))
     .replace(/<!--download(?::([\w ]+))?-->/g, (_, c) => download(c || ''))
-    .replace(/<!--faq-->/g, faqHtml());
+    .replace(/<!--faq-->/g, faqHtml())
+    .replace(/<!--arrow-->/g, ARROW);
 
 /** The <main> of a server/legal page, as site prose. */
 function legal(name) {
@@ -240,7 +239,7 @@ const pages = [
     description: 'Check in in ten seconds, write what you can’t say out loud, and see the weather of your weeks. What you write stays on your phone.',
     body: fill(read('pages/index.html')),
     schema: [org, app, faqSchema],
-    preload: ['/pictures/sky-overcast.webp']
+    preload: ['/media/today.webp']
   },
   {
     path: '/download',
@@ -281,7 +280,7 @@ const notFound = layout({
   path: '/404',
   title: 'Not found — Lowkei',
   description: 'This page doesn’t exist.',
-  body: `<div class="page wrap" style="text-align:center">${sticker('sticker-ghost', 'A small glowing jelly ghost', 'sticker" style="margin:0 auto')}<h1 style="margin-top:28px">Nothing lives here.</h1><p class="lede" style="margin:18px auto 30px">The page may have moved. Everything else is where you left it.</p><div class="ctas" style="justify-content:center"><a class="btn" href="/">Go home</a><a class="btn ghost" href="/download">Download</a></div></div>`
+  body: `<div class="page wrap" style="text-align:center">${art('king', 'art')}<h1 style="margin-top:28px">Nothing lives here.</h1><p class="lede" style="margin:18px auto 30px">The page may have moved. Everything else is where you left it.</p><div class="ctas" style="justify-content:center"><a class="btn" href="/">Go home</a><a class="btn ghost" href="/download">Download</a></div></div>`
 }).replace('<meta name="robots" content="index, follow">', '<meta name="robots" content="noindex">');
 
 // ---------------------------------------------------------------------------
@@ -289,8 +288,7 @@ const notFound = layout({
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-for (const dir of ['fonts', 'media']) cpSync(join(ROOT, dir), join(OUT, dir), { recursive: true });
-cpSync(join(ROOT, '..', 'mobile', 'assets', 'pictures'), join(OUT, 'pictures'), { recursive: true });
+for (const dir of ['fonts', 'art', 'media']) cpSync(join(ROOT, dir), join(OUT, dir), { recursive: true });
 for (const f of ['favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-512.png', 'og.jpg']) cpSync(join(ROOT, 'public', f), join(OUT, f));
 
 for (const p of pages) {
@@ -319,8 +317,8 @@ if (existsSync(WEB_APP)) {
         start_url: '/app',
         scope: '/app',
         display: 'standalone',
-        background_color: '#F7F6FA',
-        theme_color: '#F7F6FA',
+        background_color: '#F6F6F3',
+        theme_color: '#F6F6F3',
         icons: [
           { src: '/app/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: '/app/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
@@ -341,9 +339,9 @@ if (existsSync(WEB_APP)) {
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Lowkei">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#F7F6FA" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0C0B16" media="(prefers-color-scheme: dark)">
-    <style>html,body{background:#F7F6FA}@media (prefers-color-scheme: dark){html,body{background:#0C0B16}}</style>
+    <meta name="theme-color" content="#F6F6F3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0E0E0E" media="(prefers-color-scheme: dark)">
+    <style>html,body{background:#F6F6F3}@media (prefers-color-scheme: dark){html,body{background:#0E0E0E}}</style>
     <script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/app/sw.js', { scope: '/app' }).catch(() => {}));</script>
   </head>`;
   writeFileSync(
