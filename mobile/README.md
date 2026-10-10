@@ -134,7 +134,7 @@ npm run doctor
   alerts stop. The EAS slug (`mirrorspace`) is tied to the EAS project id and
   never shown to anyone; it can stay.
 - The privacy policy and terms are served by the API at `/privacy` and
-  `/terms` (`server/legal/`). Fill in the operator name, contact email and
+  `/terms` (`server/legal/`). Fill in the operator name, grievance officer and
   city before publishing, and keep them in step with `src/lib/consent.ts`.
 - The icon and splash image are still Expo’s template artwork.
 - The app ships SQLCipher, so Apple’s export-compliance question
