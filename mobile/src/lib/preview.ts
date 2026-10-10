@@ -9,10 +9,15 @@ import { night, saveSleep } from './sleep';
  * The browser preview: `npm run preview`. The app runs in a web page with a
  * stand-in profile and a month of made-up days, so every screen can be looked
  * at without a phone, an account, or the API. It never touches Supabase or
- * the server. The phone app has no web build, so web *is* the preview: it
- * cannot switch on in a phone build.
+ * the server, and it cannot switch on in a phone build.
+ *
+ * The web app (`npm run build:web`, served at /app for iPhone) is the real
+ * thing, not the preview: it sets EXPO_PUBLIC_WEB_APP=1.
  */
-export const isPreview = Platform.OS === 'web';
+export const isPreview = Platform.OS === 'web' && process.env.EXPO_PUBLIC_WEB_APP !== '1';
+
+/** The real app running in a browser — the iPhone version, for now. */
+export const isWebApp = Platform.OS === 'web' && !isPreview;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -63,4 +68,15 @@ export async function seedPreview(now: Date = new Date()): Promise<void> {
       await saveSleep(night(bed % 1440, wake, day));
     }
   }
+}
+
+/**
+ * Whether this browser can hold the app's database: expo-sqlite's web build
+ * keeps it in the origin-private file system, from a worker, and needs
+ * SharedArrayBuffer (so a cross-origin-isolated page).
+ */
+export function browserCanStore(): boolean {
+  if (Platform.OS !== 'web') return true;
+  const g = globalThis as { crossOriginIsolated?: boolean; navigator?: { storage?: { getDirectory?: unknown } } };
+  return g.crossOriginIsolated === true && typeof g.navigator?.storage?.getDirectory === 'function';
 }
