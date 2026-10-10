@@ -170,7 +170,6 @@ function layout({ path, title, description, body, schema = [], trail, preload = 
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/fonts/serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/mono-500.woff2" as="font" type="font/woff2" crossorigin>
 ${preload.map(p => `<link rel="preload" href="${p}" as="image" fetchpriority="high">`).join('\n')}
 <script>document.documentElement.classList.add('js')</script>
 <style>${CSS}</style>
