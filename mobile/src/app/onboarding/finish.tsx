@@ -22,8 +22,7 @@ export default function Finish() {
       try {
         await submitOnboarding(draft);
         await refreshProfile();
-        // Onboarding ends by offering to keep the space with an email.
-        if (!cancelled) router.replace('/account?next=welcome');
+        if (!cancelled) router.replace('/');
       } catch {
         if (!cancelled) setState('error');
       }

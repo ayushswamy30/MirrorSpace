@@ -9,7 +9,7 @@ const mockReplace = jest.fn();
 const mockBack = jest.fn();
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
-  router: { replace: (...a: unknown[]) => mockReplace(...a), back: () => mockBack() },
+  router: { replace: (...a: unknown[]) => mockReplace(...a), back: () => mockBack(), canGoBack: () => true },
   useLocalSearchParams: () => mockParams
 }));
 jest.mock('@/lib/auth', () => ({
@@ -17,6 +17,7 @@ jest.mock('@/lib/auth', () => ({
   sendLinkCode: jest.fn(),
   confirmLinkCode: jest.fn(),
   sendSignInCode: jest.fn(),
+  sendSignUpCode: jest.fn(),
   confirmSignInCode: jest.fn()
 }));
 jest.mock('@/lib/supabase', () => ({ supabase: {} }));
@@ -39,7 +40,7 @@ async function renderAccount() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockParams = {};
-  for (const fn of [mocked.sendLinkCode, mocked.confirmLinkCode, mocked.sendSignInCode, mocked.confirmSignInCode]) {
+  for (const fn of [mocked.sendLinkCode, mocked.confirmLinkCode, mocked.sendSignInCode, mocked.sendSignUpCode, mocked.confirmSignInCode]) {
     fn.mockResolvedValue();
   }
 });
@@ -82,13 +83,24 @@ test('a wrong code says so plainly, and nothing moves on', async () => {
   expect(mockReplace).not.toHaveBeenCalled();
 });
 
-test('it is always optional', async () => {
-  mockParams = { next: 'welcome' };
+test('a space made without an email has to be kept with one: there is no way past it', async () => {
+  mockParams = { mode: 'keep' };
   await renderAccount();
-  expect(screen.getByText(/Phone numbers aren’t offered yet/)).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'not now — maybe later' }));
+  expect(screen.queryByRole('button', { name: /not now/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /close/i })).toBeNull();
+});
+
+test('a new account: a code that creates it, then a fresh session', async () => {
+  mockParams = { mode: 'signup' };
+  await renderAccount();
+  fireEvent.changeText(screen.getByLabelText('Email address'), 'New@Example.com ');
+  fireEvent.press(screen.getByRole('button', { name: 'send me a code' }));
+  await waitFor(() => expect(mocked.sendSignUpCode).toHaveBeenCalledWith('new@example.com'));
+  fireEvent.changeText(screen.getByLabelText('Six-digit code'), '123456');
+  fireEvent.press(screen.getByRole('button', { name: 'create my account' }));
+  await waitFor(() => expect(mocked.confirmSignInCode).toHaveBeenCalledWith('new@example.com', '123456'));
+  expect(mockRetry).toHaveBeenCalled();
   expect(mockReplace).toHaveBeenCalledWith('/');
-  expect(screen.queryByText('not an email')).toBeNull();
 });
 
 test('an address that isn’t one is caught before anything is sent', async () => {

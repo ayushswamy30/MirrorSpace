@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/lib/api';
 import { loadCircle, setCircleName } from '@/lib/circle';
+import { pickPhoto, removePhoto, usePhoto } from '@/lib/photo';
 import { usePreferences, type Motion, type WeekStart } from '@/lib/preferences';
 import { hitTarget, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -30,6 +31,13 @@ export function ProfileCard() {
   const [icon, setIcon] = useState<ArtName | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const photo = usePhoto();
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
+
+  const choosePhoto = () => {
+    setPhotoNote(null);
+    pickPhoto().catch(() => setPhotoNote('That photo couldn’t be opened. Try another.'));
+  };
 
   const load = useCallback(() => {
     loadCircle()
@@ -78,7 +86,7 @@ export function ProfileCard() {
         disabled={offline && !profile}
         style={({ pressed }) => [styles.card, { opacity: pressed ? 0.6 : 1 }]}
       >
-        <Avatar icon={profile?.icon} name={profile?.name ?? '·'} size={64} />
+        <Avatar icon={profile?.icon} name={profile?.name ?? '·'} size={64} photo={photo} />
         <View style={styles.flex}>
           <Text variant="title">{shownName}</Text>
           <Text variant="action" style={styles.underline}>
@@ -92,7 +100,7 @@ export function ProfileCard() {
   return (
     <View style={styles.editor}>
       <View style={styles.card}>
-        <Avatar icon={icon} name={name || '·'} size={64} />
+        <Avatar icon={icon} name={name || '·'} size={64} photo={photo} />
         <TextInput
           value={name}
           onChangeText={setName}
@@ -105,8 +113,15 @@ export function ProfileCard() {
           style={[styles.field, { color: colors.ink, borderColor: colors.hairline }]}
         />
       </View>
+      <View style={styles.photoRow}>
+        <Button kind="outline" label={photo ? 'choose another photo' : 'choose a photo'} onPress={choosePhoto} />
+        {photo && <Button kind="link" label="remove photo" onPress={() => removePhoto()} />}
+      </View>
+      <Text variant="caption" tone="soft">
+        {photoNote ?? 'Your photo stays on this phone — it’s never uploaded. Your circle sees the drawing below.'}
+      </Text>
       <Text variant="mono" tone="soft">
-        Your picture — the one your circle sees beside your name.
+        Your drawing — the one your circle sees beside your name.
       </Text>
       <IconPicker value={icon} onChange={setIcon} />
       {error && (
@@ -199,6 +214,7 @@ export function Personalisation() {
 }
 
 const styles = StyleSheet.create({
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, flexWrap: 'wrap' },
   card: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1, gap: space.xs },
   underline: { textDecorationLine: 'underline' },

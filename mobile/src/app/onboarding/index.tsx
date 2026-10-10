@@ -9,7 +9,7 @@ export default function Welcome() {
   return (
     <OnboardingStep actions={
         <>
-          <Button label="begin" onPress={() => router.push('/onboarding/age')} />
+          <Button label="create an account" arrow onPress={() => router.push('/account?mode=signup')} />
           <Button kind="link" label="I already have an account" onPress={() => router.push('/account?mode=signin')} />
         </>
       }

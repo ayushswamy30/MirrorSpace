@@ -1,8 +1,6 @@
 /**
- * The Express application, with no listener attached.
- *
- * Kept separate from server.js so the same app can be mounted by a serverless
- * handler, which is handed a request rather than a port to bind.
+ * The Express application, with no listener attached (server.js binds the
+ * port), so tests can mount it on their own.
  */
 import express from 'express';
 import cors from 'cors';
@@ -13,12 +11,6 @@ import { verifyConnection } from './config/health.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 
 import userRoutes from './routes/user.js';
-import sleepRoutes from './routes/sleep.js';
-import journalRoutes from './routes/journal.js';
-import insightRoutes from './routes/insights.js';
-import chatRoutes from './routes/chat.js';
-import calmRoutes from './routes/calm.js';
-import patternRoutes from './routes/patterns.js';
 import mirrorRoutes from './routes/mirror.js';
 import circleRoutes from './routes/circle.js';
 import legalRoutes from './routes/legal.js';
@@ -29,13 +21,13 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-// Security headers. This process only ever answers JSON, so the directives
-// that matter are the ones that stop a browser from treating a response as
-// something it is not, or from embedding the API in someone else's page.
+// Security headers. Apart from the two legal pages this process only
+// answers JSON, so the directives that matter are the ones that stop a
+// browser from treating a response as something it is not, or from
+// embedding the API in someone else's page.
 app.use(helmet({
-  // Nothing here is a document, so lock the whole content policy down rather
-  // than enumerating sources. The front end carries its own policy, set in
-  // vercel.json.
+  // Lock the whole content policy down rather than enumerating sources; the
+  // legal pages set their own.
   contentSecurityPolicy: {
     useDefaults: false,
     directives: {
@@ -50,15 +42,13 @@ app.use(helmet({
   hsts: isProduction
     ? { maxAge: 15552000, includeSubDomains: true, preload: false }
     : false,
-  // Lets the front end on another origin read responses; without it the
+  // Lets the web app (on the site's origin) read responses; without it the
   // default same-origin policy blocks the browser from doing so.
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// When the front end is served from the same origin as this API — which is
-// how the Vercel deployment is arranged — the browser never sends an Origin
-// header for these requests and none of this applies. It matters for local
-// development and for any split-origin deployment.
+// The phone app sends no Origin; the web app at getlowkei.vercel.app/app does,
+// and must be listed in CORS_ORIGINS.
 app.use(cors({
   origin(origin, callback) {
     // Non-browser callers (curl, health checks) send no Origin.
@@ -77,12 +67,6 @@ app.use('/api', apiLimiter);
 
 // Routes
 app.use('/api/user', userRoutes);
-app.use('/api/sleep', sleepRoutes);
-app.use('/api/journal', journalRoutes);
-app.use('/api/insights', insightRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/calm', calmRoutes);
-app.use('/api/patterns', patternRoutes);
 app.use('/api/mirror', mirrorRoutes);
 app.use('/api/circle', circleRoutes);
 

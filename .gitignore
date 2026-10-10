@@ -16,3 +16,7 @@ supabase/.temp/
 # Design exports and screenshots dropped in the root
 /Untitled design*.zip
 /image.png
+
+# Reference images handed over as zips.
+/all_images*.zip
+/Untitled design*.zip
