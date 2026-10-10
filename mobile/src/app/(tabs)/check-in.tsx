@@ -1,7 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
@@ -32,7 +33,6 @@ import { answerConcern } from '@/lib/safety/respond';
 import { higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useProfile } from '@/lib/session';
 import { useEntering } from '@/theme/motion';
-import { sceneImage, type SceneName } from '@/theme/scenes';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
@@ -172,7 +172,7 @@ export default function CheckIn() {
 
   if (mode === 'letter' && !replacing) {
     return (
-      <Screen scene="weather" header={<AppHeader />}>
+      <Screen header={<AppHeader />}>
         <Segmented options={MODES} value={mode} onChange={setMode} />
         <Letters open={params.open} />
       </Screen>
@@ -181,7 +181,7 @@ export default function CheckIn() {
 
   if (mode === 'vent' && !replacing) {
     return (
-      <Screen scene="weather" header={<AppHeader />}>
+      <Screen header={<AppHeader />}>
         <Segmented options={MODES} value={mode} onChange={setMode} />
         <Vent reflections={profile.consents.ai_reflections?.granted === true} />
       </Screen>
@@ -189,7 +189,7 @@ export default function CheckIn() {
   }
 
   return (
-    <Screen scene="weather" header={<AppHeader />}>
+    <Screen header={<AppHeader />}>
       {!replacing && <Segmented options={MODES} value={mode} onChange={setMode} />}
       <View style={styles.block}>
         {/* A dot breathing slowly: the only thing asked before choosing. */}
@@ -247,13 +247,31 @@ const MOODS: Record<Quadrant, { title: string; hint: string; art: ArtName }> = {
 
 const FIRST_WORDS = 10;
 
-/** Each feeling's picture: the card it is chosen from. */
-const MOOD_SCENE: Record<Quadrant, SceneName> = {
-  'charged-unpleasant': 'comet',
-  'charged-pleasant': 'coralFlowers',
-  'low-unpleasant': 'nightFlowers',
-  'low-pleasant': 'hillsWalker'
+/** Each feeling's own light: coral for wound up, sun for bright, dusk for heavy, mint for easy. */
+const MOOD_GLOW: Record<Quadrant, readonly [string, string]> = {
+  'charged-unpleasant': ['#FF8A7A', '#FF9EC8'],
+  'charged-pleasant': ['#FFD873', '#FFB778'],
+  'low-unpleasant': ['#8FA2FF', '#B9A2FF'],
+  'low-pleasant': ['#86E3BC', '#93CBFF']
 };
+
+function MoodGlow({ quadrant }: { quadrant: Quadrant }) {
+  const { scheme } = useTheme();
+  const id = `mood-${quadrant}`;
+  const [a, b] = MOOD_GLOW[quadrant];
+  return (
+    <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="38%" r="70%">
+          <Stop offset="0" stopColor={a} stopOpacity={scheme === 'dark' ? 0.32 : 0.5} />
+          <Stop offset="0.55" stopColor={b} stopOpacity={scheme === 'dark' ? 0.12 : 0.22} />
+          <Stop offset="1" stopColor={b} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
+  );
+}
 
 function Choose({
   start,
@@ -281,15 +299,17 @@ function Choose({
               setQuadrant(q);
               setMore(false);
             }}
-            style={({ pressed }) => [styles.mood, { borderColor: colors.glassEdge, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+            style={({ pressed }) => [
+              styles.mood,
+              { borderColor: colors.glassEdge, backgroundColor: colors.glass, transform: [{ scale: pressed ? 0.97 : 1 }] }
+            ]}
           >
-            <Image source={sceneImage(MOOD_SCENE[q])} style={styles.moodImage} resizeMode="cover" />
-            <View style={[styles.moodLabel, { backgroundColor: colors.frost }]}>
-              <Text variant="heading">{MOODS[q].title}</Text>
-              <Text variant="mono" tone="soft">
-                {MOODS[q].hint}
-              </Text>
-            </View>
+            <MoodGlow quadrant={q} />
+            <Art name={MOODS[q].art} size={56} />
+            <Text variant="heading">{MOODS[q].title}</Text>
+            <Text variant="mono" tone="soft" style={styles.centre}>
+              {MOODS[q].hint}
+            </Text>
           </Pressable>
         ))}
       </Animated.View>
@@ -376,7 +396,7 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
   };
 
   return (
-    <Screen scene="weather" header={<AppHeader />}>
+    <Screen header={<AppHeader />}>
       <Animated.View entering={first} style={styles.block}>
         <Art name="lily" size={112} style={styles.art} />
         <Lede label="checked in" title={`${checkIn.emotion}.`}>
@@ -448,14 +468,14 @@ const styles = StyleSheet.create({
   moods: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   mood: {
     width: '48.5%',
-    aspectRatio: 0.82,
     borderWidth: 1,
     borderRadius: radius.card,
     overflow: 'hidden',
-    justifyContent: 'flex-end'
+    paddingVertical: space.lg,
+    paddingHorizontal: space.sm,
+    alignItems: 'center',
+    gap: space.sm
   },
-  moodImage: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  moodLabel: { margin: space.xs + 2, padding: space.sm + 2, borderRadius: radius.card - 6, gap: 2 },
   centre: { textAlign: 'center' },
   moodHead: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1 },

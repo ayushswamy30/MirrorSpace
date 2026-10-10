@@ -2,7 +2,7 @@ import type { BottomTabBarProps } from 'expo-router/tabs';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { dark, hitTarget, radius, room, space } from '@/theme/tokens';
+import { dark, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Text } from './Text';
@@ -34,6 +34,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
   const colors = onVoid ? { ...dark, paper: theme.colors.void } : theme.colors;
   const signal = onVoid ? dark.signal[theme.weather ?? 'fog'] : theme.signal;
   const { setInset } = useContext(InsetContext);
+  const night = onVoid || theme.scheme === 'dark';
   const bottom = Math.max(insets.bottom, space.sm) + space.xs;
 
   return (
@@ -41,11 +42,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
       <View
         style={[
           styles.tabs,
-          {
-            backgroundColor: onVoid ? room.glass : theme.colors.chrome,
-            borderColor: onVoid ? room.glassEdge : theme.colors.chromeEdge,
-            shadowColor: theme.colors.shadow
-          }
+          { backgroundColor: night ? 'rgba(22,20,40,0.82)' : 'rgba(255,255,255,0.78)', borderColor: night ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.95)' }
         ]}
         accessibilityRole="tablist"
       >
@@ -67,7 +64,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               onPress={onPress}
               hitSlop={{ top: space.sm, bottom: space.sm }}
-              style={[styles.tab, focused && { backgroundColor: onVoid ? room.chromeActive : theme.colors.chromeActive }]}
+              style={[styles.tab, focused && { backgroundColor: night ? 'rgba(255,255,255,0.1)' : 'rgba(20,19,28,0.06)' }]}
             >
               <Text variant="label" numberOfLines={1} style={[styles.label, { color: focused ? colors.ink : colors.inkSoft }]}>
                 {label}
@@ -92,6 +89,7 @@ const styles = StyleSheet.create({
     padding: space.xs,
     borderRadius: radius.pill,
     borderWidth: 1,
+    shadowColor: '#1B1640',
     shadowOpacity: 0.16,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 8 },
@@ -105,6 +103,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space.xs
   },
-  label: { fontSize: 11.5, letterSpacing: 0.1 },
+  label: { fontSize: 10, letterSpacing: 1.2 },
   mark: { width: 4, height: 4, borderRadius: radius.dot }
 });

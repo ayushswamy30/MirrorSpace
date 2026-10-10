@@ -37,35 +37,11 @@ export type Palette = {
   void: string;
   /** The one colour, keyed by Inner Weather. Small marks only. */
   signal: Record<Weather, string>;
-  /** Frosted glass over the aura: cards, header pills, fields. */
+  /** Frosted glass over the aura: cards, the tab bar, sheets. */
   glass: string;
   /** The bright edge a glass card catches. */
   glassEdge: string;
-  /** The page's sheet where it slides up over a picture. */
-  sheet: string;
-  /** The floating tab bar, and the capsule round the current tab. */
-  chrome: string;
-  chromeEdge: string;
-  chromeActive: string;
-  /** A label sitting on a picture: near-opaque, so its text keeps AA. */
-  frost: string;
-  /** Laid over a picture at night so it doesn't glare. */
-  veil: string;
-  /** Under floating things (the tab bar). */
-  shadow: string;
 };
-
-/**
- * The Mirror's dark room, the same in both themes: its glass, and the veil
- * over its picture — 0.76, the lightest that keeps the room's soft text AA
- * over the brightest part of the picture.
- */
-export const room = {
-  glass: 'rgba(22,20,40,0.78)',
-  glassEdge: 'rgba(255,255,255,0.15)',
-  chromeActive: 'rgba(255,255,255,0.1)',
-  veil: 'rgba(7,6,26,0.76)'
-} as const;
 
 export const light: Palette = {
   paper: '#F7F6FA',
@@ -86,14 +62,7 @@ export const light: Palette = {
     storm: '#6A4A7E'
   },
   glass: 'rgba(255,255,255,0.52)',
-  glassEdge: 'rgba(255,255,255,0.9)',
-  sheet: 'rgba(247,246,250,0.9)',
-  chrome: 'rgba(255,255,255,0.78)',
-  chromeEdge: 'rgba(255,255,255,0.95)',
-  chromeActive: 'rgba(20,19,28,0.06)',
-  frost: 'rgba(255,255,255,0.88)',
-  veil: 'rgba(12,11,22,0)',
-  shadow: '#1B1640'
+  glassEdge: 'rgba(255,255,255,0.9)'
 };
 
 export const dark: Palette = {
@@ -115,14 +84,7 @@ export const dark: Palette = {
     storm: '#BFA2D3'
   },
   glass: 'rgba(255,255,255,0.07)',
-  glassEdge: 'rgba(255,255,255,0.16)',
-  sheet: 'rgba(12,11,22,0.9)',
-  chrome: 'rgba(22,20,40,0.82)',
-  chromeEdge: 'rgba(255,255,255,0.14)',
-  chromeActive: 'rgba(255,255,255,0.1)',
-  frost: 'rgba(12,11,22,0.84)',
-  veil: 'rgba(12,11,22,0.38)',
-  shadow: '#000000'
+  glassEdge: 'rgba(255,255,255,0.16)'
 };
 
 export const space = {

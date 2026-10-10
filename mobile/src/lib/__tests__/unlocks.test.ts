@@ -25,18 +25,11 @@ describe('isUnlocked', () => {
     expect(isUnlocked('checkIn', created, created)).toBe(true);
   });
 
-  test('Mirror opens on day 3, not before', () => {
-    expect(isUnlocked('mirror', created, at('2026-10-02T12:00:00'))).toBe(false);
-    expect(isUnlocked('mirror', created, at('2026-10-03T00:01:00'))).toBe(true);
-  });
-
-  test('patterns open on day 7', () => {
-    expect(daysUntil('patterns', created, created)).toBe(6);
-    expect(isUnlocked('patterns', created, at('2026-10-07T08:00:00'))).toBe(true);
-  });
-
-  test('Mind Chart and Wrapped are open from day 1', () => {
-    for (const feature of ['mindChart', 'wrapped'] as const) expect(isUnlocked(feature, created, created)).toBe(true);
+  test('every feature is open from day 1', () => {
+    for (const feature of ['mirror', 'patterns', 'mindChart', 'wrapped'] as const) {
+      expect(isUnlocked(feature, created, created)).toBe(true);
+      expect(daysUntil(feature, created, created)).toBe(0);
+    }
   });
 
   test('the development override opens everything', () => {

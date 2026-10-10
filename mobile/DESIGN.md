@@ -1,99 +1,123 @@
 # Lowkei design system
 
-Read this before building or changing a screen. The brand itself — the mark,
-voice and how the pictures are chosen — is in [`../design/BRAND.md`](../design/BRAND.md).
+The reference for every screen is a screen recording of the Co-Star app
+(kept outside git). Lowkei follows its **design language** — layout,
+type, components, pacing — with its own content, icons and copy. It never
+copies Co-Star's logo, illustrations, typeface or text, and it keeps WCAG 2.2
+AA where the reference does not.
 
-**Stance:** a soft, dreamy place made of light. Every page opens under a
-picture — the day's sky — and its words sit on paper that slides up over it.
-Colour lives in the pictures and the auras; the text stays calm and readable.
+Read this before building or changing a screen.
 
-Everything below is a token or a component in `src/`. Use them; don't add a
-colour, size or radius inline. WCAG 2.2 AA throughout — the contrast tests in
-`src/theme/__tests__/contrast.test.ts` check every pair named here.
+## Feel
 
-## Colour — `src/theme/tokens.ts`
+A printed almanac on a phone. Near-white paper, black ink, lots of air, and
+text doing all the work. Nothing bounces, nothing is rounded except avatars
+and the weather dot, and nothing is coloured except one small signal mark.
+Screens are finite: a feed ends with **The end**, never an infinite scroll.
 
-| Token | Light | Dark | Role |
-| --- | --- | --- | --- |
-| `paper` | `#F7F6FA` | `#0C0B16` | Page ground: lavender-white by day, deep indigo by night |
-| `ink` | `#14131C` | `#F2F1F7` | Text, primary buttons, outlines |
-| `inkSoft` | `#4F4E66` | `#B8B6CC` | Secondary text — AA even over the strongest aura |
-| `inkFaint` | `#B9B8C7` | `#46445C` | Decoration only, never text |
-| `band` | `#ECEAF4` | `#191829` | Pressed rows, the search field |
-| `tint` | `#F7EEF6` | `#1E1630` | Writing sheets |
-| `disc` | `#FFFFFF` | `#1B1A2E` | Plates behind avatars |
-| `signal.*` | per weather | per weather | The one small colour mark (weather dot, current tab) |
-| `glass` / `glassEdge` | white 52% / 90% | white 7% / 16% | Glass cards, header pills, fields |
-| `sheet` | paper 90% | paper 90% | The page sheet over a picture |
-| `chrome` / `chromeEdge` / `chromeActive` | | | The floating tab bar and its current-tab capsule |
-| `frost` | white 88% | indigo 84% | A label sitting on a picture (mood cards) |
-| `veil` | none | indigo 38% | Over a picture at night |
-| `room.*` | | | The Mirror's dark room, both themes; `room.veil` 76% over its picture |
+## Colour (`src/theme/tokens.ts`)
 
-**Auras** (`theme/aura.ts`): four soft glows per Inner Weather drift behind
-every page (`components/Aura.tsx`), capped at 42% (day) / 33% (night) so
-text stays AA over their strongest point.
+| token | light | dark | use |
+|---|---|---|---|
+| paper | `#F6F6F3` | `#0E0E0E` | every background |
+| ink | `#111111` | `#F2F2EF` | text, rules, primary buttons |
+| inkSoft | `#6A6A66` | `#A09F9A` | subtitles, inactive tabs, mono labels — AA on paper |
+| band | `#ECECE8` | `#1A1A1A` | thick section breaks, pressed rows, search field |
+| tint | `#F7EEF4` | `#1C1519` | the rare soft-pink surface: a writing prompt, a sheet |
+| disc | `#FFFFFF` | `#1C1C1B` | the round plate an illustration sits in |
+| void | `#0A0A0A` | `#0A0A0A` | full-dark rooms (Mirror), with white text |
+| signal | per Inner Weather | | **only** the weather dot and the active-tab dot |
 
-## Pictures — `src/theme/scenes.ts`, `src/components/Art.tsx`
+Light, dark, or the phone's setting is chosen under **You → Appearance**
+(`useAppearance()`); the choice is also handed to the native side so switches
+and the keyboard match.
 
-26 slots, sources in `design/images/`, built by `scripts/pictures.py`
-(prompts in `design/image-prompts.md`).
+## Illustrations (`assets/art/`, `src/components/Art.tsx`)
 
-| Slots | Where |
-| --- | --- |
-| `sky-clear · mild · overcast · fog · storm · dawn` | The band at the top of Today, Check-in, Chart, You — chosen by the day's Inner Weather (`dawn` before any check-ins) |
-| `room-circle · mirror · welcome · calm` | Circle's band; the Mirror's whole backdrop (veiled); onboarding and sign-in; Calm |
-| `mood-wound-up · bright · heavy · easy` | The four check-in mood cards, full-bleed with a `frost` label |
-| `sticker-*` (12) | `Art` (rounded sticker) and `ArtDisc` (glowing round plate): Today's picture, profile and circle pictures, Mirror topics |
+Halftone cut-outs, black ink on transparent. At night the dark silhouettes
+are inverted to light ink (`name-dark.png`); the mostly-white ones (eye,
+lily, swan, orchid, doll, moka, stamp) are used as they are. Always
+decorative and hidden from screen readers.
 
-Rules: text never sits directly on a picture — it goes on the `sheet`, a
-`frost` label or a glass pill. Pictures are decorative and hidden from screen
-readers.
+- `ArtDisc` — the reference's round plate, top right of Today and the welcome
+  screen, followed by a long pause before the label. Today's rotates daily.
+- `Art` — a free cut-out in the margin between sections, alternating sides:
+  one per screen, never two in a row.
 
-## Type — `src/theme/typography.ts`
+| screen | art |
+|---|---|
+| Today | daily disc + masks |
+| Check-in | doll; after: lily |
+| Mirror | eye (dark) |
+| Chart | beetle |
+| Circle | kittens |
+| You | cat |
+| Vent / plan / sleep / calm | heart / bandage / city / swan |
+| Not yet open | chess king |
 
-| Family | Use |
-| --- | --- |
-| **Fraunces** | What the app says: `reading` 36/42, `title` 28/34, `heading` 20/26, `bodyItalic` 19/26 (prompts) |
-| **DM Sans** | Everything you read and touch: `body` 16/24, `caption` 14/20, `label` 13/18 semibold, `action` 15/20 semibold, `mono` 13/18 (small notes) |
-| **DM Mono** | Numbers only: `receipt` 13/21 — data lines, the code you type |
+## Type (`src/theme/typography.ts`)
 
-Sentence case everywhere — no uppercase labels. Font scaling is honoured up to
-200%.
+Three families, all SIL OFL:
 
-## Space, shape, touch
+- **Instrument Serif** — anything the app *says*: the headline ("Be patient."),
+  row titles, Do/Don't items, big centred statements. Never bold.
+- **Inter** — body paragraphs and subtitles. Small (15/22), regular weight.
+- **DM Mono** — the voice of the interface: the wordmark, section labels
+  (`YOUR DAY AT A GLANCE`), tab names, buttons, links, data lines, long reads.
+  Labels are UPPERCASE with wide tracking; the small grey "Do"/"Don't" style
+  is mono in sentence case.
 
-- Space: `xs 4 · sm 8 · md 16 · lg 24 · xl 40 · xxl 64`; page gutter 20;
-  sections 40 apart.
-- Radius: `card 22` (glass cards, mood cards, sheets' inner pieces), `pill`
-  (buttons, chips, header pills, tab bar, fields), `dot` (avatars, the
-  weather dot). The page sheet's top corners are 32.
-- Touch targets at least 44 (`hitTarget`).
+Dynamic Type up to 200% everywhere.
 
-## Components — `src/components/`
+## Layout
 
-| Component | What it is |
-| --- | --- |
-| `Screen` | The page: aura behind, optional `scene` band (a picture) with the content on a sheet that slides over it, or a full `backdrop` (the Mirror). Leaves room for the floating tab bar. |
-| `AppHeader` / `SubHeader` | The wordmark and calm, or back/close and a title — on frosted pills so they read over pictures. |
-| `TabBar` | Six names on a floating glass pill; the current one in a soft capsule with the weather dot. |
-| `Button` | `primary` ink pill with a soft glow; `outline` glass pill; `link` underlined. |
-| `Chip` | A pill for words and tags; selected is inverted. |
-| `SettingGroup`, `SettingRow`, `SettingLink`, `Box` | Settings and summaries on glass cards. |
-| `Art`, `ArtDisc`, `Avatar` | Pictures as stickers, glowing plates, people. |
-| `Sparkles` | A few four-point glints, twinkling slowly. |
-| `Aura` | The drifting weather glows; leans towards a touch. |
+- **App header** (every tab): wordmark `LOWKEI` with the weather dot
+  on the left, `CALM` alone on the right (where the reference keeps its date).
+  No rule. Fixed; content scrolls beneath. Onboarding shows the `CALM` link alone.
+- **Sub-screen header**: back arrow left, mono title centred (`Crush Report`
+  style) — or a large serif title left-aligned for settings-like screens.
+- **Tab bar**: `TODAY · CHECK-IN · CIRCLE · MIRROR · CHART · YOU` — text only, 10pt
+  mono capitals, no icons, no rule. First and last sit on the page margins and
+  the gaps between all five are equal. Active is ink with a small signal dot;
+  inactive is inkSoft.
+- **Help**: crisis lines are a `HELP` link in calm's header — one tap from
+  calm, two from anywhere — and the crisis screens open by themselves when a
+  check-in screens elevated or acute. There is no care strip over the tabs.
+- Side margin 20. **One vertical rhythm**: a screen's direct children are
+  sections, 40 apart (`Screen`); inside a section things sit 8–16 apart
+  (`Lede`, `Section`, `SettingGroup`). Never loose elements at the top level.
+- Page tops use `Lede`: mono label, big serif line, short paragraph.
+- Settings (You) follow the reference's settings page: small grey group
+  headings, plain-text lines with no rules between them, switches at the right.
+
+## Components (`src/components/`)
+
+| component | reference look |
+|---|---|
+| `Button` primary | solid ink rectangle, paper mono uppercase label, optional `→`, hugs content |
+| `Button` outline | 1px ink border, mono uppercase (`CHANGE PROFILE PHOTO`) |
+| `Button` link | mono uppercase, underlined, no box (`VIEW ALL LONG READS`) |
+| `SectionLabel` | mono uppercase label with a hairline under it (`TODAY'S LONG READ`) |
+| `Segmented` | horizontal mono tabs with a small ○ bullet (● when active) and an underline |
+| `Row` | optional leading image, serif title, grey Inter subtitle, `→` at the right, hairline |
+| `Box` | 1px ink border; optional mono header row divided by a rule; centred content |
+| `DoDont` | two columns, grey mono heading, serif items |
+| `Chip` | 1px-bordered square box, serif word; inverted when selected |
+| `EndMark` | ink block with *The end* and an underlined link — the bottom of a feed |
+| `Toggle` | small grey/ink switch, no colour |
 
 ## Motion
 
-Slow and breathing: transitions 600–900 ms, sine easing, nothing bounces
-(`theme/motion.ts`). Auras drift on a 22 s cycle, sparkles on 4.5 s. The
-person's Motion setting is honoured everywhere: `gentle` halves speeds,
-`still` stops ambient motion and keeps only plain fades — and the system's
-reduce-motion setting means `still`.
+600–900 ms eases, no bounce. Reduced motion → plain fades. A thin circular
+spinner centred on paper while loading.
 
-## Accessibility
+## Mapping to Lowkei
 
-AA contrast for every text pair (tested); 44-point targets; labels for every
-control; pictures hidden from screen readers; reduced motion respected; text
-scales to 200%.
+| reference | Lowkei |
+|---|---|
+| Home: "Your day at a glance", Do/Don't, "Dive deeper" | Today: reading, receipts, Do/Don't |
+| Void (dark room, suggested questions, ask anything) | Mirror chat |
+| Friends list, compatibility | Circle: friends by code, today's weather, running low, "thinking of you", a rhythm line |
+| Chart wheel, tables and boxed placements | Chart: the month as a wheel of weather, words set by size, tag lines, a skyline of nights |
+| You / Settings rows and toggles | You tab: appearance, reminder, lock, consents, export, erase |
+| "Send your future self a message" prompt sheet | Vent / letters |

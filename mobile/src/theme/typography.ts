@@ -3,19 +3,16 @@ import type { TextStyle } from 'react-native';
 /**
  * Three families, all SIL OFL, loaded in the root layout (see DESIGN.md):
  *
- *   Fraunces — what the app says: headlines, readings, row titles. A soft,
- *              warm serif; the voice of a friend, not an almanac.
- *   DM Sans  — everything else you read and touch: body, labels, tabs,
- *              buttons, links. Sentence case, never shouting.
- *   DM Mono  — numbers only: data lines, receipts, the code you type.
+ *   Instrument Serif — what the app says: headlines, row titles, Do/Don't.
+ *   Inter            — body paragraphs and subtitles.
+ *   DM Mono          — the interface's own voice: labels, tabs, buttons,
+ *                      links, data lines and long reads.
  */
 export const fonts = {
-  serif: 'Fraunces_400Regular',
-  serifItalic: 'Fraunces_400Regular_Italic',
-  serifBold: 'Fraunces_600SemiBold',
-  sans: 'DMSans_400Regular',
-  sansMedium: 'DMSans_500Medium',
-  sansBold: 'DMSans_600SemiBold',
+  serif: 'InstrumentSerif_400Regular',
+  serifItalic: 'InstrumentSerif_400Regular_Italic',
+  sans: 'Inter_400Regular',
+  sansMedium: 'Inter_500Medium',
   mono: 'DMMono_400Regular',
   monoMedium: 'DMMono_500Medium'
 } as const;
@@ -40,21 +37,28 @@ export type TextVariant =
 
 export const textVariants: Record<TextVariant, TextStyle> = {
   // The day's headline ("Be patient."): the largest thing in the app.
-  reading: { fontFamily: fonts.serif, fontSize: 36, lineHeight: 42, letterSpacing: -0.6 },
-  title: { fontFamily: fonts.serif, fontSize: 28, lineHeight: 34, letterSpacing: -0.4 },
+  reading: { fontFamily: fonts.serif, fontSize: 40, lineHeight: 44, letterSpacing: -0.4 },
+  title: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 34, letterSpacing: -0.2 },
   // Row titles, Do/Don't items, chosen words.
-  heading: { fontFamily: fonts.serif, fontSize: 20, lineHeight: 26, letterSpacing: -0.2 },
-  body: { fontFamily: fonts.sans, fontSize: 16, lineHeight: 24 },
+  heading: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 27 },
+  body: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23 },
   // Prompts: the question a writing sheet asks.
-  bodyItalic: { fontFamily: fonts.serifItalic, fontSize: 19, lineHeight: 26 },
+  bodyItalic: { fontFamily: fonts.serifItalic, fontSize: 20, lineHeight: 26 },
   // Subtitles under a row title ("through tonight").
-  caption: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 20 },
+  caption: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19 },
   // Long reads and data lines.
   receipt: { fontFamily: fonts.mono, fontSize: 13, lineHeight: 21 },
-  // Small soft notes ("Do" / "Don't", hints).
-  mono: { fontFamily: fonts.sansMedium, fontSize: 13, lineHeight: 18 },
-  // Section labels, the wordmark, tab names: small, medium-weight, sentence case.
-  label: { fontFamily: fonts.sansBold, fontSize: 13, lineHeight: 18, letterSpacing: 0.2 },
+  // The small grey sentence-case mono of "Do" / "Don't".
+  mono: { fontFamily: fonts.mono, fontSize: 12, lineHeight: 17 },
+  // Section labels, the wordmark, tab names. Capitals are a style only:
+  // screen readers still get the words, not spelled-out letters.
+  label: { fontFamily: fonts.mono, fontSize: 11, lineHeight: 16, letterSpacing: 1.3, textTransform: 'uppercase' },
   // What a button or link says.
-  action: { fontFamily: fonts.sansBold, fontSize: 15, lineHeight: 20, letterSpacing: 0.1 }
+  action: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 12,
+    lineHeight: 17,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase'
+  }
 };

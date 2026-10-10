@@ -3,8 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { useEntering } from '@/theme/motion';
-import { gutter, hitTarget, radius, space } from '@/theme/tokens';
-import { useTheme } from '@/theme/ThemeProvider';
+import { gutter, space } from '@/theme/tokens';
 
 import { CalmLink } from './Header';
 import { Screen } from './Screen';
@@ -22,18 +21,9 @@ type Props = {
 export function OnboardingStep({ children, actions }: Props) {
   const entering = useEntering();
   const later = useEntering(250);
-  const { colors } = useTheme();
-  // Calm sits on a frosted pill, so it reads over the picture.
-  const header = (
-    <View style={styles.top}>
-      <View style={[styles.pill, { backgroundColor: colors.glass, borderColor: colors.glassEdge }]}>
-        <CalmLink />
-      </View>
-    </View>
-  );
 
   return (
-    <Screen edges={['top', 'bottom']} scene="auraEye" contentStyle={styles.content} header={header}>
+    <Screen edges={['top', 'bottom']} contentStyle={styles.content} header={<View style={styles.top}><CalmLink /></View>}>
       <Animated.View entering={entering} style={styles.body}>
         {children}
       </Animated.View>
@@ -45,8 +35,7 @@ export function OnboardingStep({ children, actions }: Props) {
 }
 
 const styles = StyleSheet.create({
-  top: { alignItems: 'flex-end', paddingHorizontal: gutter, paddingTop: space.xs },
-  pill: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: hitTarget - 6, justifyContent: 'center' },
+  top: { alignItems: 'flex-end', paddingHorizontal: gutter },
   content: { flexGrow: 1 },
   body: { flex: 1, gap: space.lg, justifyContent: 'center', paddingTop: space.xl },
   actions: { gap: space.sm }

@@ -116,14 +116,14 @@ export default function Chart() {
 function ChartPage() {
   const data = useChart();
 
-  if (!data) return <Screen scene="weather" header={<AppHeader />}>{null}</Screen>;
+  if (!data) return <Screen header={<AppHeader />}>{null}</Screen>;
 
   const { days, words, tags, nights, perNight, wordsOn, year } = data;
   const mostly = mostlyWeather(days);
   const checkedIn = days.filter(d => d.weather).length;
 
   return (
-    <Screen scene="weather" header={<AppHeader />}>
+    <Screen header={<AppHeader />}>
       <View style={styles.links}>
         <Button kind="link" label="this week, in reflection" onPress={() => router.push('/week')} />
         <UnlockLink feature="mindChart" label="your mind chart" name="Your mind chart" href="/mind" />

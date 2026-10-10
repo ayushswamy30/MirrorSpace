@@ -1,42 +1,52 @@
+import { useId } from 'react';
 import { Image, StyleSheet, View, type ImageSourcePropType, type ViewStyle } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { auraFor } from '@/theme/aura';
 import { radius } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Sparkles } from './Sparkles';
 
 /**
- * The app's pictures: the sticker slots in assets/pictures (scripts/pictures.py),
- * shown as soft rounded stickers. The names are the ones the app has always
- * used — circle pictures are stored by name on the server — each now pointing
- * at the image that suits it.
+ * Halftone cut-outs — the printed almanac's illustrations. Black ink on the
+ * light page; at night the dark silhouettes are inverted to light ink, and the
+ * mostly-white ones are kept as they are (inverting them reads as a negative).
  *
  * Always decorative: hidden from screen readers, never carrying meaning.
  */
 
+type Pair = { light: ImageSourcePropType; dark: ImageSourcePropType; ratio: number };
+
+const same = (source: ImageSourcePropType, ratio: number): Pair => ({ light: source, dark: source, ratio });
+
 const ART = {
-  bandage: require('../../assets/pictures/sticker-orchid.webp'),
-  bean: require('../../assets/pictures/sticker-jelly-cat.webp'),
-  beetle: require('../../assets/pictures/sticker-butterfly.webp'),
-  butterfly: require('../../assets/pictures/sticker-butterfly.webp'),
-  can: require('../../assets/pictures/sticker-ghost.webp'),
-  cat: require('../../assets/pictures/sticker-jelly-cat.webp'),
-  city: require('../../assets/pictures/sticker-sun.webp'),
-  dice: require('../../assets/pictures/sticker-butterfly.webp'),
-  doll: require('../../assets/pictures/sticker-star-child.webp'),
-  eye: require('../../assets/pictures/sticker-eye.webp'),
-  heart: require('../../assets/pictures/sticker-cherries.webp'),
-  king: require('../../assets/pictures/sticker-star-child.webp'),
-  kittens: require('../../assets/pictures/sticker-ghost.webp'),
-  lily: require('../../assets/pictures/sticker-lily.webp'),
-  masks: require('../../assets/pictures/sticker-eye.webp'),
-  moka: require('../../assets/pictures/sticker-sun.webp'),
-  orchid: require('../../assets/pictures/sticker-orchid.webp'),
-  stamp: require('../../assets/pictures/sticker-flower-frame.webp'),
-  swallow: require('../../assets/pictures/sticker-cloud.webp'),
-  swan: require('../../assets/pictures/sticker-koi.webp'),
-  urchin: require('../../assets/pictures/sticker-cherries.webp')
-} satisfies Record<string, ImageSourcePropType>;
+  bandage: { light: require('../../assets/art/bandage.png'), dark: require('../../assets/art/bandage-dark.png'), ratio: 480 / 118 },
+  bean: { light: require('../../assets/art/bean.png'), dark: require('../../assets/art/bean-dark.png'), ratio: 366 / 480 },
+  beetle: { light: require('../../assets/art/beetle.png'), dark: require('../../assets/art/beetle-dark.png'), ratio: 480 / 324 },
+  butterfly: {
+    light: require('../../assets/art/butterfly.png'),
+    dark: require('../../assets/art/butterfly-dark.png'),
+    ratio: 480 / 465
+  },
+  can: { light: require('../../assets/art/can.png'), dark: require('../../assets/art/can-dark.png'), ratio: 308 / 480 },
+  cat: { light: require('../../assets/art/cat.png'), dark: require('../../assets/art/cat-dark.png'), ratio: 395 / 435 },
+  city: { light: require('../../assets/art/city.png'), dark: require('../../assets/art/city-dark.png'), ratio: 480 / 273 },
+  dice: { light: require('../../assets/art/dice.png'), dark: require('../../assets/art/dice-dark.png'), ratio: 348 / 480 },
+  doll: same(require('../../assets/art/doll.png'), 235 / 480),
+  eye: same(require('../../assets/art/eye.png'), 478 / 480),
+  heart: { light: require('../../assets/art/heart.png'), dark: require('../../assets/art/heart-dark.png'), ratio: 304 / 445 },
+  king: { light: require('../../assets/art/king.png'), dark: require('../../assets/art/king-dark.png'), ratio: 192 / 480 },
+  kittens: { light: require('../../assets/art/kittens.png'), dark: require('../../assets/art/kittens-dark.png'), ratio: 418 / 480 },
+  lily: same(require('../../assets/art/lily.png'), 480 / 455),
+  masks: { light: require('../../assets/art/masks.png'), dark: require('../../assets/art/masks-dark.png'), ratio: 480 / 220 },
+  moka: same(require('../../assets/art/moka.png'), 379 / 480),
+  orchid: same(require('../../assets/art/orchid.png'), 480 / 421),
+  stamp: same(require('../../assets/art/stamp.png'), 348 / 335),
+  swallow: { light: require('../../assets/art/swallow.png'), dark: require('../../assets/art/swallow-dark.png'), ratio: 253 / 480 },
+  swan: same(require('../../assets/art/swan.png'), 468 / 318),
+  urchin: { light: require('../../assets/art/urchin.png'), dark: require('../../assets/art/urchin-dark.png'), ratio: 480 / 444 }
+} satisfies Record<string, Pair>;
 
 export type ArtName = keyof typeof ART;
 
@@ -46,50 +56,64 @@ export function isArtName(value: unknown): value is ArtName {
   return typeof value === 'string' && value in ART;
 }
 
-/** Today's picture, one a day in turn — the gentler ones only. */
-const DAILY: readonly ArtName[] = ['lily', 'swan', 'orchid', 'butterfly', 'moka', 'bean', 'swallow', 'kittens', 'cat', 'king', 'stamp', 'eye'];
+/** Today's hero, one a day in turn — the gentler pictures only. */
+const DAILY: readonly ArtName[] = ['lily', 'swan', 'orchid', 'butterfly', 'moka', 'bean', 'swallow', 'kittens', 'cat', 'king', 'dice', 'stamp'];
 
 export function artOfTheDay(now: Date = new Date()): ArtName {
   const day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000);
   return DAILY[day % DAILY.length];
 }
 
-export function artImage(name: ArtName): ImageSourcePropType {
-  return ART[name];
-}
-
 type Props = {
   name: ArtName;
-  /** Width and height, in points. */
+  /** The longer side, in points. */
   size: number;
-  /** Kept for callers on the dark Mirror room; the pictures read on both. */
+  /** Force a variant — the Mirror room is dark whatever the theme. */
   scheme?: 'light' | 'dark';
   style?: ViewStyle;
 };
 
-/** A picture as a soft rounded sticker. */
-export function Art({ name, size, style }: Props) {
-  const { colors } = useTheme();
+/** A free-standing cut-out, placed in the margin of a page. */
+export function Art({ name, size, scheme, style }: Props) {
+  const theme = useTheme();
+  const art = ART[name];
+  const source = (scheme ?? theme.scheme) === 'dark' ? art.dark : art.light;
+  const width = art.ratio >= 1 ? size : size * art.ratio;
+  const height = art.ratio >= 1 ? size / art.ratio : size;
+
   return (
-    <View
-      style={[styles.sticker, { width: size, height: size, borderRadius: size * 0.28, borderColor: colors.glassEdge }, style]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      testID={`art-${name}`}
-    >
-      <Image source={ART[name]} style={styles.fill} resizeMode="cover" />
+    <View style={style} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID={`art-${name}`}>
+      <Image source={source} style={{ width, height }} resizeMode="contain" />
     </View>
   );
 }
 
-/** A picture in a round, glowing disc, top right of a page, with a few sparkles. */
+/**
+ * A drawing in a glowing disc, top right of a page: a soft halo in the day's
+ * aura colours behind a pale plate, with a few sparkles catching the light.
+ */
 export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: number; style?: ViewStyle }) {
-  const { colors, signal } = useTheme();
+  const { colors, scheme, weather } = useTheme();
+  const [a, b] = auraFor(weather, scheme);
+  const halo = size * 1.9;
+  const id = `halo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   return (
     <View style={[{ width: size, height: size }, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <View style={[styles.disc, { width: size, height: size, borderColor: colors.glassEdge, shadowColor: signal }]}>
-        <Image source={ART[name]} style={styles.fill} resizeMode="cover" />
+      <View pointerEvents="none" style={{ position: 'absolute', left: (size - halo) / 2, top: (size - halo) / 2, width: halo, height: halo }}>
+        <Svg width={halo} height={halo}>
+          <Defs>
+            <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+              <Stop offset="0.3" stopColor={a} stopOpacity={0.85} />
+              <Stop offset="0.62" stopColor={b} stopOpacity={0.35} />
+              <Stop offset="1" stopColor={b} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={halo} height={halo} fill={`url(#${id})`} />
+        </Svg>
+      </View>
+      <View style={[styles.disc, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.glassEdge }]}>
+        <Art name={name} size={size * 0.72} />
       </View>
       <Sparkles
         sparks={[
@@ -103,15 +127,11 @@ export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: numb
 }
 
 const styles = StyleSheet.create({
-  fill: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  sticker: { overflow: 'hidden', borderWidth: 1 },
   disc: {
     borderRadius: radius.dot,
-    borderWidth: 2,
-    overflow: 'hidden',
-    shadowOpacity: 0.55,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
   }
 });
