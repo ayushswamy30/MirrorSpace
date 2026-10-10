@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { ArtDisc } from '@/components/Art';
+import { Art } from '@/components/Art';
 import { Lede } from '@/components/Blocks';
 import { Button } from '@/components/Button';
 import { SubHeader } from '@/components/Header';
@@ -20,7 +20,7 @@ import {
 } from '@/lib/auth';
 import { useSession } from '@/lib/session';
 import { useEntering } from '@/theme/motion';
-import { hitTarget, radius, space } from '@/theme/tokens';
+import { hitTarget, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -126,11 +126,11 @@ export default function Account() {
     }
   };
 
-  const field = [styles.field, { color: colors.ink, borderColor: colors.glassEdge, backgroundColor: colors.glass }];
+  const field = [styles.field, { color: colors.ink, borderColor: colors.hairline }];
 
   return (
-    <Screen edges={['top', 'bottom']} aura="dawn" header={<SubHeader title={copy.header} leading={back ? 'close' : undefined} onLeading={back} />}>
-      <ArtDisc name="stamp" size={96} style={styles.art} />
+    <Screen edges={['top', 'bottom']} header={<SubHeader title={copy.header} leading={back ? 'close' : undefined} onLeading={back} />}>
+      <Art name="stamp" size={96} style={styles.art} />
 
       {!sentTo ? (
         <Animated.View key="email" entering={enter} style={styles.block}>
@@ -211,9 +211,8 @@ const styles = StyleSheet.create({
   block: { gap: space.lg },
   field: {
     borderWidth: 1,
-    borderRadius: radius.card,
-    minHeight: hitTarget + 8,
-    paddingHorizontal: space.md + 2,
+    minHeight: hitTarget + 4,
+    paddingHorizontal: space.md,
     fontFamily: fonts.sans,
     fontSize: 16
   },

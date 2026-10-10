@@ -1,5 +1,4 @@
 import { dark, light, type Palette, type Weather } from '../tokens';
-import { auraDark, auraLight, auraStrength, blend } from '../aura';
 
 /**
  * WCAG 2.2 AA, both themes (report §6). Body text needs 4.5:1; outlines
@@ -60,23 +59,4 @@ describe.each<[string, Palette]>([
     // Chip and field outlines are the only sign they can be tapped.
     expect(contrast(p.hairline, p.paper)).toBeGreaterThanOrEqual(3);
   });
-});
-
-describe('text over the aura', () => {
-  // Where a glow is strongest, the page is the palette colour laid over paper
-  // at the aura's strength. Body text and captions must still read there.
-  const cases: [string, Palette, typeof auraLight, number][] = [
-    ['light', light, auraLight, auraStrength.light],
-    ['dark', dark, auraDark, auraStrength.dark]
-  ];
-  for (const [scheme, p, set, alpha] of cases) {
-    for (const [name, colours] of Object.entries(set)) {
-      if (name === 'void') continue;
-      test.each(colours)(`${scheme} ${name}: ink and soft ink on %s`, colour => {
-        const bg = blend(p.paper, colour, alpha);
-        expect(contrast(p.ink, bg)).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(p.inkSoft, bg)).toBeGreaterThanOrEqual(4.5);
-      });
-    }
-  }
 });

@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   art: { alignSelf: 'flex-end' },
   block: { gap: space.md },
   flex: { flex: 1 },
-  sheet: { padding: space.md, gap: space.sm, borderRadius: radius.card },
+  sheet: { padding: space.md, gap: space.sm },
   request: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
   friend: { borderBottomWidth: StyleSheet.hairlineWidth },
   friendRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, minHeight: hitTarget + 16 },
@@ -496,7 +496,6 @@ const styles = StyleSheet.create({
   addRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   field: {
     borderWidth: 1,
-    borderRadius: radius.pill,
     minHeight: hitTarget,
     paddingHorizontal: space.md,
     fontFamily: fonts.sans,
