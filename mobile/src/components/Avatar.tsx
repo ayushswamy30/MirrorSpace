@@ -14,7 +14,7 @@ export function Avatar({ icon, name, size = 44, photo }: { icon: string | null |
   const { colors } = useTheme();
   return (
     <View
-      style={[styles.plate, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.glassEdge }]}
+      style={[styles.plate, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.hairline }]}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >

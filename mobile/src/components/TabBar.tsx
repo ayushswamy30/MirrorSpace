@@ -1,51 +1,28 @@
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { dark, hitTarget, radius, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Text } from './Text';
 
 /**
- * The tab bar floats over the page, so the pages under it need to know how
- * much room to leave at the bottom. 0 outside the tabs.
- */
-const InsetContext = createContext<{ inset: number; setInset: (n: number) => void }>({ inset: 0, setInset: () => undefined });
-
-export function TabInsetProvider({ children }: { children: ReactNode }) {
-  const [inset, setInset] = useState(0);
-  return <InsetContext.Provider value={{ inset, setInset }}>{children}</InsetContext.Provider>;
-}
-
-export function useTabInset(): number {
-  return useContext(InsetContext).inset;
-}
-
-/**
- * Six tab names in small mono capitals on a floating glass pill — text only,
- * no icons. The current tab sits in a softly lit capsule with a small
- * weather-coloured dot; the rest are soft ink. Under the Mirror room the pill
- * goes dark with it, whatever the theme.
+ * Six tab names in small mono capitals — text only, no icons, no rule
+ * (DESIGN.md). The first and last names sit on the page's margins and the
+ * gaps between all five are equal, whatever each name's length. The current
+ * tab is ink with a small weather-coloured dot; the rest are soft ink.
+ * Under the Mirror room the bar goes dark with it, whatever the theme, so
+ * the room runs to the bottom of the screen as the reference's Void does.
  */
 export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const theme = useTheme();
   const onVoid = state.routes[state.index]?.name === 'mirror';
   const colors = onVoid ? { ...dark, paper: theme.colors.void } : theme.colors;
   const signal = onVoid ? dark.signal[theme.weather ?? 'fog'] : theme.signal;
-  const { setInset } = useContext(InsetContext);
-  const night = onVoid || theme.scheme === 'dark';
-  const bottom = Math.max(insets.bottom, space.sm) + space.xs;
 
   return (
-    <View pointerEvents="box-none" style={[styles.float, { bottom }]} onLayout={e => setInset(e.nativeEvent.layout.height + bottom + space.sm)}>
-      <View
-        style={[
-          styles.tabs,
-          { backgroundColor: night ? 'rgba(22,20,40,0.82)' : 'rgba(255,255,255,0.78)', borderColor: night ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.95)' }
-        ]}
-        accessibilityRole="tablist"
-      >
+    <View style={{ backgroundColor: colors.paper, paddingBottom: Math.max(insets.bottom, space.sm) }}>
+      <View style={styles.tabs} accessibilityRole="tablist">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const focused = state.index === index;
@@ -64,7 +41,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
               onPress={onPress}
               hitSlop={{ top: space.sm, bottom: space.sm }}
-              style={[styles.tab, focused && { backgroundColor: night ? 'rgba(255,255,255,0.1)' : 'rgba(20,19,28,0.06)' }]}
+              style={styles.tab}
             >
               <Text variant="label" numberOfLines={1} style={[styles.label, { color: focused ? colors.ink : colors.inkSoft }]}>
                 {label}
@@ -82,26 +59,20 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
 const PAD = space.xs + 2;
 
 const styles = StyleSheet.create({
-  float: { position: 'absolute', left: space.sm + 4, right: space.sm + 4 },
   tabs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: space.xs,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    shadowColor: '#1B1640',
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8
+    // Each tab's own padding widens its touch area; this keeps the words
+    // themselves on the page margin.
+    paddingHorizontal: gutter - PAD,
+    paddingTop: space.md
   },
   tab: {
     minHeight: hitTarget,
     paddingHorizontal: PAD,
-    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.xs
+    gap: space.xs + 2
   },
   label: { fontSize: 10, letterSpacing: 1.2 },
   mark: { width: 4, height: 4, borderRadius: radius.dot }

@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated';
 
 import { deliveryDate, listLetters, markOpened, writeLetter, type Letter, type Wait } from '@/lib/letters';
 import { useEntering } from '@/theme/motion';
-import { radius, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -160,6 +160,6 @@ export function Letters({ open }: { /** Opens this letter straight away (from To
 const styles = StyleSheet.create({
   art: { alignSelf: 'flex-end' },
   block: { gap: space.md },
-  sheet: { padding: space.md, borderRadius: radius.card },
+  sheet: { padding: space.md },
   input: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, minHeight: 200, padding: 0, textAlignVertical: 'top' }
 });
