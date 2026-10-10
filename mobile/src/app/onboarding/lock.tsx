@@ -21,7 +21,7 @@ export default function Lock() {
   }, []);
 
   useEffect(() => {
-    if (available === false) router.replace('/onboarding/finish');
+    if (available === false) router.replace('/onboarding/reminder');
   }, [available]);
 
   if (!available) return null;
@@ -31,7 +31,7 @@ export default function Lock() {
     // a setting they never saw succeed.
     if (await authenticate()) {
       await setEnabled(true);
-      router.push('/onboarding/finish');
+      router.push('/onboarding/reminder');
     } else {
       setFailed(true);
     }
@@ -42,7 +42,7 @@ export default function Lock() {
       actions={
         <>
           <Button label="lock it" onPress={turnOn} />
-          <Button kind="link" label="not now" onPress={() => router.push('/onboarding/finish')} />
+          <Button kind="link" label="not now" onPress={() => router.push('/onboarding/reminder')} />
         </>
       }
     >
