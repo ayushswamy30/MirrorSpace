@@ -16,3 +16,10 @@ supabase/.temp/
 # Design exports and screenshots dropped in the root
 /Untitled design*.zip
 /image.png
+
+# Reference artwork: other artists' work, for this project only. Kept out of
+# the public repo until the originals in design/images replace them
+# (mobile/scripts/pictures.py).
+/all_images*.zip
+/Untitled design*.zip
+mobile/assets/pictures/

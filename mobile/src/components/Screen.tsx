@@ -66,7 +66,7 @@ export function Screen({ children, header, scroll = true, edges = ['top'], backg
       )}
       {sceneName && (
         <View pointerEvents="none" style={[styles.band, { height: band }]}>
-          <Image source={sceneImage(sceneName, 'wide')} style={styles.fillImage} resizeMode="cover" />
+          <Image source={sceneImage(sceneName)} style={styles.fillImage} resizeMode="cover" />
           {scheme === 'dark' && <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(12,11,22,0.38)' }]} />}
           <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
             <Defs>

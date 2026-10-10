@@ -129,7 +129,7 @@ export default function Account() {
   const field = [styles.field, { color: colors.ink, borderColor: colors.glassEdge, backgroundColor: colors.glass }];
 
   return (
-    <Screen edges={['top', 'bottom']} scene="sunrise" header={<SubHeader title={copy.header} leading={back ? 'close' : undefined} onLeading={back} />}>
+    <Screen edges={['top', 'bottom']} scene="auraEye" header={<SubHeader title={copy.header} leading={back ? 'close' : undefined} onLeading={back} />}>
       <ArtDisc name="stamp" size={96} style={styles.art} />
 
       {!sentTo ? (

@@ -64,13 +64,13 @@ export default function Circle() {
 
   useFocusEffect(refresh);
 
-  if (session.status !== 'ready') return <Screen scene="orbs" header={<AppHeader />}>{null}</Screen>;
+  if (session.status !== 'ready') return <Screen scene="ghosts" header={<AppHeader />}>{null}</Screen>;
 
-  if (load.kind === 'loading') return <Screen scene="orbs" header={<AppHeader />}>{null}</Screen>;
+  if (load.kind === 'loading') return <Screen scene="ghosts" header={<AppHeader />}>{null}</Screen>;
 
   if (load.kind === 'error') {
     return (
-      <Screen scene="orbs" header={<AppHeader />}>
+      <Screen scene="ghosts" header={<AppHeader />}>
         <Lede label="your circle" title="Your circle needs a connection." size="title">
           <Text tone="soft">Nothing else in Lowkei does — check-ins, vent and calm all work offline.</Text>
         </Lede>
@@ -110,7 +110,7 @@ export default function Circle() {
   }
 
   return (
-    <Screen scene="orbs" header={<AppHeader />}>
+    <Screen scene="ghosts" header={<AppHeader />}>
       <View style={styles.top}>
         <Lede label="your circle" title={circle.friends.length ? peopleLine(circle.friends) : 'Just you, so far.'}>
           <Text tone="soft">They see your weather, and nothing else.</Text>
@@ -246,7 +246,7 @@ function StartCircle({ onStart }: { onStart: (name: string, share: boolean, icon
   };
 
   return (
-    <Screen scene="orbs" header={<AppHeader />}>
+    <Screen scene="ghosts" header={<AppHeader />}>
       <View style={styles.top}>
         <Art name="kittens" size={120} style={styles.art} />
         <Lede label="your circle" title="A few people who can see your weather, and nothing else.">
