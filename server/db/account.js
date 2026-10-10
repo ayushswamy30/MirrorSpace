@@ -3,6 +3,10 @@ import { supabase, unwrap } from '../config/supabase.js';
 /**
  * Everything the account holds, for the export endpoint.
  *
+ * Sleep logs, journal entries, insights, chats, mood patterns and calm
+ * triggers were written by the earlier web client; nothing writes them now,
+ * but whatever an account has there is still its own, so it is exported.
+ *
  * This deliberately returns the raw content — full journal text, whole
  * conversations, and the sentiment analysis the app never shows in the UI.
  * An export that hid the analysis would be a worse answer to "what do you
