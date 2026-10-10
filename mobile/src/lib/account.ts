@@ -109,6 +109,16 @@ export async function shareExport(): Promise<ExportFile> {
 }
 
 /**
+ * Sign out of this phone. What's on the phone isn't tied to one account, so
+ * it goes too — otherwise the next person to sign in here would see it. The
+ * account, circle and settings stay on the server for the next sign-in.
+ */
+export async function signOutHere(): Promise<void> {
+  await supabase.auth.signOut({ scope: 'local' });
+  await destroyLocalData();
+}
+
+/**
  * Erase everything: the account on the server (which cascades through every
  * row), then this phone's database and its key. The server goes first — if
  * it can't be reached nothing is touched, rather than leaving the account

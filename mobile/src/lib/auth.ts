@@ -2,12 +2,12 @@ import { isPreview } from './preview';
 import { supabase } from './supabase';
 
 /**
- * An account, by email — optional, and never needed to use the app.
+ * An account, by email — Lowkei needs one to open.
  *
- * Lowkei starts every space anonymously. Keeping it with an email links
- * that address to the same space (nothing moves, nothing is lost); signing in
- * on another phone reaches the same account there. Either way the person
- * types a six-digit code from their inbox — no password to forget.
+ * A new person signs up with an address; someone with an account signs in to
+ * it on this phone. A space made anonymously before accounts were required is
+ * kept by linking an address to it (nothing moves, nothing is lost). Every way
+ * in is a six-digit code from the inbox — no password to forget.
  *
  * Phone numbers aren't offered: every text message costs money, and the app
  * runs on free services only. What's on the phone itself (check-ins, pages,
@@ -49,6 +49,13 @@ export async function sendLinkCode(email: string): Promise<void> {
 export async function confirmLinkCode(email: string, code: string): Promise<void> {
   if (isPreview) return;
   const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email_change' });
+  if (error) throw new AuthProblem(explain(error));
+}
+
+/** A new account: a code to the address, which creates the account when typed. */
+export async function sendSignUpCode(email: string): Promise<void> {
+  if (isPreview) return;
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
   if (error) throw new AuthProblem(explain(error));
 }
 
