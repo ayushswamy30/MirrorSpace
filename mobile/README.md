@@ -127,8 +127,15 @@ npm run doctor
 
 ## Before a store build
 
-- `app.mirrorspace` is a **placeholder** bundle id / package name. It is
-  permanent once published — choose the real one first.
+- `app.mirrorspace` is a **placeholder** bundle id / package name, left over
+  from before the app was Lowkei. It is permanent once published — choose
+  the real one first. Changing it needs a new Android app in the Firebase
+  project and a fresh `google-services.json` for the new package, or Circle
+  alerts stop. The EAS slug (`mirrorspace`) is tied to the EAS project id and
+  never shown to anyone; it can stay.
+- The privacy policy and terms are served by the API at `/privacy` and
+  `/terms` (`server/legal/`). Fill in the operator name, contact email and
+  city before publishing, and keep them in step with `src/lib/consent.ts`.
 - The icon and splash image are still Expo’s template artwork.
 - The app ships SQLCipher, so Apple’s export-compliance question
   (`ITSAppUsesNonExemptEncryption`) needs a real answer from counsel; it is

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
 import { Art } from '@/components/Art';
 import { Band, Lede, Segmented, SettingGroup, SettingLink, SettingRow } from '@/components/Blocks';
@@ -11,6 +11,7 @@ import { Text } from '@/components/Text';
 import { Personalisation, ProfileCard } from '@/components/YouParts';
 import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
+import { legalUrl } from '@/lib/config';
 import type { ConsentPurpose } from '@/lib/consent';
 import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
@@ -265,6 +266,12 @@ export default function You() {
           subtitle="Check-ins, pages, nights, Mirror, your plan and your account — one file"
           onPress={exporting ? undefined : runExport}
         />
+        <SettingLink
+          title="Privacy policy"
+          subtitle="What stays on this phone, and what doesn’t"
+          onPress={() => Linking.openURL(legalUrl('privacy'))}
+        />
+        <SettingLink title="Terms of use" onPress={() => Linking.openURL(legalUrl('terms'))} />
       </SettingGroup>
 
       <Band />

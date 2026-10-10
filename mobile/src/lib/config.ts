@@ -24,3 +24,8 @@ export const config = {
   /** Development only: open every progressive unlock from day one. */
   unlockAll: process.env.EXPO_PUBLIC_UNLOCK_ALL === '1'
 };
+
+/** The privacy policy and terms are served by the API's host, outside /api. */
+export function legalUrl(page: 'privacy' | 'terms'): string {
+  return `${config.apiUrl.replace(/\/api$/, '')}/${page}`;
+}

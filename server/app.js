@@ -21,6 +21,7 @@ import calmRoutes from './routes/calm.js';
 import patternRoutes from './routes/patterns.js';
 import mirrorRoutes from './routes/mirror.js';
 import circleRoutes from './routes/circle.js';
+import legalRoutes from './routes/legal.js';
 
 const app = express();
 
@@ -84,6 +85,9 @@ app.use('/api/calm', calmRoutes);
 app.use('/api/patterns', patternRoutes);
 app.use('/api/mirror', mirrorRoutes);
 app.use('/api/circle', circleRoutes);
+
+// The privacy policy and terms — the only documents this process serves.
+app.use(legalRoutes);
 
 // Health check — reports whether Supabase is actually reachable.
 app.get('/api/health', async (req, res) => {
