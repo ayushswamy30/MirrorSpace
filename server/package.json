@@ -1,5 +1,5 @@
 {
-  "name": "mirrorspace-server",
+  "name": "lowkei-server",
   "version": "1.0.0",
   "description": "Lowkei Backend — Express + Supabase",
   "main": "server.js",
