@@ -61,7 +61,8 @@ export function Screen({ children, header, scroll = true, edges = ['top'], backg
       {backdrop && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <Image source={sceneImage(backdrop)} style={styles.fillImage} resizeMode="cover" />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(7,6,26,0.45)' }]} />
+          {/* 0.76: the lightest veil that keeps the room's soft text AA over its picture. */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(7,6,26,0.76)' }]} />
         </View>
       )}
       {sceneName && (
