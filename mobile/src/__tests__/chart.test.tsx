@@ -53,12 +53,11 @@ test('lays out the month, the words and what surrounds the days', async () => {
   expect(screen.getByText('2×')).toBeTruthy();
   expect(screen.getByText('friends')).toBeTruthy();
   expect(screen.getByText(/No nights logged yet/)).toBeTruthy();
-  expect(screen.getByText('Your mind chart opens in 3 days.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: /mind chart/i })).toBeTruthy();
 });
 
-test('stays closed before day 7', async () => {
+test('is open on the first day', async () => {
   mockCreated = new Date().toISOString();
   await renderChart();
-  expect(screen.getByText('Your patterns, once there are enough days to see them.')).toBeTruthy();
-  expect(screen.queryByText('The last thirty days.')).toBeNull();
+  expect(screen.getByText('The last thirty days.')).toBeTruthy();
 });
