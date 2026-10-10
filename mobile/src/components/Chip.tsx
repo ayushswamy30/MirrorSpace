@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     paddingHorizontal: space.md,
     justifyContent: 'center',
-    borderRadius: radius.none,
+    borderRadius: radius.pill,
     borderWidth: 1
   },
   word: { fontSize: 19, lineHeight: 23 }

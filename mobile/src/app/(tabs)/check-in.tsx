@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Button } from '@/components/Button';
 import { CareLine } from '@/components/CareLine';
@@ -32,7 +33,7 @@ import { answerConcern } from '@/lib/safety/respond';
 import { higher, screenCheckIn, type Tier } from '@/lib/safety/screen';
 import { useProfile } from '@/lib/session';
 import { useEntering } from '@/theme/motion';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -246,6 +247,32 @@ const MOODS: Record<Quadrant, { title: string; hint: string; art: ArtName }> = {
 
 const FIRST_WORDS = 10;
 
+/** Each feeling's own light: coral for wound up, sun for bright, dusk for heavy, mint for easy. */
+const MOOD_GLOW: Record<Quadrant, readonly [string, string]> = {
+  'charged-unpleasant': ['#FF8A7A', '#FF9EC8'],
+  'charged-pleasant': ['#FFD873', '#FFB778'],
+  'low-unpleasant': ['#8FA2FF', '#B9A2FF'],
+  'low-pleasant': ['#86E3BC', '#93CBFF']
+};
+
+function MoodGlow({ quadrant }: { quadrant: Quadrant }) {
+  const { scheme } = useTheme();
+  const id = `mood-${quadrant}`;
+  const [a, b] = MOOD_GLOW[quadrant];
+  return (
+    <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="38%" r="70%">
+          <Stop offset="0" stopColor={a} stopOpacity={scheme === 'dark' ? 0.32 : 0.5} />
+          <Stop offset="0.55" stopColor={b} stopOpacity={scheme === 'dark' ? 0.12 : 0.22} />
+          <Stop offset="1" stopColor={b} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
+  );
+}
+
 function Choose({
   start,
   selectedWord,
@@ -272,8 +299,12 @@ function Choose({
               setQuadrant(q);
               setMore(false);
             }}
-            style={({ pressed }) => [styles.mood, { borderColor: colors.hairline, backgroundColor: pressed ? colors.band : colors.paper }]}
+            style={({ pressed }) => [
+              styles.mood,
+              { borderColor: colors.glassEdge, backgroundColor: colors.glass, transform: [{ scale: pressed ? 0.97 : 1 }] }
+            ]}
           >
+            <MoodGlow quadrant={q} />
             <Art name={MOODS[q].art} size={56} />
             <Text variant="heading">{MOODS[q].title}</Text>
             <Text variant="mono" tone="soft" style={styles.centre}>
@@ -437,7 +468,9 @@ const styles = StyleSheet.create({
   moods: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   mood: {
     width: '48.5%',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
+    borderRadius: radius.card,
+    overflow: 'hidden',
     paddingVertical: space.lg,
     paddingHorizontal: space.sm,
     alignItems: 'center',
@@ -448,7 +481,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   links: { flexDirection: 'row', gap: space.lg },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  sheet: { padding: space.md, gap: space.sm },
+  sheet: { padding: space.md, gap: space.sm, borderRadius: radius.card },
   note: {
     fontFamily: fonts.sans,
     fontSize: 15,

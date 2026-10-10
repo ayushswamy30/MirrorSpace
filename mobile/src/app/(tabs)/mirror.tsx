@@ -27,7 +27,7 @@ import { useProfile } from '@/lib/session';
 import { downloadVoiceModel, readAloudOn, setReadAloud, speak, stopSpeaking, useListening, voiceReadiness } from '@/lib/voice';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
-import { dark, gutter, hitTarget, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
 import { useEntering } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
@@ -147,6 +147,7 @@ function Room() {
       header={<AppHeader onVoid />}
       scroll={false}
       background={colors.void}
+      room="void"
       contentStyle={styles.page}
     >
       <Starfield />
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
   suggestions: { gap: space.sm, marginTop: space.md },
   topics: { gap: space.md, marginTop: space.lg },
   topicRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  topic: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm, width: '23%', borderWidth: 1 },
+  topic: { alignItems: 'center', gap: space.xs + 2, paddingVertical: space.sm, width: '23%', borderWidth: 1, borderRadius: 18 },
   closed: { gap: space.lg, marginTop: space.xl },
   mine: { textAlign: 'right' },
   message: { gap: space.sm },
@@ -409,6 +410,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm + 4,
     textAlignVertical: 'center'
   },
-  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center' },
-  speak: { minHeight: 36, paddingHorizontal: space.sm, justifyContent: 'center', borderWidth: 1 }
+  send: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center', borderRadius: radius.pill },
+  speak: { minHeight: 36, paddingHorizontal: space.md, justifyContent: 'center', borderWidth: 1, borderRadius: radius.pill }
 });

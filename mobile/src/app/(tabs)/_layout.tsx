@@ -5,7 +5,7 @@ import { Tabs } from 'expo-router/tabs';
 import { Button } from '@/components/Button';
 import { Loader } from '@/components/Loader';
 import { Screen } from '@/components/Screen';
-import { TabBar } from '@/components/TabBar';
+import { TabBar, TabInsetProvider } from '@/components/TabBar';
 import { CircleSync } from '@/components/CircleSync';
 import { HealthSync } from '@/components/HealthSync';
 import { PushSync } from '@/components/PushSync';
@@ -47,7 +47,7 @@ export default function TabsLayout() {
   }
 
   return (
-    <>
+    <TabInsetProvider>
       <WeatherSync />
       <ReminderSync />
       <HealthSync />
@@ -63,6 +63,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="chart" options={{ title: 'chart' }} />
         <Tabs.Screen name="you" options={{ title: 'you' }} />
       </Tabs>
-    </>
+    </TabInsetProvider>
   );
 }
