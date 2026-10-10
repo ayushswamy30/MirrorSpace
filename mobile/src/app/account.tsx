@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -15,6 +15,7 @@ import {
   confirmSignInCode,
   sendLinkCode,
   sendSignInCode,
+  sendSignUpCode,
   validEmail
 } from '@/lib/auth';
 import { useSession } from '@/lib/session';
@@ -24,17 +25,47 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
 /**
- * Keep your space with an email — or sign in to it on another phone. Two
- * steps: an address, then the six-digit code sent to it. Always optional:
- * "not now" goes straight into the app.
+ * The account, by email: nothing in Lowkei opens without one. Two steps — an
+ * address, then the six-digit code sent to it. No passwords.
  *
- * ?mode=signin  signing in to an existing account
- * ?next=welcome arriving from the end of onboarding
+ * ?mode=signup  a new account (from the welcome screen)
+ * ?mode=signin  an existing account, on this phone
+ * ?mode=keep    a space made anonymously before accounts were required:
+ *               it is kept with an email, and nothing on it moves
  */
+
+type Mode = 'signup' | 'signin' | 'keep';
+
+const COPY: Record<Mode, { header: string; label: string; title: string; body: string; confirm: string }> = {
+  signup: {
+    header: 'create an account',
+    label: 'your account',
+    title: 'Start with your email.',
+    body: 'Your account is what makes your space yours, on any phone. We’ll send a six-digit code — no password, and no emails you didn’t ask for.',
+    confirm: 'create my account'
+  },
+  signin: {
+    header: 'sign in',
+    label: 'welcome back',
+    title: 'Sign in with your email.',
+    body: 'We’ll send a six-digit code. Your account, circle and settings come with you; what you wrote stays on the phone you wrote it on.',
+    confirm: 'sign in'
+  },
+  keep: {
+    header: 'your account',
+    label: 'one more step',
+    title: 'Keep your space with an email.',
+    body: 'Lowkei now needs an account. Add your email and everything here stays exactly as it is — nothing moves and nothing is lost.',
+    confirm: 'keep my space'
+  }
+};
+
+const RESEND_SECONDS = 30;
+
 export default function Account() {
-  const { mode, next } = useLocalSearchParams<{ mode?: string; next?: string }>();
-  const signIn = mode === 'signin';
-  const fromOnboarding = next === 'welcome';
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const mode: Mode = params.mode === 'signin' ? 'signin' : params.mode === 'signup' ? 'signup' : 'keep';
+  const copy = COPY[mode];
   const session = useSession();
   const { colors } = useTheme();
   const enter = useEntering();
@@ -44,20 +75,24 @@ export default function Account() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wait, setWait] = useState(0);
 
-  const leave = () => (fromOnboarding || signIn ? router.replace('/') : router.back());
+  useEffect(() => {
+    if (wait <= 0) return;
+    const timer = setTimeout(() => setWait(w => w - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [wait]);
 
-  const send = async () => {
-    const address = validEmail(email);
-    if (!address) {
-      setError('That doesn’t look like an email address.');
-      return;
-    }
+  // Keeping a space is required; signing up or in can go back to the welcome.
+  const back = mode === 'keep' ? undefined : () => (router.canGoBack() ? router.back() : router.replace('/onboarding'));
+
+  const sendTo = async (address: string) => {
     setBusy(true);
     setError(null);
     try {
-      await (signIn ? sendSignInCode : sendLinkCode)(address);
+      await (mode === 'signin' ? sendSignInCode : mode === 'signup' ? sendSignUpCode : sendLinkCode)(address);
       setSentTo(address);
+      setWait(RESEND_SECONDS);
     } catch (err) {
       setError(err instanceof AuthProblem ? err.message : 'That didn’t go through. Try again.');
     } finally {
@@ -65,16 +100,25 @@ export default function Account() {
     }
   };
 
+  const send = () => {
+    const address = validEmail(email);
+    if (!address) {
+      setError('That doesn’t look like an email address.');
+      return;
+    }
+    sendTo(address);
+  };
+
   const confirm = async () => {
     if (!sentTo) return;
     setBusy(true);
     setError(null);
     try {
-      await (signIn ? confirmSignInCode : confirmLinkCode)(sentTo, code.trim());
-      // A new session (sign in) or a newly permanent one (link): read it again.
-      if (signIn) session.retry();
-      else await session.refreshProfile().catch(() => undefined);
-      leave();
+      await (mode === 'keep' ? confirmLinkCode : confirmSignInCode)(sentTo, code.trim());
+      // A new session (sign up, sign in) or a newly permanent one (keep): read it again.
+      if (mode === 'keep') await session.refreshProfile().catch(() => undefined);
+      else session.retry();
+      router.replace('/');
     } catch (err) {
       setError(err instanceof AuthProblem ? err.message : 'That didn’t go through. Try again.');
     } finally {
@@ -85,27 +129,18 @@ export default function Account() {
   const field = [styles.field, { color: colors.ink, borderColor: colors.hairline }];
 
   return (
-    <Screen
-      edges={['top', 'bottom']}
-      header={<SubHeader title={signIn ? 'sign in' : 'your account'} leading="close" onLeading={leave} />}
-    >
+    <Screen edges={['top', 'bottom']} header={<SubHeader title={copy.header} leading={back ? 'close' : undefined} onLeading={back} />}>
       <Art name="stamp" size={96} style={styles.art} />
 
       {!sentTo ? (
         <Animated.View key="email" entering={enter} style={styles.block}>
-          <Lede
-            label={signIn ? 'welcome back' : 'keep your space'}
-            title={signIn ? 'Sign in with your email.' : 'Keep your space with an email.'}
-          >
-            <Text tone="soft">
-              {signIn
-                ? 'We’ll send a six-digit code. What you wrote on your old phone stays on that phone; your account, circle and settings come with you.'
-                : 'So you can sign in again on a new phone. We’ll send a six-digit code — no password to remember, and no emails you didn’t ask for.'}
-            </Text>
+          <Lede label={copy.label} title={copy.title}>
+            <Text tone="soft">{copy.body}</Text>
           </Lede>
           <TextInput
             value={email}
             onChangeText={setEmail}
+            onSubmitEditing={send}
             placeholder="you@example.com"
             placeholderTextColor={colors.inkSoft}
             accessibilityLabel="Email address"
@@ -113,6 +148,7 @@ export default function Account() {
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect={false}
+            returnKeyType="send"
             maxFontSizeMultiplier={2}
             style={field}
           />
@@ -122,12 +158,8 @@ export default function Account() {
             </Text>
           )}
           <Button label={busy ? 'sending…' : 'send me a code'} arrow disabled={busy || !email.trim()} onPress={send} />
-          <Button kind="link" label={signIn ? 'not now' : 'not now — maybe later'} onPress={leave} />
-          {!signIn && (
-            <Text variant="caption" tone="soft">
-              Phone numbers aren’t offered yet: text messages cost money, and Lowkei runs on free services.
-            </Text>
-          )}
+          {mode === 'signup' && <Button kind="link" label="I already have an account" onPress={() => router.replace('/account?mode=signin')} />}
+          {mode === 'signin' && <Button kind="link" label="I’m new — create an account" onPress={() => router.replace('/account?mode=signup')} />}
         </Animated.View>
       ) : (
         <Animated.View key="code" entering={enter} style={styles.block}>
@@ -152,7 +184,13 @@ export default function Account() {
               {error}
             </Text>
           )}
-          <Button label={busy ? 'checking…' : signIn ? 'sign in' : 'keep my space'} arrow disabled={busy || code.length !== 6} onPress={confirm} />
+          <Button label={busy ? 'checking…' : copy.confirm} arrow disabled={busy || code.length !== 6} onPress={confirm} />
+          <Button
+            kind="link"
+            label={wait > 0 ? `send a new code in ${wait}s` : 'send a new code'}
+            disabled={wait > 0 || busy}
+            onPress={() => sendTo(sentTo)}
+          />
           <Button
             kind="link"
             label="use a different email"

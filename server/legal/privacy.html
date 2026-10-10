@@ -36,7 +36,7 @@
   <ul>
     <li>What you write in Lowkei — check-ins, vent pages, Mirror chats, your plan, letters, notes — is kept on your phone, encrypted. It is not uploaded to our servers.</li>
     <li>Your writing leaves the phone only when you have switched on AI reflections and ask the Mirror something or ask for a reflection on a page. It passes through our server to an AI service to get an answer, and neither we nor that service keep it.</li>
-    <li>Our server holds a small account record: an anonymous ID, your email if you add one, your consent choices, and — if you use Circle — what you chose to share with your circle.</li>
+    <li>Our server holds a small account record: your email, a random account ID, your consent choices, and — if you use Circle — what you chose to share with your circle.</li>
     <li>No ads, no analytics, no tracking SDKs. We do not sell or share your data for advertising.</li>
     <li>You can download everything, or erase everything, from the You tab at any time.</li>
   </ul>
@@ -53,6 +53,7 @@
   <li>Sleep and wake times, whether entered by hand or read from Health Connect.</li>
   <li>Steps, resting heart rate and heart-rate variability, if you allow Lowkei to read them.</li>
   <li>Your safety plan, letters, experiments, and the record of times you opened crisis help.</li>
+  <li>Your profile photo, if you choose one from your phone. Your circle sees the drawing you picked, never the photo.</li>
   <li>Your answer to the age question, and app preferences such as appearance and reminders.</li>
 </ul>
 <p>Your daily reading, patterns, Mind Chart, forecast and Wrapped are all calculated on the phone from this data.</p>
@@ -62,11 +63,11 @@
 <p>On iPhone, and anywhere else you open Lowkei at getlowkei.vercel.app/app, the same things are kept in that browser’s storage on your device instead. They are still not uploaded. A browser can’t use SQLCipher, so this copy is not encrypted by Lowkei: protect the device with a passcode, and know that clearing the browser’s website data deletes it. Voice and Health Connect aren’t available in the browser version.</p>
 
 <h2>2. What our server holds</h2>
-<p>Lowkei starts with an anonymous account so the app can talk to our server securely. Our server stores:</p>
+<p>You sign up with your email address; it is how you sign in, with a six-digit code, on any phone. Our server stores:</p>
 <table>
   <tr><th>Data</th><th>Why</th></tr>
   <tr><td>A random account ID, and when the account was created and last used</td><td>To sign the app in and keep it secure.</td></tr>
-  <tr><td>Your email address — only if you choose to add one</td><td>So you can sign in on a new phone with a six-digit code.</td></tr>
+  <tr><td>Your email address</td><td>To sign you in with a six-digit code, on this phone or a new one. We only email you sign-in codes.</td></tr>
   <tr><td>What you said you came to Lowkei for (chosen during onboarding)</td><td>To shape the app around it.</td></tr>
   <tr><td>When you confirmed you are 18 or older, and when you saw the AI disclosure</td><td>To show we asked before you started.</td></tr>
   <tr><td>Each consent you give or withdraw: which one, yes or no, the policy version, and when</td><td>To honour your choices, and to show we did, as the DPDP Act requires.</td></tr>

@@ -33,21 +33,6 @@ YOUR TONE EXAMPLES:
 
 REMEMBER: You are a quiet room, not a clinic.`;
 
-export const DAILY_INSIGHT_PROMPT = `Generate a daily mental insight for the user based on the following context data.
-
-The insight should:
-- Be 1-2 sentences for the headline (poetic, observational)
-- Have a small subtext line explaining what data it draws from
-- Feel like a Co-Star daily reading — mysterious but grounded in real patterns
-- Never feel clinical or diagnostic
-- If data is limited, be honest about that — poetic stillness is fine
-
-Format your response as JSON:
-{
-  "headline": "The main insight text",
-  "subtext": "Based on [data sources]"
-}`;
-
 export const VENT_REFLECTION_PROMPT = `Reflect on the user's vent/journal entry. This reflection will be shown HOURS LATER — not immediately.
 
 The reflection should:
