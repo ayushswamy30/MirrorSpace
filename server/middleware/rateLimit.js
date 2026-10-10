@@ -36,17 +36,6 @@ export const chatLimiter = rateLimit({
   message: { message: 'The mirror needs a moment. Come back shortly.' }
 });
 
-/**
- * Whole-history analysis: the most expensive call in the app, and one nobody
- * has a reason to run repeatedly.
- */
-export const predictionLimiter = rateLimit({
-  ...base,
-  windowMs: HOUR,
-  limit: 10,
-  message: { message: 'That analysis was just run. Give it an hour.' }
-});
-
 /** Writes that create rows, including first-request account provisioning. */
 export const writeLimiter = rateLimit({
   ...base,
