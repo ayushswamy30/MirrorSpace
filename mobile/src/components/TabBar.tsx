@@ -103,6 +103,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space.xs
   },
-  label: { fontSize: 10, letterSpacing: 1.2 },
+  label: { fontSize: 11.5, letterSpacing: 0.1 },
   mark: { width: 4, height: 4, borderRadius: radius.dot }
 });

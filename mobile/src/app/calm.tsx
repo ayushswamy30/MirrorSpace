@@ -47,6 +47,7 @@ export default function Calm() {
   return (
     <Screen
       edges={['top', 'bottom']}
+      scene="haze"
       header={
         <SubHeader
           title="calm"

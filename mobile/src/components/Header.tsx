@@ -50,9 +50,11 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
   const ink = onVoid ? dark.ink : colors.ink;
   const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
 
+  const pill = { backgroundColor: onVoid ? 'rgba(22,20,40,0.72)' : colors.glass, borderColor: onVoid ? 'rgba(255,255,255,0.16)' : colors.glassEdge };
+
   return (
-    <View style={[styles.bar, onVoid && { backgroundColor: colors.void }]}>
-      <View style={styles.brand}>
+    <View style={styles.bar}>
+      <View style={[styles.brand, styles.pill, pill]}>
         <Text variant="label" accessibilityRole="header" accessibilityLabel="Lowkei" style={{ color: ink }}>
           lowkei
         </Text>
@@ -62,7 +64,7 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
           importantForAccessibility="no-hide-descendants"
         />
       </View>
-      <View style={styles.right}>
+      <View style={[styles.right, styles.pill, pill]}>
         {extra}
         <CalmLink ink={ink} />
       </View>
@@ -84,7 +86,7 @@ export function SubHeader({ title, leading = 'back', onLeading, trailing }: SubH
   const { colors } = useTheme();
 
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, styles.subBar, { backgroundColor: colors.glass, borderColor: colors.glassEdge }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={leading === 'close' ? 'close' : 'back'}
@@ -111,7 +113,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between'
   },
+  subBar: { marginHorizontal: space.sm, marginTop: space.xs, paddingHorizontal: space.sm, borderWidth: 1, borderRadius: radius.pill },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  pill: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: hitTarget - 6 },
   right: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   dot: { width: 6, height: 6, borderRadius: radius.dot },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, minHeight: hitTarget },

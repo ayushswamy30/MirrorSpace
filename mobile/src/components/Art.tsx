@@ -9,9 +9,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { Sparkles } from './Sparkles';
 
 /**
- * Halftone cut-outs — the printed almanac's illustrations. Black ink on the
- * light page; at night the dark silhouettes are inverted to light ink, and the
- * mostly-white ones are kept as they are (inverting them reads as a negative).
+ * Glowing drawings: the engravings recoloured as iridescent light, each with
+ * its own pair of hues and a soft halo (scripts/art/glow.py). One file reads
+ * on both the light page and the night.
  *
  * Always decorative: hidden from screen readers, never carrying meaning.
  */
@@ -21,31 +21,27 @@ type Pair = { light: ImageSourcePropType; dark: ImageSourcePropType; ratio: numb
 const same = (source: ImageSourcePropType, ratio: number): Pair => ({ light: source, dark: source, ratio });
 
 const ART = {
-  bandage: { light: require('../../assets/art/bandage.png'), dark: require('../../assets/art/bandage-dark.png'), ratio: 480 / 118 },
-  bean: { light: require('../../assets/art/bean.png'), dark: require('../../assets/art/bean-dark.png'), ratio: 366 / 480 },
-  beetle: { light: require('../../assets/art/beetle.png'), dark: require('../../assets/art/beetle-dark.png'), ratio: 480 / 324 },
-  butterfly: {
-    light: require('../../assets/art/butterfly.png'),
-    dark: require('../../assets/art/butterfly-dark.png'),
-    ratio: 480 / 465
-  },
-  can: { light: require('../../assets/art/can.png'), dark: require('../../assets/art/can-dark.png'), ratio: 308 / 480 },
-  cat: { light: require('../../assets/art/cat.png'), dark: require('../../assets/art/cat-dark.png'), ratio: 395 / 435 },
-  city: { light: require('../../assets/art/city.png'), dark: require('../../assets/art/city-dark.png'), ratio: 480 / 273 },
-  dice: { light: require('../../assets/art/dice.png'), dark: require('../../assets/art/dice-dark.png'), ratio: 348 / 480 },
-  doll: same(require('../../assets/art/doll.png'), 235 / 480),
-  eye: same(require('../../assets/art/eye.png'), 478 / 480),
-  heart: { light: require('../../assets/art/heart.png'), dark: require('../../assets/art/heart-dark.png'), ratio: 304 / 445 },
-  king: { light: require('../../assets/art/king.png'), dark: require('../../assets/art/king-dark.png'), ratio: 192 / 480 },
-  kittens: { light: require('../../assets/art/kittens.png'), dark: require('../../assets/art/kittens-dark.png'), ratio: 418 / 480 },
-  lily: same(require('../../assets/art/lily.png'), 480 / 455),
-  masks: { light: require('../../assets/art/masks.png'), dark: require('../../assets/art/masks-dark.png'), ratio: 480 / 220 },
-  moka: same(require('../../assets/art/moka.png'), 379 / 480),
-  orchid: same(require('../../assets/art/orchid.png'), 480 / 421),
-  stamp: same(require('../../assets/art/stamp.png'), 348 / 335),
-  swallow: { light: require('../../assets/art/swallow.png'), dark: require('../../assets/art/swallow-dark.png'), ratio: 253 / 480 },
-  swan: same(require('../../assets/art/swan.png'), 468 / 318),
-  urchin: { light: require('../../assets/art/urchin.png'), dark: require('../../assets/art/urchin-dark.png'), ratio: 480 / 444 }
+  bandage: same(require('../../assets/art-glow/bandage.png'), 614 / 252),
+  bean: same(require('../../assets/art-glow/bean.png'), 500 / 614),
+  beetle: same(require('../../assets/art-glow/beetle.png'), 614 / 458),
+  butterfly: same(require('../../assets/art-glow/butterfly.png'), 614 / 599),
+  can: same(require('../../assets/art-glow/can.png'), 442 / 614),
+  cat: same(require('../../assets/art-glow/cat.png'), 515 / 555),
+  city: same(require('../../assets/art-glow/city.png'), 614 / 407),
+  dice: same(require('../../assets/art-glow/dice.png'), 482 / 614),
+  doll: same(require('../../assets/art-glow/doll.png'), 369 / 614),
+  eye: same(require('../../assets/art-glow/eye.png'), 612 / 614),
+  heart: same(require('../../assets/art-glow/heart.png'), 428 / 569),
+  king: same(require('../../assets/art-glow/king.png'), 326 / 614),
+  kittens: same(require('../../assets/art-glow/kittens.png'), 552 / 614),
+  lily: same(require('../../assets/art-glow/lily.png'), 614 / 589),
+  masks: same(require('../../assets/art-glow/masks.png'), 614 / 354),
+  moka: same(require('../../assets/art-glow/moka.png'), 513 / 614),
+  orchid: same(require('../../assets/art-glow/orchid.png'), 614 / 555),
+  stamp: same(require('../../assets/art-glow/stamp.png'), 444 / 431),
+  swallow: same(require('../../assets/art-glow/swallow.png'), 387 / 614),
+  swan: same(require('../../assets/art-glow/swan.png'), 598 / 448),
+  urchin: same(require('../../assets/art-glow/urchin.png'), 614 / 578)
 } satisfies Record<string, Pair>;
 
 export type ArtName = keyof typeof ART;

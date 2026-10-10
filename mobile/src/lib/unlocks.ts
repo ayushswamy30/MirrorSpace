@@ -1,8 +1,8 @@
 /**
- * Progressive unlocks (report §7). Since 2026-10-10 everything opens on day 1:
- * every feature is for everyone from the start. The days are kept so a
- * feature can be held back again by raising its number here. Screens with
- * little data say so themselves ("still filling in").
+ * Progressive unlocks (report §7): the Mirror opens on day 3 and the Chart on
+ * day 7, once there is a little rhythm to reflect on. Everything else is open
+ * from day 1; Mind Chart and Wrapped say themselves when they're still
+ * filling in.
  *
  * "Day 1" is the day the account was created, counted in calendar days in the
  * user's own timezone — opening the app at 23:50 and again at 00:10 is two days.
@@ -13,8 +13,8 @@ export type Feature = 'today' | 'checkIn' | 'mirror' | 'patterns' | 'mindChart' 
 export const unlockDay: Record<Feature, number> = {
   today: 1,
   checkIn: 1,
-  mirror: 1,
-  patterns: 1,
+  mirror: 3,
+  patterns: 7,
   mindChart: 1,
   wrapped: 1
 };

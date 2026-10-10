@@ -67,7 +67,7 @@ export default function You() {
 
   if (session.status !== 'ready') {
     return (
-      <Screen header={<AppHeader />}>
+      <Screen scene="weather" header={<AppHeader />}>
         <Text tone="soft">Your space isn’t open yet.</Text>
       </Screen>
     );
@@ -177,7 +177,7 @@ export default function You() {
   };
 
   return (
-    <Screen header={<AppHeader />}>
+    <Screen scene="weather" header={<AppHeader />}>
       <ProfileCard />
 
       <Lede label={`day ${day}`} title="Your space." size="title">
