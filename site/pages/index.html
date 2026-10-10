@@ -1,164 +1,151 @@
-<div class="hero wrap">
-  <p class="label soft">A journal that reads back</p>
-  <h1>A quiet place to notice how you are.</h1>
-  <p class="lede">Check in in ten seconds. Write what you can’t say out loud. Lowkei keeps it on your phone and shows you the weather of your weeks.</p>
-  <div class="ctas">
-    <!--download-->
-    <span class="note">Free · Android · <a href="/download#iphone">iPhone in Safari</a></span>
-  </div>
-  <div class="stage">
-    <!--phone:chart:left-->
-    <div class="phone mid">
-      <div class="screen">
-        <video data-auto muted loop playsinline preload="none" width="600" height="1298" poster="/media/today.webp" aria-label="Today: the day’s reading, with what to lean into and what to leave">
-          <source data-src="/media/today.webm" type="video/webm">
-          <source data-src="/media/today.mp4" type="video/mp4">
-        </video>
-        <button class="btn small ghost play" type="button">Play</button>
+<div class="hero">
+  <div class="hero-bg" style="background-image:url(/pictures/sky-overcast.webp)" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wordmark" aria-hidden="true">lowkei</div>
+  <div class="wrap">
+    <div class="intro">
+      <span class="eyebrow">A journal that reads back</span>
+      <h1>A soft place to notice how you are.</h1>
+      <p class="lede">Check in in ten seconds. Write what you can’t say out loud. Lowkei keeps it on your phone and shows you the weather of your weeks.</p>
+      <div class="ctas">
+        <!--download-->
+        <a class="btn ghost" href="/download#iphone">On iPhone</a>
       </div>
+      <p class="note" style="margin:14px 0 0">Free, every feature. Android app · iPhone in Safari.</p>
     </div>
-    <!--phone:mirror:right-->
-    <!--art:lily:art a1-->
-    <!--art:butterfly:art a2-->
+    <div class="stage">
+      <!--phone:chart:left-->
+      <!--phone:today:mid-->
+      <!--phone:mirror:right-->
+    </div>
   </div>
+  <div class="arch" aria-hidden="true"></div>
 </div>
 
-<section id="how">
+<section id="how" aria-labelledby="how-title">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="label soft">How it works</span>
-      <h2>It notices, so you don’t have to keep score.</h2>
-      <p class="lede">Most days you just name how you are. Over weeks, Lowkei finds what lifts you and what drains you — from your own words, on your own phone.</p>
+    <div class="head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2 id="how-title">It notices, so you don’t have to keep score.</h2>
+      <p class="lede">Most days you just name how you are. Over the weeks, Lowkei finds what lifts you and what drains you — from your own check-ins, on your own phone.</p>
     </div>
     <div class="steps">
-      <div class="step reveal">
-        <span class="num">01</span>
-        <h3>Check in.</h3>
-        <p>Pick heavy, wound up, bright or easy, then the closest word. Add what it was around if you like.</p>
-        <!--phone:checkin-->
-      </div>
-      <div class="step reveal">
-        <span class="num">02</span>
-        <h3>Put it down.</h3>
-        <p>Vent is a page nobody else reads. Keep it, or let it go when you’re done.</p>
-        <!--phone:vent-->
-      </div>
-      <div class="step reveal">
-        <span class="num">03</span>
-        <h3>See the weather.</h3>
-        <p>Thirty days become a ring of Inner Weather — clear, mild, overcast, fog or storm.</p>
-        <!--phone:chart-->
+      <ol class="step-list">
+        <li class="step" data-show="checkin">
+          <span class="num">01</span>
+          <h3>Check in.</h3>
+          <p>Pick wound up, bright, heavy or easy, then the word that fits. Add what it was around, if you like.</p>
+          <!--phone:checkin-->
+        </li>
+        <li class="step" data-show="vent">
+          <span class="num">02</span>
+          <h3>Put it down.</h3>
+          <p>Vent is a page nobody else reads. Keep it, or let it go when you’re done.</p>
+          <!--phone:vent-->
+        </li>
+        <li class="step" data-show="chart">
+          <span class="num">03</span>
+          <h3>See the weather.</h3>
+          <p>A week of check-ins becomes a ring of Inner Weather — clear, mild, overcast, fog or storm — and the app takes on the colour of your day.</p>
+          <!--phone:chart-->
+        </li>
+        <li class="step" data-show="today">
+          <span class="num">04</span>
+          <h3>Read your day.</h3>
+          <p>Each morning, a short reading built from your own patterns: what tends to help, and what to go easy on.</p>
+          <!--phone:today-->
+        </li>
+      </ol>
+      <div class="sticky" aria-hidden="true">
+        <div class="stack">
+          <!--stack:checkin,vent,chart,today-->
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="features" class="rule">
+<section id="features" aria-labelledby="features-title">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="label soft">Inside Lowkei</span>
-      <h2>Small, honest tools for ordinary days.</h2>
+    <div class="head reveal">
+      <span class="eyebrow">Inside Lowkei</span>
+      <h2 id="features-title">Small, gentle tools for ordinary days.</h2>
     </div>
-
-    <div class="feature reveal">
-      <div class="copy">
-        <!--art:urchin-->
-        <span class="label soft">Today</span>
-        <h2>A reading built from your own patterns.</h2>
-        <p>Each morning, Lowkei turns your check-ins and sleep into a short reading — what tends to help, what to go easy on. It’s worked out on your phone, from your numbers, never your words.</p>
-        <ul><li>Do and don’t, from what’s actually lifted you</li><li>Share the day’s reading as a card</li><li>Low-day mode asks for nothing when things are heavy</li></ul>
-      </div>
-      <!--phone:today-->
-    </div>
-
-    <div class="feature flip reveal">
-      <div class="copy">
-        <!--art:orchid-->
-        <span class="label soft">Your Mind Chart</span>
-        <h2>Your placements, drawn from ninety days.</h2>
-        <p>When you’ve checked in for two weeks, Lowkei draws your Mind Chart: your nights, your lightest hours, how heavy days show up, and what tends to restore or drain you.</p>
-        <ul><li>Every placement shows the numbers behind it</li><li>Placements still filling in say so</li><li>Wrapped tells the month back, from day thirty</li></ul>
-      </div>
-      <!--phone:mind-->
-    </div>
-  </div>
-</section>
-
-<section class="void" aria-labelledby="mirror-title">
-  <div class="stars" aria-hidden="true"></div>
-  <div class="wrap">
-    <div class="feature reveal">
-      <div class="copy">
-        <!--art:eye-->
-        <span class="label soft">The Mirror</span>
-        <h2 id="mirror-title">Ask the question you keep circling.</h2>
-        <p>The Mirror is an AI you can talk things through with — software, not a person, and not a therapist. It only switches on if you say so, and it only knows what you choose to show it.</p>
-        <ul><li>Tap speak to talk instead of type; your phone turns it into text</li><li>“What the Mirror knows” is a page you can read and edit</li><li>Answers that rely on it say which note they used</li></ul>
-      </div>
-      <!--phone:mirror-->
+    <div class="cards">
+      <article class="card wide reveal">
+        <div class="bg" style="background-image:url(/pictures/room-circle.webp)" aria-hidden="true"></div>
+        <div class="label"><h3>Circle</h3><p>Let a few people see your weather — one word for your day, and when you’re running low. Never your words.</p></div>
+        <!--phone:circle-->
+      </article>
+      <article class="card narrow reveal">
+        <div class="bg" style="background-image:url(/pictures/room-calm.webp)" aria-hidden="true"></div>
+        <div class="label"><h3>Calm</h3><p>Breathing, grounding and sounds, one tap from every screen. Crisis lines are right there, always free.</p></div>
+        <!--phone:calm-->
+      </article>
+      <article class="card narrow reveal">
+        <div class="bg" style="background-image:url(/pictures/sky-fog.webp)" aria-hidden="true"></div>
+        <div class="label"><h3>Mind Chart</h3><p>Your placements, drawn from ninety days: your nights, your lightest hours, what restores you.</p></div>
+        <!--phone:mind-->
+      </article>
+      <article class="card wide reveal">
+        <div class="bg" style="background-image:url(/pictures/sky-mild.webp)" aria-hidden="true"></div>
+        <div class="label"><h3>Wrapped</h3><p>The month, or the year, told back to you — plain facts, no scores.</p></div>
+        <!--phone:wrapped-->
+      </article>
     </div>
   </div>
 </section>
 
-<section class="rule">
-  <div class="wrap">
-    <div class="feature flip reveal">
-      <div class="copy">
-        <!--art:kittens-->
-        <span class="label soft">Circle</span>
-        <h2>Let a few people see your weather. Nothing else.</h2>
-        <p>Add the people you trust. They see one word for your day and when you’re running low — never your words, notes or check-ins. A nudge says “thinking of you” without a single question.</p>
-        <ul><li>Twelve people at most, by invite code</li><li>“Running low” clears itself after a day</li><li>Alerts never show names or feelings on a lock screen</li></ul>
-      </div>
-      <!--phone:circle-->
-    </div>
-
-    <div class="feature reveal">
-      <div class="copy">
-        <!--art:swan-->
-        <span class="label soft">Calm</span>
-        <h2>Breathe out for longer than you breathe in.</h2>
-        <p>Guided breathing, grounding and sounds, one tap from every screen. If it’s more than a bad day, crisis lines for your country and your own safety plan are right there — free, always.</p>
-        <ul><li>Double sigh, box breathing and 4·7·8</li><li>A safety plan you write for yourself</li><li>Crisis lines for your country</li></ul>
-      </div>
-      <!--phone:calm-->
-    </div>
-  </div>
-</section>
-
-<section id="privacy" class="rule" aria-labelledby="privacy-title">
-  <div class="wrap privacy">
-    <div class="panel reveal" role="img" aria-label="Lowkei's privacy settings: your words never leave the phone; no ads; no trackers; AI reflections only if you switch them on; health data never shared">
-      <div class="row"><div>Your words leave this phone<small>Check-ins, pages, letters</small></div><span class="switch" aria-hidden="true"></span></div>
-      <div class="row"><div>Ads<small>None, anywhere</small></div><span class="state">None</span></div>
-      <div class="row"><div>Trackers and analytics<small>No SDKs watching</small></div><span class="state">None</span></div>
-      <div class="row"><div>AI reflections<small>Off until you switch them on</small></div><span class="state">Your call</span></div>
-      <div class="row"><div>Health data shared<small>Sleep, steps, heart rate</small></div><span class="switch" aria-hidden="true"></span></div>
-      <div class="row"><div>Encrypted on this phone<small>SQLCipher · key never leaves</small></div><span class="switch on" aria-hidden="true"></span></div>
-    </div>
+<section class="room" aria-labelledby="mirror-title">
+  <div class="bg" style="background-image:url(/pictures/room-mirror.webp)" aria-hidden="true"></div>
+  <div class="wrap split">
     <div class="reveal">
-      <span class="label soft">Privacy</span>
-      <h2 id="privacy-title" style="margin-top:16px">Private by design, not by setting.</h2>
-      <p class="lede" style="margin-top:18px">Lowkei was built so the private parts never need a server. What you write is encrypted on your phone. You can download all of it, or erase all of it, in one tap.</p>
-      <p><a href="/privacy">Read the privacy policy</a></p>
+      <span class="eyebrow">The Mirror</span>
+      <h2 id="mirror-title">Ask the question you keep circling.</h2>
+      <p class="lede" style="margin-top:16px">An AI you can talk things through with — software, not a person, and not a therapist. It opens on your third day, only if you switch it on, and only knows what you choose to show it.</p>
+      <ul>
+        <li>Tap speak to talk instead of type</li>
+        <li>“What the Mirror knows” is a page you can read and edit</li>
+        <li>Answers that use it say which note they used</li>
+      </ul>
     </div>
+    <!--phone:mirror-->
   </div>
 </section>
 
-<section id="faq" class="rule" aria-labelledby="faq-title">
+<section id="privacy" aria-labelledby="privacy-title">
   <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="label soft">Questions</span>
+    <div class="head centre reveal" style="text-align:center">
+      <span class="eyebrow">Privacy</span>
+      <h2 id="privacy-title">Private by design, not by setting.</h2>
+      <p class="lede centre">What you write is kept on your phone, not on our servers. You can download all of it, or erase all of it, from the app.</p>
+    </div>
+    <div class="marquee" role="group" aria-label="Lowkei's privacy settings">
+      <div class="track">
+        <!--chips-->
+      </div>
+    </div>
+    <p style="text-align:center"><a href="/privacy">Read the privacy policy</a></p>
+  </div>
+</section>
+
+<section id="faq" aria-labelledby="faq-title">
+  <div class="wrap">
+    <div class="head centre reveal" style="text-align:center">
+      <span class="eyebrow">Questions</span>
       <h2 id="faq-title">Asked, quietly.</h2>
     </div>
     <!--faq-->
   </div>
 </section>
 
-<section class="rule closing">
-  <div class="wrap reveal">
-    <!--art:stamp-->
-    <h2>Start with one check-in.</h2>
-    <div class="ctas"><!--download--><a class="btn ghost" href="/download#iphone">On iPhone</a></div>
+<div class="closing">
+  <div class="bg" style="background-image:url(/pictures/sky-clear.webp)" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="intro reveal">
+      <h2>Start with one check-in.</h2>
+      <p class="lede">Free, every feature. It takes ten seconds.</p>
+      <div class="ctas"><!--download--><a class="btn ghost" href="/download#iphone">On iPhone</a></div>
+    </div>
   </div>
-</section>
+</div>
