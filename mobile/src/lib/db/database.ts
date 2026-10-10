@@ -47,6 +47,7 @@ export async function checkEncryption(
   return { encrypted: false };
 }
 
+// Named before the app was Lowkei. Renaming either would orphan existing data.
 const DATABASE_NAME = 'mirrorspace.db';
 const KEY_NAME = 'mirrorspace.db.key.v1';
 
