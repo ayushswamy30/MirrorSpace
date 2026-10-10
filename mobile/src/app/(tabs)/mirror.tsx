@@ -148,7 +148,7 @@ function Room() {
       scroll={false}
       background={colors.void}
       room="void"
-      backdrop="nebula"
+      backdrop="cosmos"
       contentStyle={styles.page}
     >
       <Starfield />

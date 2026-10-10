@@ -1,48 +1,42 @@
-import { useId } from 'react';
 import { Image, StyleSheet, View, type ImageSourcePropType, type ViewStyle } from 'react-native';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { auraFor } from '@/theme/aura';
 import { radius } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Sparkles } from './Sparkles';
 
 /**
- * Glowing drawings: the engravings recoloured as iridescent light, each with
- * its own pair of hues and a soft halo (scripts/art/glow.py). One file reads
- * on both the light page and the night.
+ * The app's pictures: the sticker slots in assets/pictures (scripts/pictures.py),
+ * shown as soft rounded stickers. The names are the ones the app has always
+ * used — circle pictures are stored by name on the server — each now pointing
+ * at the image that suits it.
  *
  * Always decorative: hidden from screen readers, never carrying meaning.
  */
 
-type Pair = { light: ImageSourcePropType; dark: ImageSourcePropType; ratio: number };
-
-const same = (source: ImageSourcePropType, ratio: number): Pair => ({ light: source, dark: source, ratio });
-
 const ART = {
-  bandage: same(require('../../assets/art-glow/bandage.png'), 614 / 252),
-  bean: same(require('../../assets/art-glow/bean.png'), 500 / 614),
-  beetle: same(require('../../assets/art-glow/beetle.png'), 614 / 458),
-  butterfly: same(require('../../assets/art-glow/butterfly.png'), 614 / 599),
-  can: same(require('../../assets/art-glow/can.png'), 442 / 614),
-  cat: same(require('../../assets/art-glow/cat.png'), 515 / 555),
-  city: same(require('../../assets/art-glow/city.png'), 614 / 407),
-  dice: same(require('../../assets/art-glow/dice.png'), 482 / 614),
-  doll: same(require('../../assets/art-glow/doll.png'), 369 / 614),
-  eye: same(require('../../assets/art-glow/eye.png'), 612 / 614),
-  heart: same(require('../../assets/art-glow/heart.png'), 428 / 569),
-  king: same(require('../../assets/art-glow/king.png'), 326 / 614),
-  kittens: same(require('../../assets/art-glow/kittens.png'), 552 / 614),
-  lily: same(require('../../assets/art-glow/lily.png'), 614 / 589),
-  masks: same(require('../../assets/art-glow/masks.png'), 614 / 354),
-  moka: same(require('../../assets/art-glow/moka.png'), 513 / 614),
-  orchid: same(require('../../assets/art-glow/orchid.png'), 614 / 555),
-  stamp: same(require('../../assets/art-glow/stamp.png'), 444 / 431),
-  swallow: same(require('../../assets/art-glow/swallow.png'), 387 / 614),
-  swan: same(require('../../assets/art-glow/swan.png'), 598 / 448),
-  urchin: same(require('../../assets/art-glow/urchin.png'), 614 / 578)
-} satisfies Record<string, Pair>;
+  bandage: require('../../assets/pictures/sticker-orchid.webp'),
+  bean: require('../../assets/pictures/sticker-jelly-cat.webp'),
+  beetle: require('../../assets/pictures/sticker-butterfly.webp'),
+  butterfly: require('../../assets/pictures/sticker-butterfly.webp'),
+  can: require('../../assets/pictures/sticker-ghost.webp'),
+  cat: require('../../assets/pictures/sticker-jelly-cat.webp'),
+  city: require('../../assets/pictures/sticker-sun.webp'),
+  dice: require('../../assets/pictures/sticker-butterfly.webp'),
+  doll: require('../../assets/pictures/sticker-star-child.webp'),
+  eye: require('../../assets/pictures/sticker-eye.webp'),
+  heart: require('../../assets/pictures/sticker-cherries.webp'),
+  king: require('../../assets/pictures/sticker-star-child.webp'),
+  kittens: require('../../assets/pictures/sticker-ghost.webp'),
+  lily: require('../../assets/pictures/sticker-lily.webp'),
+  masks: require('../../assets/pictures/sticker-eye.webp'),
+  moka: require('../../assets/pictures/sticker-sun.webp'),
+  orchid: require('../../assets/pictures/sticker-orchid.webp'),
+  stamp: require('../../assets/pictures/sticker-flower-frame.webp'),
+  swallow: require('../../assets/pictures/sticker-cloud.webp'),
+  swan: require('../../assets/pictures/sticker-koi.webp'),
+  urchin: require('../../assets/pictures/sticker-cherries.webp')
+} satisfies Record<string, ImageSourcePropType>;
 
 export type ArtName = keyof typeof ART;
 
@@ -52,64 +46,50 @@ export function isArtName(value: unknown): value is ArtName {
   return typeof value === 'string' && value in ART;
 }
 
-/** Today's hero, one a day in turn — the gentler pictures only. */
-const DAILY: readonly ArtName[] = ['lily', 'swan', 'orchid', 'butterfly', 'moka', 'bean', 'swallow', 'kittens', 'cat', 'king', 'dice', 'stamp'];
+/** Today's picture, one a day in turn — the gentler ones only. */
+const DAILY: readonly ArtName[] = ['lily', 'swan', 'orchid', 'butterfly', 'moka', 'bean', 'swallow', 'kittens', 'cat', 'king', 'stamp', 'eye'];
 
 export function artOfTheDay(now: Date = new Date()): ArtName {
   const day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000);
   return DAILY[day % DAILY.length];
 }
 
+export function artImage(name: ArtName): ImageSourcePropType {
+  return ART[name];
+}
+
 type Props = {
   name: ArtName;
-  /** The longer side, in points. */
+  /** Width and height, in points. */
   size: number;
-  /** Force a variant — the Mirror room is dark whatever the theme. */
+  /** Kept for callers on the dark Mirror room; the pictures read on both. */
   scheme?: 'light' | 'dark';
   style?: ViewStyle;
 };
 
-/** A free-standing cut-out, placed in the margin of a page. */
-export function Art({ name, size, scheme, style }: Props) {
-  const theme = useTheme();
-  const art = ART[name];
-  const source = (scheme ?? theme.scheme) === 'dark' ? art.dark : art.light;
-  const width = art.ratio >= 1 ? size : size * art.ratio;
-  const height = art.ratio >= 1 ? size / art.ratio : size;
-
+/** A picture as a soft rounded sticker. */
+export function Art({ name, size, style }: Props) {
+  const { colors } = useTheme();
   return (
-    <View style={style} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID={`art-${name}`}>
-      <Image source={source} style={{ width, height }} resizeMode="contain" />
+    <View
+      style={[styles.sticker, { width: size, height: size, borderRadius: size * 0.28, borderColor: colors.glassEdge }, style]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      testID={`art-${name}`}
+    >
+      <Image source={ART[name]} style={styles.fill} resizeMode="cover" />
     </View>
   );
 }
 
-/**
- * A drawing in a glowing disc, top right of a page: a soft halo in the day's
- * aura colours behind a pale plate, with a few sparkles catching the light.
- */
+/** A picture in a round, glowing disc, top right of a page, with a few sparkles. */
 export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: number; style?: ViewStyle }) {
-  const { colors, scheme, weather } = useTheme();
-  const [a, b] = auraFor(weather, scheme);
-  const halo = size * 1.9;
-  const id = `halo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const { colors, signal } = useTheme();
 
   return (
     <View style={[{ width: size, height: size }, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <View pointerEvents="none" style={{ position: 'absolute', left: (size - halo) / 2, top: (size - halo) / 2, width: halo, height: halo }}>
-        <Svg width={halo} height={halo}>
-          <Defs>
-            <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-              <Stop offset="0.3" stopColor={a} stopOpacity={0.85} />
-              <Stop offset="0.62" stopColor={b} stopOpacity={0.35} />
-              <Stop offset="1" stopColor={b} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Rect width={halo} height={halo} fill={`url(#${id})`} />
-        </Svg>
-      </View>
-      <View style={[styles.disc, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.glassEdge }]}>
-        <Art name={name} size={size * 0.72} />
+      <View style={[styles.disc, { width: size, height: size, borderColor: colors.glassEdge, shadowColor: signal }]}>
+        <Image source={ART[name]} style={styles.fill} resizeMode="cover" />
       </View>
       <Sparkles
         sparks={[
@@ -123,11 +103,15 @@ export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: numb
 }
 
 const styles = StyleSheet.create({
+  fill: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
+  sticker: { overflow: 'hidden', borderWidth: 1 },
   disc: {
     borderRadius: radius.dot,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden'
+    borderWidth: 2,
+    overflow: 'hidden',
+    shadowOpacity: 0.55,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10
   }
 });

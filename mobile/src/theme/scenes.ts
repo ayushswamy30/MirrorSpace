@@ -3,56 +3,48 @@ import type { ImageSourcePropType } from 'react-native';
 import type { Weather } from './tokens';
 
 /**
- * Lowkei's scenes — original airbrushed artwork (scripts/art/scenes.html):
- * the sky a page opens under. Each Inner Weather has its own, so the app
- * looks like the day feels; a few places have their own regardless.
+ * The sky a page opens under — the picture slots in assets/pictures. Each
+ * Inner Weather has its own, so the app looks like the day feels; a few
+ * places have their own regardless.
  */
 
-export type SceneName = 'hills' | 'clouds' | 'nebula' | 'bloom' | 'sunrise' | 'burst' | 'orbs' | 'haze';
+const SCENES = {
+  sunWaves: require('../../assets/pictures/sky-clear.webp'),
+  meadow: require('../../assets/pictures/sky-mild.webp'),
+  pinkClouds: require('../../assets/pictures/sky-overcast.webp'),
+  fuji: require('../../assets/pictures/sky-fog.webp'),
+  starburst: require('../../assets/pictures/sky-storm.webp'),
+  blooms: require('../../assets/pictures/sky-dawn.webp'),
+  ghosts: require('../../assets/pictures/room-circle.webp'),
+  cosmos: require('../../assets/pictures/room-mirror.webp'),
+  auraEye: require('../../assets/pictures/room-welcome.webp'),
+  koi: require('../../assets/pictures/room-calm.webp'),
+  comet: require('../../assets/pictures/mood-wound-up.webp'),
+  coralFlowers: require('../../assets/pictures/mood-bright.webp'),
+  nightFlowers: require('../../assets/pictures/mood-heavy.webp'),
+  hillsWalker: require('../../assets/pictures/mood-easy.webp')
+} satisfies Record<string, ImageSourcePropType>;
 
-const TALL: Record<SceneName, ImageSourcePropType> = {
-  hills: require('../../assets/scenes/hills-tall.webp'),
-  clouds: require('../../assets/scenes/clouds-tall.webp'),
-  nebula: require('../../assets/scenes/nebula-tall.webp'),
-  bloom: require('../../assets/scenes/bloom-tall.webp'),
-  sunrise: require('../../assets/scenes/sunrise-tall.webp'),
-  burst: require('../../assets/scenes/burst-tall.webp'),
-  orbs: require('../../assets/scenes/orbs-tall.webp'),
-  haze: require('../../assets/scenes/haze-tall.webp')
-};
+export type SceneName = keyof typeof SCENES;
 
-const WIDE: Record<SceneName, ImageSourcePropType> = {
-  hills: require('../../assets/scenes/hills-wide.webp'),
-  clouds: require('../../assets/scenes/clouds-wide.webp'),
-  nebula: require('../../assets/scenes/nebula-wide.webp'),
-  bloom: require('../../assets/scenes/bloom-wide.webp'),
-  sunrise: require('../../assets/scenes/sunrise-wide.webp'),
-  burst: require('../../assets/scenes/burst-wide.webp'),
-  orbs: require('../../assets/scenes/orbs-wide.webp'),
-  haze: require('../../assets/scenes/haze-wide.webp')
-};
-
-export function sceneImage(name: SceneName, shape: 'tall' | 'wide' = 'tall'): ImageSourcePropType {
-  return (shape === 'tall' ? TALL : WIDE)[name];
+export function sceneImage(name: SceneName): ImageSourcePropType {
+  return SCENES[name];
 }
 
-/** The day's sky. Before there are check-ins to read, a bloom. */
+/** The day's sky. Before there are check-ins to read, blooms. */
 export function sceneForWeather(weather: Weather | null): SceneName {
   switch (weather) {
     case 'clear':
-      return 'sunrise';
+      return 'sunWaves';
     case 'mild':
-      return 'hills';
+      return 'meadow';
     case 'overcast':
-      return 'clouds';
+      return 'pinkClouds';
     case 'fog':
-      return 'haze';
+      return 'fuji';
     case 'storm':
-      return 'nebula';
+      return 'starburst';
     default:
-      return 'bloom';
+      return 'blooms';
   }
 }
-
-/** Scenes that are dark themselves: text over them is light. */
-export const darkScenes: readonly SceneName[] = ['nebula', 'burst'];

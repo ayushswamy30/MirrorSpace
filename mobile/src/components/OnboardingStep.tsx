@@ -23,7 +23,7 @@ export function OnboardingStep({ children, actions }: Props) {
   const later = useEntering(250);
 
   return (
-    <Screen edges={['top', 'bottom']} scene="sunrise" contentStyle={styles.content} header={<View style={styles.top}><CalmLink /></View>}>
+    <Screen edges={['top', 'bottom']} scene="auraEye" contentStyle={styles.content} header={<View style={styles.top}><CalmLink /></View>}>
       <Animated.View entering={entering} style={styles.body}>
         {children}
       </Animated.View>

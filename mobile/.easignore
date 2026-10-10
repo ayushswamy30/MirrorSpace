@@ -1,0 +1,26 @@
+# EAS uploads by this file instead of .gitignore, so the reference artwork
+# (kept out of git — see scripts/refs.py) still reaches app builds.
+node_modules/
+.expo/
+dist/
+web-build/
+dist-web/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+.env*.local
+*.tsbuildinfo
+example
+/ios
+/android
