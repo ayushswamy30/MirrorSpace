@@ -81,7 +81,7 @@ p { margin: 0 0 14px; }
 .js .hero-bg { animation: drift 40s ease-in-out infinite alternate; }
 @keyframes drift { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
 .glow { position: absolute; width: 60vmax; height: 60vmax; left: 50%; top: 40%; margin: -30vmax 0 0 -30vmax; z-index: -2; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .55) 0%, rgba(255, 214, 236, .25) 35%, rgba(255, 255, 255, 0) 70%); transform: translate(var(--gx, 0), var(--gy, 0)); transition: transform .8s cubic-bezier(.2, .7, .2, 1); pointer-events: none; }
-.wordmark { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); z-index: -1; font: 600 clamp(140px, 30vw, 440px)/.8 var(--serif); letter-spacing: -.05em; color: rgba(255, 255, 255, .78); text-shadow: 0 0 60px rgba(255, 255, 255, .7); white-space: nowrap; pointer-events: none; user-select: none; }
+.wordmark { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); z-index: -1; font: 600 clamp(140px, 30vw, 440px)/.8 var(--serif); letter-spacing: -.05em; color: rgba(255, 255, 255, .82); white-space: nowrap; pointer-events: none; user-select: none; }
 .intro { position: relative; max-width: 720px; margin: 0 auto; text-align: center; padding: 26px 28px 28px; border-radius: var(--card); background: var(--frost); border: 1px solid var(--glass-edge); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .intro .lede { margin: 16px auto 22px; }
 .stage { position: relative; height: clamp(520px, 62vw, 720px); max-width: 1000px; margin: 56px auto 0; }
@@ -105,8 +105,10 @@ p { margin: 0 0 14px; }
 .phone .play { position: absolute; right: 12px; bottom: 12px; display: none; }
 .reduced .phone .play { display: inline-flex; }
 
-/* Sections */
+/* Sections. Below the fold, the browser skips laying them out until they
+   come near the screen. */
 section { padding: clamp(80px, 11vw, 140px) 0; }
+section, .closing, footer { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 .head { max-width: 760px; margin-bottom: clamp(36px, 6vw, 64px); }
 .head .lede { margin-top: 16px; }
 .centre { text-align: center; margin-left: auto; margin-right: auto; }
