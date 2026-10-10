@@ -9,7 +9,7 @@ import { AppHeader } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
 import { Personalisation, ProfileCard } from '@/components/YouParts';
-import { eraseEverything, setConsent, shareExport } from '@/lib/account';
+import { eraseEverything, setConsent, shareExport, signOutHere } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import { legalUrl } from '@/lib/config';
 import type { ConsentPurpose } from '@/lib/consent';
@@ -51,6 +51,7 @@ export default function You() {
   const [note, setNote] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [erase, setErase] = useState<Erase>('idle');
+  const [leaving, setLeaving] = useState<'idle' | 'confirm' | 'leaving'>('idle');
   const [pending, setPending] = useState<Partial<Record<ConsentPurpose, boolean>>>({});
   const [reminder, setReminder] = useState(false);
   const [health, setHealth] = useState(false);
@@ -150,6 +151,18 @@ export default function You() {
     }
   };
 
+  const runSignOut = async () => {
+    setLeaving('leaving');
+    try {
+      await signOutHere();
+      session.retry();
+      router.replace('/');
+    } catch (err) {
+      console.error('Sign out failed:', err);
+      setLeaving('confirm');
+    }
+  };
+
   const runErase = async () => {
     setErase('erasing');
     try {
@@ -180,14 +193,20 @@ export default function You() {
       )}
 
       <SettingGroup title="Account">
-        {profile.isAnonymous ? (
-          <SettingLink
-            title="Keep your space with an email"
-            subtitle="So you can sign in on a new phone. A six-digit code, no password."
-            onPress={() => router.push('/account')}
-          />
+        <SettingLink title={profile.email ?? 'Your account'} subtitle="Signed in — your account, circle and settings follow you" />
+        {leaving === 'idle' ? (
+          <SettingLink title="Sign out" subtitle="Your account stays; this phone forgets it" onPress={() => setLeaving('confirm')} />
         ) : (
-          <SettingLink title={profile.email ?? 'Your account'} subtitle="Signed in — your account, circle and settings follow you" />
+          <View style={styles.block}>
+            <Text>
+              Signing out also clears what’s on this phone — check-ins, pages, your plan — so no one else who signs in here can see it.
+              Download everything first if you want to keep it.
+            </Text>
+            <View style={styles.actions}>
+              <Button kind="outline" label={leaving === 'leaving' ? 'signing out…' : 'sign out'} disabled={leaving === 'leaving'} onPress={runSignOut} />
+              {leaving === 'confirm' && <Button kind="link" label="stay signed in" onPress={() => setLeaving('idle')} />}
+            </View>
+          </View>
         )}
       </SettingGroup>
 

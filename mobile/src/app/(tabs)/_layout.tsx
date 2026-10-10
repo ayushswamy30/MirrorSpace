@@ -13,7 +13,7 @@ import { ReflectionSync } from '@/components/ReflectionSync';
 import { ReminderSync } from '@/components/ReminderSync';
 import { WeatherSync } from '@/components/WeatherSync';
 import { Text } from '@/components/Text';
-import { needsOnboarding, useSession } from '@/lib/session';
+import { needsAccount, needsOnboarding, useSession } from '@/lib/session';
 
 export default function TabsLayout() {
   const session = useSession();
@@ -42,8 +42,16 @@ export default function TabsLayout() {
     );
   }
 
-  if (needsOnboarding(session.profile)) {
+  if (session.status === 'signed-out') {
     return <Redirect href="/onboarding" />;
+  }
+
+  if (needsAccount(session.profile)) {
+    return <Redirect href="/account?mode=keep" />;
+  }
+
+  if (needsOnboarding(session.profile)) {
+    return <Redirect href="/onboarding/age" />;
   }
 
   return (

@@ -40,6 +40,8 @@ export function needsOnboarding(profile: Profile): boolean {
 
 type SessionState =
   | { status: 'loading'; /** The server is slow to answer: probably waking from sleep. */ waking?: boolean }
+  /** No account on this phone yet: the welcome screen, then sign up or sign in. */
+  | { status: 'signed-out' }
   | { status: 'error'; message: string }
   | { status: 'ready'; profile: Profile; offline: boolean };
 
@@ -53,12 +55,21 @@ const PROFILE_CACHE_KEY = 'profile.cache';
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
+class SignedOut extends Error {}
+
+/**
+ * Lowkei needs an account, made with an email: nothing opens without one.
+ * (Spaces made anonymously before that are asked to add an email; see
+ * needsAccount.)
+ */
 async function ensureSession(): Promise<void> {
   const { data } = await supabase.auth.getSession();
-  if (data.session) return;
+  if (!data.session) throw new SignedOut();
+}
 
-  const { error } = await supabase.auth.signInAnonymously();
-  if (error) throw error;
+/** An older, anonymous space: it must be kept with an email before it opens. */
+export function needsAccount(profile: Profile): boolean {
+  return profile.isAnonymous && !isPreview;
 }
 
 async function fetchProfile(): Promise<Profile> {
@@ -129,9 +140,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             });
         if (!cancelled) setState({ status: 'ready', profile, offline: false });
       } catch (error) {
+        if (error instanceof SignedOut) {
+          if (!cancelled) setState({ status: 'signed-out' });
+          return;
+        }
         // A 401 means the stored session is dead (e.g. the account was erased
         // on another device). Falling back to the cache would show a ghost.
         const deadSession = error instanceof ApiError && error.status === 401;
+        if (deadSession) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+          if (!cancelled) setState({ status: 'signed-out' });
+          return;
+        }
         const cached = deadSession ? null : await cachedProfile().catch(() => null);
         if (cancelled) return;
 

@@ -83,7 +83,7 @@ const FAQ = [
   ['Does the Mirror use AI?', 'Yes. The Mirror and vent reflections are written by an AI model, and the app says so before you start. It’s off unless you switch on AI reflections. When it’s on, the message you send passes through our server to Groq to get a reply; neither keeps it, and Groq doesn’t train on it.'],
   ['What does it cost?', 'Nothing. Lowkei is free, and every feature — the Mirror, your charts, Circle, calm — is open to everyone. There are no ads and no in-app purchases.'],
   ['Is there an iPhone app?', 'Yes — on iPhone, Lowkei runs in Safari. Open getlowkei.vercel.app/app, tap Share, then Add to Home Screen, and it opens like any other app. Voice and Health Connect are Android-only for now.'],
-  ['Do I need an account?', 'No. Lowkei starts anonymously. You can add an email later if you want to move to a new phone — you sign in with a six-digit code, no password.'],
+  ['Do I need an account?', 'Yes — an email is all it takes. You sign up and sign in with a six-digit code sent to your inbox, so there’s no password to remember, and your account, circle and settings follow you to a new phone. We only ever email you sign-in codes.'],
   ['Does Lowkei share my health data?', 'No. If you connect Health Connect, your sleep, steps and heart-rate data are read on your phone and stay there. They aren’t sent to us, to the AI service, or to anyone else, and never used for ads.'],
   ['How do I delete everything?', 'In the app, go to You → Erase → erase everything. It deletes your account on our server and everything on the phone, straight away. You can download a copy of your data first from You → Your data.']
 ];
@@ -245,7 +245,7 @@ const pages = [
     path: '/download',
     out: 'download.html',
     title: 'Download Lowkei for Android',
-    description: 'Get Lowkei on your Android phone. Free to start, no account needed. iPhone is coming later.',
+    description: 'Get Lowkei on Android, or use it on iPhone in Safari. Free, every feature; sign up with your email.',
     body: fill(read('pages/download.html')),
     trail: [['/download', 'Download']]
   },
