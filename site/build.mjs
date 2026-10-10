@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, 'dist');
-const SITE = (process.env.SITE_URL || 'https://lowkei.vercel.app').replace(/\/$/, '');
+const SITE = (process.env.SITE_URL || 'https://getlowkei.vercel.app').replace(/\/$/, '');
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const read = p => readFileSync(join(ROOT, p), 'utf8');
@@ -81,8 +81,8 @@ const FAQ = [
   ['Is Lowkei therapy?', 'No. Lowkei is a journal and mood tracker. It can help you notice patterns, but it doesn’t diagnose or treat anything, and it isn’t a substitute for a professional. If you’re in danger, call your local emergency number — in India, 112, or Tele-MANAS on 14416. Lowkei lists more crisis lines under calm → help.'],
   ['Who can read what I write?', 'Only you. Check-ins, vent pages, letters and your Mirror conversation are stored on your phone, encrypted with SQLCipher. They aren’t uploaded to our servers. You can add an app lock as well.'],
   ['Does the Mirror use AI?', 'Yes. The Mirror and vent reflections are written by an AI model, and the app says so before you start. It’s off unless you switch on AI reflections. When it’s on, the message you send passes through our server to Groq to get a reply; neither keeps it, and Groq doesn’t train on it.'],
-  ['What does it cost?', 'Lowkei is free to download and use. Lowkei Plus adds the Mirror and the deeper charts for ₹139 a month (₹69 for students); outside India it’s $12.99, or $6.99 for students. Crisis help and your safety plan are always free.'],
-  ['Is there an iPhone app?', 'Not yet. Lowkei is on Android first. The iPhone version is planned; the site will say when it’s ready.'],
+  ['What does it cost?', 'Nothing. Lowkei is free, and every feature — the Mirror, your charts, Circle, calm — is open to everyone. There are no ads and no in-app purchases.'],
+  ['Is there an iPhone app?', 'Yes — on iPhone, Lowkei runs in Safari. Open getlowkei.vercel.app/app, tap Share, then Add to Home Screen, and it opens like any other app. Voice and Health Connect are Android-only for now.'],
   ['Do I need an account?', 'No. Lowkei starts anonymously. You can add an email later if you want to move to a new phone — you sign in with a six-digit code, no password.'],
   ['Does Lowkei share my health data?', 'No. If you connect Health Connect, your sleep, steps and heart-rate data are read on your phone and stay there. They aren’t sent to us, to the AI service, or to anyone else, and never used for ads.'],
   ['How do I delete everything?', 'In the app, go to You → Erase → erase everything. It deletes your account on our server and everything on the phone, straight away. You can download a copy of your data first from You → Your data.']
@@ -110,18 +110,19 @@ const app = {
   '@context': 'https://schema.org',
   '@type': 'MobileApplication',
   name: 'Lowkei',
-  operatingSystem: 'Android',
+  operatingSystem: 'Android, iOS (web app)',
   applicationCategory: 'HealthApplication',
   description: 'A private journal and mood tracker. Check in, vent, and see the weather of your weeks. What you write stays on your phone.',
   url: SITE,
   image: `${SITE}/og.jpg`,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' }
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+  isAccessibleForFree: true
 };
 
 // ---------------------------------------------------------------------------
 // Layout
 
-const NAV = [['/#features', 'Features'], ['/pricing', 'Pricing'], ['/#faq', 'FAQ'], ['/about', 'About']];
+const NAV = [['/#features', 'Features'], ['/#privacy', 'Privacy'], ['/#faq', 'FAQ'], ['/about', 'About']];
 
 function crumbs(trail) {
   const items = [['/', 'Lowkei'], ...trail];
@@ -195,7 +196,7 @@ ${body}
         <a class="brand" href="/">LOWKEI<span class="dot" aria-hidden="true"></span></a>
         <p style="margin-top:16px;color:var(--soft);max-width:22em">A quiet place to notice how you are. Made in India.</p>
       </div>
-      <div><h2>Product</h2><ul><li><a href="/#features">Features</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/download">Download</a></li><li><a href="/#faq">FAQ</a></li></ul></div>
+      <div><h2>Product</h2><ul><li><a href="/#features">Features</a></li><li><a href="/download">Download</a></li><li><a href="/#faq">FAQ</a></li></ul></div>
       <div><h2>Company</h2><ul><li><a href="/about">About</a></li><li><a href="/about#contact">Contact</a></li></ul></div>
       <div><h2>Legal</h2><ul><li><a href="/privacy">Privacy policy</a></li><li><a href="/terms">Terms of use</a></li><li><a href="/terms#copyright">Copyright</a></li></ul></div>
     </div>
@@ -237,14 +238,6 @@ const pages = [
     preload: ['/media/today.webp']
   },
   {
-    path: '/pricing',
-    out: 'pricing.html',
-    title: 'Pricing — Lowkei',
-    description: 'Lowkei is free. Lowkei Plus adds the Mirror and the deeper charts: ₹139 a month, or ₹69 for students. Crisis help is always free.',
-    body: fill(read('pages/pricing.html')),
-    trail: [['/pricing', 'Pricing']]
-  },
-  {
     path: '/download',
     out: 'download.html',
     title: 'Download Lowkei for Android',
@@ -272,7 +265,7 @@ const pages = [
     path: '/terms',
     out: 'terms.html',
     title: 'Terms of use — Lowkei',
-    description: 'The terms for using Lowkei: what it is and isn’t, subscriptions, Circle, acceptable use and copyright.',
+    description: 'The terms for using Lowkei: what it is and isn’t, Circle, acceptable use and copyright.',
     body: legal('terms'),
     trail: [['/terms', 'Terms of use']]
   }
@@ -299,6 +292,63 @@ for (const p of pages) {
   writeFileSync(join(OUT, p.out), html);
 }
 writeFileSync(join(OUT, '404.html'), notFound);
+
+// The app itself, for iPhone and any browser: the real app built for the web
+// by `npm --prefix mobile run build:web`, served under /app and installable
+// from Safari's Share → Add to Home Screen.
+const WEB_APP = join(ROOT, '..', 'mobile', 'dist-web');
+if (existsSync(WEB_APP)) {
+  cpSync(WEB_APP, join(OUT, 'app'), { recursive: true });
+  for (const f of ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) cpSync(join(ROOT, 'public', f), join(OUT, 'app', f));
+  cpSync(join(ROOT, 'app', 'sw.js'), join(OUT, 'app', 'sw.js'));
+  writeFileSync(
+    join(OUT, 'app', 'manifest.webmanifest'),
+    JSON.stringify(
+      {
+        name: 'Lowkei',
+        short_name: 'Lowkei',
+        description: 'A private journal and mood tracker.',
+        id: '/app',
+        start_url: '/app',
+        scope: '/app',
+        display: 'standalone',
+        background_color: '#F6F6F3',
+        theme_color: '#F6F6F3',
+        icons: [
+          { src: '/app/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/app/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      },
+      null,
+      2
+    )
+  );
+  const index = join(OUT, 'app', 'index.html');
+  const head = `
+    <meta name="description" content="Lowkei, the app: check in, vent, and see the weather of your weeks.">
+    <meta name="robots" content="noindex">
+    <link rel="manifest" href="/app/manifest.webmanifest">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Lowkei">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F6F6F3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0E0E0E" media="(prefers-color-scheme: dark)">
+    <style>html,body{background:#F6F6F3}@media (prefers-color-scheme: dark){html,body{background:#0E0E0E}}</style>
+    <script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/app/sw.js', { scope: '/app' }).catch(() => {}));</script>
+  </head>`;
+  writeFileSync(
+    index,
+    readFileSync(index, 'utf8')
+      .replace('content="width=device-width, initial-scale=1, shrink-to-fit=no"', 'content="width=device-width, initial-scale=1, viewport-fit=cover"')
+      .replace('</head>', head)
+  );
+  console.log('included the web app at /app');
+} else {
+  console.log('no mobile/dist-web — run `npm --prefix mobile run build:web` to include the app');
+}
 
 writeFileSync(
   join(OUT, 'sitemap.xml'),

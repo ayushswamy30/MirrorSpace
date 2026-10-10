@@ -72,7 +72,7 @@
         "expo-audio",
         {
           "recordAudioAndroid": false,
-        "microphonePermission": "Lowkei listens only while you tap speak in the Mirror, and turns your words into text on the phone. Nothing is recorded.",
+          "microphonePermission": "Lowkei listens only while you tap speak in the Mirror, and turns your words into text on the phone. Nothing is recorded.",
           "enableBackgroundPlayback": true
         }
       ],
@@ -92,7 +92,11 @@
         {
           "microphonePermission": "Lowkei listens only while you tap speak in the Mirror, and turns your words into text on the phone. Nothing is recorded.",
           "speechRecognitionPermission": "Lowkei turns what you say to the Mirror into words on this phone.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox", "com.google.android.tts", "com.google.android.as"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.tts",
+            "com.google.android.as"
+          ]
         }
       ],
       [
@@ -118,6 +122,12 @@
         "projectId": "00269356-72a3-4dce-aa4a-27dfcb4c7367"
       }
     },
-    "owner": "333shubh"
+    "owner": "333shubh",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/00269356-72a3-4dce-aa4a-27dfcb4c7367"
+    }
   }
 }

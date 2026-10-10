@@ -13,6 +13,7 @@ import { eraseEverything, setConsent, shareExport } from '@/lib/account';
 import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import { legalUrl } from '@/lib/config';
 import type { ConsentPurpose } from '@/lib/consent';
+import { isWebApp } from '@/lib/preview';
 import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
 import type { Appearance } from '@/lib/appearance';
@@ -230,11 +231,15 @@ export default function You() {
       <SettingGroup title="Privacy">
         {encryption && (
           <SettingLink
-            title={encryption.encrypted ? 'Encrypted on this phone' : 'Not encrypted in Expo Go'}
+            title={
+              encryption.encrypted ? 'Encrypted on this phone' : isWebApp ? 'Kept in this browser' : 'Not encrypted in Expo Go'
+            }
             subtitle={
               encryption.encrypted
                 ? `SQLCipher ${encryption.cipher.split(' ')[0]} · the key never leaves this phone`
-                : 'Lowkei’s own build encrypts everything you write'
+                : isWebApp
+                  ? 'Not uploaded, but not encrypted either — use a passcode on this device'
+                  : 'Lowkei’s own build encrypts everything you write'
             }
           />
         )}
