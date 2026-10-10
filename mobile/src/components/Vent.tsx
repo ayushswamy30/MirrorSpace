@@ -10,7 +10,7 @@ import { answerConcern } from '@/lib/safety/respond';
 import { screenText } from '@/lib/safety/screen';
 import { deleteVent, draft, firstLine, keepVent, listVents, type Vent as VentPage } from '@/lib/vents';
 import { useEntering } from '@/theme/motion';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/typography';
 
@@ -307,7 +307,7 @@ export function Vent({ reflections = false }: { reflections?: boolean }) {
 const styles = StyleSheet.create({
   art: { alignSelf: 'flex-end' },
   block: { gap: space.md },
-  sheet: { padding: space.md, gap: space.sm },
+  sheet: { padding: space.md, gap: space.sm, borderRadius: radius.card },
   prompt: { gap: space.xs },
   line: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   lineInput: { flex: 1, minHeight: 0 },

@@ -191,16 +191,17 @@ export function DoDont({
 export const EndMark = InkEnd;
 
 /**
- * A group of settings, after the reference's settings page: a small grey
- * heading, then lines with no rules between them — space alone groups them.
+ * A group of settings: a small grey heading, then its lines together on one
+ * glass card, with no rules between them — the card alone groups them.
  */
 export function SettingGroup({ title, children }: { title: string; children: ReactNode }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.group}>
       <Text variant="mono" tone="soft" accessibilityRole="header">
         {title}
       </Text>
-      <View>{children}</View>
+      <View style={[styles.glassGroup, { backgroundColor: colors.glass, borderColor: colors.glassEdge }]}>{children}</View>
     </View>
   );
 }
@@ -284,14 +285,14 @@ type BoxProps = {
   centred?: boolean;
 };
 
-/** A 1px ink box — the reference's "HARMONY / Renewed authority" card. */
+/** A frosted glass card over the aura, with a mono title above a soft rule. */
 export function Box({ title, children, centred = false }: BoxProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.box, { borderColor: colors.ink }]}>
+    <View style={[styles.box, { borderColor: colors.glassEdge, backgroundColor: colors.glass }]}>
       {title && (
-        <View style={[styles.boxTitle, { borderBottomColor: colors.ink }]}>
+        <View style={[styles.boxTitle, { borderBottomColor: colors.glassEdge }]}>
           <Text variant="label" style={centred && styles.centre}>
             {title}
           </Text>
@@ -330,6 +331,7 @@ const styles = StyleSheet.create({
   rowLeading: { width: 36, alignItems: 'center' },
   rowText: { flex: 1, gap: 2 },
   group: { gap: space.xs },
+  glassGroup: { borderWidth: 1, borderRadius: radius.card, paddingHorizontal: space.md, paddingVertical: space.xs },
   setting: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -339,7 +341,7 @@ const styles = StyleSheet.create({
   },
   doDont: { flexDirection: 'row', gap: space.lg },
   column: { flex: 1, gap: 2 },
-  box: { borderWidth: 1, borderRadius: radius.none },
+  box: { borderWidth: 1, borderRadius: radius.card, overflow: 'hidden' },
   boxTitle: { paddingVertical: space.sm + 2, paddingHorizontal: space.md, borderBottomWidth: 1 },
   boxBody: { padding: space.md, gap: space.xs },
   boxCentred: { alignItems: 'center' },

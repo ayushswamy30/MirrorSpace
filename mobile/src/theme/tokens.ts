@@ -37,46 +37,54 @@ export type Palette = {
   void: string;
   /** The one colour, keyed by Inner Weather. Small marks only. */
   signal: Record<Weather, string>;
+  /** Frosted glass over the aura: cards, the tab bar, sheets. */
+  glass: string;
+  /** The bright edge a glass card catches. */
+  glassEdge: string;
 };
 
 export const light: Palette = {
-  paper: '#F6F6F3',
-  paperRaised: '#F6F6F3',
-  ink: '#111111',
-  inkSoft: '#6A6A66',
-  inkFaint: '#B8B8B3',
-  hairline: '#111111',
-  band: '#ECECE8',
-  tint: '#F7EEF4',
+  paper: '#F7F6FA',
+  paperRaised: '#F7F6FA',
+  ink: '#14131C',
+  inkSoft: '#4F4E66',
+  inkFaint: '#B9B8C7',
+  hairline: '#14131C',
+  band: '#ECEAF4',
+  tint: '#F7EEF6',
   disc: '#FFFFFF',
-  void: '#0A0A0A',
+  void: '#08071A',
   signal: {
     clear: '#9A5B1E',
     mild: '#6F6A2A',
     overcast: '#3F6576',
     fog: '#6A6258',
     storm: '#6A4A7E'
-  }
+  },
+  glass: 'rgba(255,255,255,0.52)',
+  glassEdge: 'rgba(255,255,255,0.9)'
 };
 
 export const dark: Palette = {
-  paper: '#0E0E0E',
-  paperRaised: '#0E0E0E',
-  ink: '#F2F2EF',
-  inkSoft: '#A09F9A',
-  inkFaint: '#4A4A47',
-  hairline: '#F2F2EF',
-  band: '#1A1A1A',
-  tint: '#1C1519',
-  disc: '#1C1C1B',
-  void: '#0A0A0A',
+  paper: '#0C0B16',
+  paperRaised: '#0C0B16',
+  ink: '#F2F1F7',
+  inkSoft: '#B8B6CC',
+  inkFaint: '#46445C',
+  hairline: '#F2F1F7',
+  band: '#191829',
+  tint: '#1E1630',
+  disc: '#1B1A2E',
+  void: '#08071A',
   signal: {
     clear: '#E0A868',
     mild: '#C9C27A',
     overcast: '#8FB6C7',
     fog: '#B3AA9C',
     storm: '#BFA2D3'
-  }
+  },
+  glass: 'rgba(255,255,255,0.07)',
+  glassEdge: 'rgba(255,255,255,0.16)'
 };
 
 export const space = {
@@ -94,9 +102,11 @@ export const gutter = 20;
 /** The widest the page column gets (the browser preview, a large phone). */
 export const MAX_WIDTH = 430;
 
-/** Square, like print. Only the weather dot is round. */
+/** Soft glass cards and pill buttons; the weather dot is round. */
 export const radius = {
   none: 0,
+  card: 22,
+  pill: 999,
   dot: 999
 } as const;
 

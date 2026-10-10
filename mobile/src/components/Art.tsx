@@ -1,7 +1,12 @@
+import { useId } from 'react';
 import { Image, StyleSheet, View, type ImageSourcePropType, type ViewStyle } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { auraFor } from '@/theme/aura';
 import { radius } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+
+import { Sparkles } from './Sparkles';
 
 /**
  * Halftone cut-outs — the printed almanac's illustrations. Black ink on the
@@ -83,17 +88,40 @@ export function Art({ name, size, scheme, style }: Props) {
   );
 }
 
-/** The reference's round plate: a cut-out inside a disc, top right of a page. */
+/**
+ * A drawing in a glowing disc, top right of a page: a soft halo in the day's
+ * aura colours behind a pale plate, with a few sparkles catching the light.
+ */
 export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: number; style?: ViewStyle }) {
-  const { colors } = useTheme();
+  const { colors, scheme, weather } = useTheme();
+  const [a, b] = auraFor(weather, scheme);
+  const halo = size * 1.9;
+  const id = `halo-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   return (
-    <View
-      style={[styles.disc, { width: size, height: size, backgroundColor: colors.disc }, style]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      <Art name={name} size={size * 0.72} />
+    <View style={[{ width: size, height: size }, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View pointerEvents="none" style={{ position: 'absolute', left: (size - halo) / 2, top: (size - halo) / 2, width: halo, height: halo }}>
+        <Svg width={halo} height={halo}>
+          <Defs>
+            <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+              <Stop offset="0.3" stopColor={a} stopOpacity={0.85} />
+              <Stop offset="0.62" stopColor={b} stopOpacity={0.35} />
+              <Stop offset="1" stopColor={b} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={halo} height={halo} fill={`url(#${id})`} />
+        </Svg>
+      </View>
+      <View style={[styles.disc, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.glassEdge }]}>
+        <Art name={name} size={size * 0.72} />
+      </View>
+      <Sparkles
+        sparks={[
+          { x: 0.02, y: 0.18, size: size * 0.16 },
+          { x: 0.96, y: 0.86, size: size * 0.12, delay: 2.1 },
+          { x: 0.88, y: 0.04, size: size * 0.09, delay: 4 }
+        ]}
+      />
     </View>
   );
 }
@@ -101,6 +129,7 @@ export function ArtDisc({ name, size = 88, style }: { name: ArtName; size?: numb
 const styles = StyleSheet.create({
   disc: {
     borderRadius: radius.dot,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
