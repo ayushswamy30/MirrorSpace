@@ -80,3 +80,25 @@ describe('text over the aura', () => {
     }
   }
 });
+
+describe('text on surfaces over pictures', () => {
+  // A translucent surface over a picture shows the picture through it; the
+  // worst case is the brightest or darkest pixel a picture can have.
+  const over = (surface: string, under: string) => {
+    const [r, g, b, a] = surface.match(/[\d.]+/g)!.map(Number);
+    const fg = `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
+    return blend(under, fg, a);
+  };
+  test.each<[string, Palette]>([
+    ['light', light],
+    ['dark', dark]
+  ])('%s: ink and soft ink stay AA on the frost label and the sheet, over any picture', (_, p) => {
+    for (const surface of [p.frost, p.sheet]) {
+      for (const under of ['#FFFFFF', '#000000']) {
+        const bg = over(surface, under);
+        expect(contrast(p.ink, bg)).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(p.inkSoft, bg)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
