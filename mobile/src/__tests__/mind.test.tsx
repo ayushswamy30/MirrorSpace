@@ -55,11 +55,11 @@ test('draws the placements it has evidence for, and says what the rest still nee
   expect(screen.getAllByText('not yet').length).toBeGreaterThan(0);
 });
 
-test('stays closed before day 14', async () => {
-  mockCreated = new Date(Date.now() - 5 * DAY).toISOString();
+test('is open on the first day', async () => {
+  mockCreated = new Date().toISOString();
   await renderMind();
-  expect(screen.getByText('Your mind chart, drawn from your own rhythm.')).toBeTruthy();
-  expect(screen.queryByText('Your placements.')).toBeNull();
+  expect(screen.queryByText('Your mind chart, drawn from your own rhythm.')).toBeNull();
+  expect(screen.getByText('Your placements.')).toBeTruthy();
 });
 
 test('opened before the account has loaded, it waits instead of breaking', async () => {

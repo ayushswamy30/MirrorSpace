@@ -10,6 +10,8 @@ const { join } = require('node:path');
  */
 module.exports = ({ config }) => ({
   ...config,
+  // The browser build of the real app is served under /app on the site.
+  ...(process.env.EXPO_PUBLIC_WEB_APP === '1' ? { experiments: { ...config.experiments, baseUrl: '/app' } } : {}),
   android: {
     ...config.android,
     ...(existsSync(join(__dirname, 'google-services.json')) ? { googleServicesFile: './google-services.json' } : {})

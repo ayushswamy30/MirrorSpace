@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api, ApiError, NetworkError } from './api';
 import type { ConsentPurpose } from './consent';
 import { kv } from './db/kv';
-import { isPreview, previewProfile, seedPreview } from './preview';
+import { browserCanStore, isPreview, isWebApp, previewProfile, seedPreview } from './preview';
 import { supabase } from './supabase';
 
 /**
@@ -137,6 +137,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
         if (cached) {
           setState({ status: 'ready', profile: cached, offline: true });
+        } else if (isWebApp && !browserCanStore()) {
+          // Not a connection problem: this browser can't hold the database.
+          setState({
+            status: 'error',
+            message: 'This browser can’t keep Lowkei’s data. On iPhone, update to iOS 17 or later and open Lowkei in Safari.'
+          });
         } else {
           setState({
             status: 'error',
