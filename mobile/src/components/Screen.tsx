@@ -7,7 +7,7 @@ import { Aura, AuraTouch } from '@/components/Aura';
 import { useTabInset } from '@/components/TabBar';
 import type { AuraName } from '@/theme/aura';
 import { sceneForWeather, sceneImage, type SceneName } from '@/theme/scenes';
-import { gutter, space } from '@/theme/tokens';
+import { gutter, room as roomTokens, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 type Props = {
@@ -42,7 +42,7 @@ const SHEET_RADIUS = 32;
  * Its direct children are sections, 40 apart.
  */
 export function Screen({ children, header, scroll = true, edges = ['top'], background, contentStyle, aura, room, scene, backdrop }: Props) {
-  const { colors, scheme, weather } = useTheme();
+  const { colors, weather } = useTheme();
   const { height } = useWindowDimensions();
   // Room for the floating tab bar, on pages inside the tabs.
   const tabInset = useTabInset();
@@ -51,9 +51,7 @@ export function Screen({ children, header, scroll = true, edges = ['top'], backg
   const band = sceneName ? Math.round(Math.min(380, Math.max(240, height * 0.36))) : 0;
   const bottom = tabInset ? { paddingBottom: (scroll ? space.xxl : 0) + tabInset } : null;
 
-  const sheetStyle = sceneName
-    ? [styles.sheet, { backgroundColor: scheme === 'dark' ? 'rgba(12,11,22,0.9)' : 'rgba(247,246,250,0.9)' }]
-    : null;
+  const sheetStyle = sceneName ? [styles.sheet, { backgroundColor: colors.sheet }] : null;
 
   return (
     <AuraTouch style={[styles.root, { backgroundColor: background ?? colors.paper }]}>
@@ -61,14 +59,13 @@ export function Screen({ children, header, scroll = true, edges = ['top'], backg
       {backdrop && (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <Image source={sceneImage(backdrop)} style={styles.fillImage} resizeMode="cover" />
-          {/* 0.76: the lightest veil that keeps the room's soft text AA over its picture. */}
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(7,6,26,0.76)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: roomTokens.veil }]} />
         </View>
       )}
       {sceneName && (
         <View pointerEvents="none" style={[styles.band, { height: band }]}>
           <Image source={sceneImage(sceneName)} style={styles.fillImage} resizeMode="cover" />
-          {scheme === 'dark' && <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(12,11,22,0.38)' }]} />}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.veil }]} />
           <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
             <Defs>
               <LinearGradient id="band-fade" x1="0" y1="0" x2="0" y2="1">

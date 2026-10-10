@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { dark, gutter, hitTarget, radius, space } from '@/theme/tokens';
+import { dark, gutter, hitTarget, radius, room, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Icon } from './icons';
@@ -50,7 +50,7 @@ export function AppHeader({ onVoid = false, extra }: { onVoid?: boolean; /** Bes
   const ink = onVoid ? dark.ink : colors.ink;
   const dot = onVoid ? dark.signal[weather ?? 'fog'] : signal;
 
-  const pill = { backgroundColor: onVoid ? 'rgba(22,20,40,0.72)' : colors.glass, borderColor: onVoid ? 'rgba(255,255,255,0.16)' : colors.glassEdge };
+  const pill = { backgroundColor: onVoid ? room.glass : colors.glass, borderColor: onVoid ? room.glassEdge : colors.glassEdge };
 
   return (
     <View style={styles.bar}>

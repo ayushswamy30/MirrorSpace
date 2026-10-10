@@ -264,7 +264,7 @@ function Choose({
   selectedWord?: string;
   onChoose: (emotion: Emotion) => void;
 }) {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const [quadrant, setQuadrant] = useState<Quadrant | null>(start);
   const [more, setMore] = useState(false);
   const enter = useEntering();
@@ -284,8 +284,7 @@ function Choose({
             style={({ pressed }) => [styles.mood, { borderColor: colors.glassEdge, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
           >
             <Image source={sceneImage(MOOD_SCENE[q])} style={styles.moodImage} resizeMode="cover" />
-            {/* Near-opaque, so the words keep their contrast whatever the picture behind. */}
-            <View style={[styles.moodLabel, { backgroundColor: scheme === 'dark' ? 'rgba(12,11,22,0.84)' : 'rgba(255,255,255,0.88)' }]}>
+            <View style={[styles.moodLabel, { backgroundColor: colors.frost }]}>
               <Text variant="heading">{MOODS[q].title}</Text>
               <Text variant="mono" tone="soft">
                 {MOODS[q].hint}
