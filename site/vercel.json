@@ -8,6 +8,28 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "lowkei-sigma.vercel.app"
+        }
+      ],
+      "destination": "https://getlowkei.vercel.app/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
