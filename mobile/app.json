@@ -106,6 +106,14 @@
             "minSdkVersion": 26
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lowkei opens your photos only when you choose a picture for your profile. It stays on this phone.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

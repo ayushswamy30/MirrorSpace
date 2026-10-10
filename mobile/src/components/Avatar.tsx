@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { hitTarget, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -7,18 +7,20 @@ import { Art, ART_NAMES, isArtName, type ArtName } from './Art';
 import { Text } from './Text';
 
 /**
- * A person, as a plate: the cut-out they chose, or the first letter of their
- * name in serif when they haven't chosen one.
+ * A person, as a plate: their own photo (only ever on their own phone), the
+ * cut-out they chose, or the first letter of their name in serif.
  */
-export function Avatar({ icon, name, size = 44 }: { icon: string | null | undefined; name: string; size?: number }) {
+export function Avatar({ icon, name, size = 44, photo }: { icon: string | null | undefined; name: string; size?: number; photo?: string | null }) {
   const { colors } = useTheme();
   return (
     <View
-      style={[styles.plate, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.hairline }]}
+      style={[styles.plate, { width: size, height: size, backgroundColor: colors.disc, borderColor: colors.glassEdge }]}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      {isArtName(icon) ? (
+      {photo ? (
+        <Image source={{ uri: photo }} style={{ width: size, height: size }} />
+      ) : isArtName(icon) ? (
         <Art name={icon} size={size * 0.66} />
       ) : (
         <Text variant="heading" style={{ fontSize: size * 0.46, lineHeight: size * 0.56 }}>
