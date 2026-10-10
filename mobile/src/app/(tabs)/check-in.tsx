@@ -172,7 +172,7 @@ export default function CheckIn() {
 
   if (mode === 'letter' && !replacing) {
     return (
-      <Screen header={<AppHeader />}>
+      <Screen scene="weather" header={<AppHeader />}>
         <Segmented options={MODES} value={mode} onChange={setMode} />
         <Letters open={params.open} />
       </Screen>
@@ -181,7 +181,7 @@ export default function CheckIn() {
 
   if (mode === 'vent' && !replacing) {
     return (
-      <Screen header={<AppHeader />}>
+      <Screen scene="weather" header={<AppHeader />}>
         <Segmented options={MODES} value={mode} onChange={setMode} />
         <Vent reflections={profile.consents.ai_reflections?.granted === true} />
       </Screen>
@@ -189,7 +189,7 @@ export default function CheckIn() {
   }
 
   return (
-    <Screen header={<AppHeader />}>
+    <Screen scene="weather" header={<AppHeader />}>
       {!replacing && <Segmented options={MODES} value={mode} onChange={setMode} />}
       <View style={styles.block}>
         {/* A dot breathing slowly: the only thing asked before choosing. */}
@@ -396,7 +396,7 @@ function After({ checkIn, care, tagOrder, onChange, onDone, onDifferentWord }: A
   };
 
   return (
-    <Screen header={<AppHeader />}>
+    <Screen scene="weather" header={<AppHeader />}>
       <Animated.View entering={first} style={styles.block}>
         <Art name="lily" size={112} style={styles.art} />
         <Lede label="checked in" title={`${checkIn.emotion}.`}>
