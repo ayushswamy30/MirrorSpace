@@ -21,10 +21,6 @@
       "android": {
         "buildType": "apk"
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://mirrorspace-api.onrender.com/api",
-        "EXPO_PUBLIC_UNLOCK_ALL": "0"
-      },
       "channel": "preview"
     },
     "production": {
