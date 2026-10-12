@@ -1,15 +1,18 @@
 import * as push from '../db/push.js';
 import { buildBatches, deadTokens, EXPO_PUSH_URL } from '../lib/push.js';
+import { notifyWeb } from './webPush.js';
 
 const TIMEOUT_MS = 10_000;
 
 /**
  * Send a Circle alert to these people's phones, through Expo's push service
- * (free, no key needed). Never awaited by a request and never throws: a push
- * that doesn't arrive must not undo the thing that happened.
+ * (free, no key needed), and to their Home Screen web apps. Never awaited by
+ * a request and never throws: a push that doesn't arrive must not undo the
+ * thing that happened.
  */
 export function notify(userIds, kind) {
   deliver(userIds, kind).catch(err => console.warn(`push.${kind} not sent:`, err.message));
+  notifyWeb(userIds, kind);
 }
 
 async function deliver(userIds, kind) {

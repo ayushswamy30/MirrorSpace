@@ -5,6 +5,7 @@
 import app from './app.js';
 import { config } from './config/env.js';
 import { verifyConnection } from './config/health.js';
+import { startWebPushTimer } from './services/webPush.js';
 
 const server = app.listen(config.port, async () => {
   console.log(`🪞 Lowkei server listening on port ${config.port}`);
@@ -15,6 +16,9 @@ const server = app.listen(config.port, async () => {
   } else {
     console.error(`   Supabase unreachable: ${database.error}`);
   }
+
+  // Reminders and letter notices for the web app go out from here.
+  startWebPushTimer();
 });
 
 // Let the platform's rolling deploy drain in-flight requests.
