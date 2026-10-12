@@ -187,3 +187,35 @@ test('push tokens: only Expo tokens, one owner each, gone with the account', asy
   const { rows } = await db.query('select count(*)::int as n from public.push_tokens');
   assert.equal(rows[0].n, 0);
 });
+
+test('web push: no client reads it, and it goes with the account', async () => {
+  const db = await freshDatabase();
+  const [a] = await twoUsers(db);
+  const endpoint = 'https://web.push.apple.com/abc';
+  await db.query(`insert into public.web_push_subscriptions (endpoint, user_id, p256dh, auth) values ($1, $2, $3, $4)`, [
+    endpoint,
+    a.id,
+    'B'.repeat(87),
+    'a'.repeat(22)
+  ]);
+  await db.query(`insert into public.web_push_schedule (endpoint, kind, send_at) values ($1, 'reminder', now())`, [endpoint]);
+  await assert.rejects(
+    db.query(`insert into public.web_push_schedule (endpoint, kind, send_at) values ($1, 'anything', now())`, [endpoint]),
+    /web_push_schedule_kind_valid/
+  );
+  await assert.rejects(
+    db.query(`insert into public.web_push_subscriptions (endpoint, user_id, p256dh, auth) values ('http://x/', $1, $2, $3)`, [
+      a.id,
+      'B'.repeat(87),
+      'a'.repeat(22)
+    ]),
+    /web_push_endpoint_valid/
+  );
+  await assert.rejects(asUser(db, a.authId, () => db.query('select endpoint from public.web_push_subscriptions')), /permission denied/);
+
+  await db.query('delete from auth.users where id = $1', [a.authId]);
+  for (const table of ['web_push_subscriptions', 'web_push_schedule']) {
+    const { rows } = await db.query(`select count(*)::int as n from public.${table}`);
+    assert.equal(rows[0].n, 0, table);
+  }
+});

@@ -1,9 +1,10 @@
 import type * as NotificationsModule from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { api, ApiError } from './api';
 import { getDatabase } from './db/database';
 import { isPreview } from './preview';
-import { remindersSupported } from './reminders';
+import { remindersSupported, syncReminder } from './reminders';
 import { atLeast, screenText } from './safety/screen';
 
 /**
@@ -23,7 +24,7 @@ export const DELAY_MS = 3 * 60 * 60 * 1000;
 export type Reflection = { text: string; visibleAt: string } | null;
 
 function notifications(): typeof NotificationsModule | null {
-  if (!remindersSupported) return null;
+  if (!remindersSupported || Platform.OS === 'web') return null;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('expo-notifications') as typeof NotificationsModule;
 }
@@ -73,6 +74,11 @@ export async function retryPending(): Promise<void> {
 
 /** A quiet notification when the reflection becomes visible — nothing of it on the lock screen. */
 async function announce(at: Date): Promise<void> {
+  // The web app on a Home Screen: the server sends it, at the hour handed over here.
+  if (Platform.OS === 'web') {
+    if (remindersSupported) await syncReminder();
+    return;
+  }
   const N = notifications();
   if (!N || !(await N.getPermissionsAsync()).granted) return;
   await N.scheduleNotificationAsync({
