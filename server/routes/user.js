@@ -6,7 +6,10 @@ import * as account from '../db/account.js';
 import * as consents from '../db/consents.js';
 import * as circle from '../db/circle.js';
 import * as push from '../db/push.js';
+import * as webPushStore from '../db/webPush.js';
 import { parseRegistration, PushValidationError } from '../lib/push.js';
+import { parseAlerts, parseSchedule, parseSubscription, WebPushValidationError } from '../lib/webPush.js';
+import { publicVapidKey, sendTest } from '../services/webPush.js';
 import { parseConsentChanges, ConsentValidationError } from '../lib/consent.js';
 
 const router = express.Router();
@@ -131,6 +134,51 @@ router.delete('/push-token', auth, writeLimiter, async (req, res, next) => {
   try {
     if (typeof req.body?.token !== 'string') return res.status(400).json({ message: 'token is required' });
     await push.remove(req.userId, req.body.token);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/user/web-push/key — the public key a browser subscribes with
+// (null until the server has one, and then the web app gets no notifications)
+router.get('/web-push/key', auth, (req, res) => {
+  res.json({ key: publicVapidKey() });
+});
+
+// PUT /api/user/web-push — { subscription, alerts, reminderAt, letters,
+// reflections }: where the Home Screen web app's notifications go, whether
+// it wants more than the reminder, and when the next ones are due
+router.put('/web-push', auth, writeLimiter, async (req, res, next) => {
+  try {
+    const subscription = parseSubscription(req.body?.subscription);
+    const schedule = parseSchedule(req.body);
+    await webPushStore.save(req.userId, subscription, parseAlerts(req.body), schedule);
+    res.status(204).end();
+  } catch (error) {
+    if (error instanceof WebPushValidationError) return res.status(400).json({ message: error.message });
+    next(error);
+  }
+});
+
+// DELETE /api/user/web-push — { endpoint }: this browser stops getting them
+router.delete('/web-push', auth, writeLimiter, async (req, res, next) => {
+  try {
+    if (typeof req.body?.endpoint !== 'string') return res.status(400).json({ message: 'endpoint is required' });
+    await webPushStore.remove(req.userId, req.body.endpoint);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/user/web-push/test — { endpoint }: the test reminder, sent now
+router.post('/web-push/test', auth, writeLimiter, async (req, res, next) => {
+  try {
+    if (!publicVapidKey()) return res.status(503).json({ message: 'Notifications aren’t set up on the server yet.' });
+    if (typeof req.body?.endpoint !== 'string') return res.status(400).json({ message: 'endpoint is required' });
+    const sent = await sendTest(req.userId, req.body.endpoint);
+    if (!sent) return res.status(404).json({ message: 'This browser isn’t registered for notifications.' });
     res.status(204).end();
   } catch (error) {
     next(error);

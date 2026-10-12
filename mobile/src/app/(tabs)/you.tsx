@@ -14,6 +14,8 @@ import { authenticate, lockAvailability, useAppLock } from '@/lib/appLock';
 import { legalUrl } from '@/lib/config';
 import type { ConsentPurpose } from '@/lib/consent';
 import { isWebApp } from '@/lib/preview';
+import { setWebAlerts } from '@/lib/push';
+import { needsHomeScreen, webAlertsOn, webPushSupported } from '@/lib/webPush';
 import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
 import type { Appearance } from '@/lib/appearance';
@@ -54,11 +56,15 @@ export default function You() {
   const [leaving, setLeaving] = useState<'idle' | 'confirm' | 'leaving'>('idle');
   const [pending, setPending] = useState<Partial<Record<ConsentPurpose, boolean>>>({});
   const [reminder, setReminder] = useState(false);
+  const [alerts, setAlerts] = useState(false);
   const [health, setHealth] = useState(false);
 
   useEffect(() => {
     remindersEnabled()
       .then(setReminder)
+      .catch(() => undefined);
+    webAlertsOn()
+      .then(setAlerts)
       .catch(() => undefined);
     healthConnected()
       .then(setHealth)
@@ -100,6 +106,18 @@ export default function You() {
       }
     } catch (err) {
       console.error('Reminder change failed:', err);
+      setNote('That didn’t work. Nothing changed.');
+    }
+  };
+
+  const toggleAlerts = async (on: boolean) => {
+    setNote(null);
+    try {
+      const done = await setWebAlerts(on);
+      setAlerts(on && done);
+      if (!done) setNote('Notifications are off for Lowkei in your phone’s settings.');
+    } catch (err) {
+      console.error('Alerts change failed:', err);
       setNote('That didn’t work. Nothing changed.');
     }
   };
@@ -222,7 +240,9 @@ export default function You() {
           subtitle={
             remindersSupported
               ? 'Once a day at most, around when you usually check in — never after you have'
-              : 'Needs Lowkei’s own app build — Expo Go and the preview can’t send them'
+              : needsHomeScreen
+                ? 'Add Lowkei to your Home Screen first, then open it from there (on iPhone, iOS 16.4 or later)'
+                : 'Needs Lowkei’s own app build — Expo Go and the preview can’t send them'
           }
           value={reminder}
           onValueChange={toggleReminder}
@@ -230,6 +250,14 @@ export default function You() {
         />
         {reminder && (
           <SettingLink title="Send a test" subtitle="See one arrive in five seconds" onPress={testReminder} />
+        )}
+        {webPushSupported && (
+          <SettingRow
+            title="Letters, reflections and circle"
+            subtitle="When a letter or a reflection is ready, or someone in your circle reaches out"
+            value={alerts}
+            onValueChange={toggleAlerts}
+          />
         )}
       </SettingGroup>
 

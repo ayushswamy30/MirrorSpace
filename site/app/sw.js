@@ -50,3 +50,44 @@ self.addEventListener('fetch', event => {
     );
   }
 });
+
+// Notifications, for the app on a Home Screen: the daily reminder, a letter's
+// day, a reflection that is ready, Circle alerts. The server sends a title, a line and where a tap goes —
+// nothing else (server/lib/webPush.js). Every push shows something: iPhone
+// stops delivering to a web app that receives pushes silently.
+
+const OPENABLE = ['/', '/circle', '/check-in?mode=letter', '/check-in?mode=vent'];
+
+self.addEventListener('push', event => {
+  let message = {};
+  try {
+    message = event.data ? event.data.json() : {};
+  } catch {
+    message = {};
+  }
+  event.waitUntil(
+    self.registration.showNotification(message.title || 'Lowkei', {
+      body: message.body || 'Something is waiting for you.',
+      icon: '/app/icon-192.png',
+      tag: message.tag,
+      data: { url: OPENABLE.includes(message.url) ? message.url : '/' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const path = OPENABLE.includes(event.notification.data?.url) ? event.notification.data.url : '/';
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const open = windows.find(w => new URL(w.url).pathname.startsWith('/app'));
+      if (open) {
+        await open.focus();
+        open.postMessage({ type: 'open', path });
+        return;
+      }
+      await self.clients.openWindow(path === '/' ? '/app' : `/app${path}`);
+    })()
+  );
+});

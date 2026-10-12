@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { allCheckIns, localDate, type CheckIn } from './checkIns';
 import { kv } from './db/kv';
 import { inExpoGo } from './runtime';
+import { askWebPush, sendWebTest, syncWebPush, webPushSupported } from './webPush';
 
 /**
  * The daily reminder (report §5: "timed to the user's rhythm, never more than
@@ -15,7 +16,9 @@ import { inExpoGo } from './runtime';
  * never a streak or a guilt line.
  *
  * expo-notifications throws as soon as it loads in Expo Go on Android (it was
- * removed there in SDK 53), so it is loaded only in Lowkei's own build.
+ * removed there in SDK 53), so it is loaded only in Lowkei's own build. The
+ * web app on a Home Screen can't schedule anything itself: the server sends
+ * its reminder at the time worked out here (see webPush.ts).
  */
 
 const ENABLED_KEY = 'reminder.enabled';
@@ -24,11 +27,19 @@ const STEP = 15;
 
 export const DEFAULT_TIME = 21 * 60;
 
-/** False in Expo Go and the browser preview: reminders need the app's own build. */
-export const remindersSupported = !inExpoGo && Platform.OS !== 'web';
+const native = !inExpoGo && Platform.OS !== 'web';
+
+/**
+ * Lowkei's own build, or the web app opened from a Home Screen. False in Expo
+ * Go, the browser preview, and the web app in a browser tab.
+ */
+export const remindersSupported = native || webPushSupported;
+
+/** Where a tapped letter notice goes. */
+export const LETTER_URL = '/check-in?mode=letter';
 
 function notifications(): typeof NotificationsModule | null {
-  if (!remindersSupported) return null;
+  if (!native) return null;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('expo-notifications') as typeof NotificationsModule;
 }
@@ -64,6 +75,13 @@ export async function remindersEnabled(): Promise<boolean> {
 
 /** Asks the system once; false if the person said no, or in Expo Go. */
 export async function enableReminders(): Promise<boolean> {
+  if (webPushSupported) {
+    // Straight from the tap, before anything else is awaited.
+    if (!(await askWebPush())) return false;
+    await kv.set(ENABLED_KEY, '1');
+    await syncReminder();
+    return true;
+  }
   const N = notifications();
   if (!N) return false;
   const current = await N.getPermissionsAsync();
@@ -76,7 +94,21 @@ export async function enableReminders(): Promise<boolean> {
 
 export async function disableReminders(): Promise<void> {
   await kv.set(ENABLED_KEY, '0');
-  await notifications()?.cancelAllScheduledNotificationsAsync();
+  if (webPushSupported) {
+    await syncReminder();
+    return;
+  }
+  const N = notifications();
+  if (N) await cancelReminder(N);
+}
+
+/**
+ * Only the reminder. Letters' and reflections' notices name where a tap goes
+ * and keep their day; the reminder (and the test) name nowhere.
+ */
+async function cancelReminder(N: typeof NotificationsModule): Promise<void> {
+  const pending = await N.getAllScheduledNotificationsAsync();
+  await Promise.all(pending.filter(p => !p.content.data?.url).map(p => N.cancelScheduledNotificationAsync(p.identifier)));
 }
 
 /**
@@ -106,6 +138,7 @@ async function ensureChannel(N: typeof NotificationsModule): Promise<void> {
  * looks like and that it arrives. It doesn't touch the scheduled one.
  */
 export async function sendTestReminder(seconds = 5): Promise<boolean> {
+  if (webPushSupported) return (await remindersEnabled()) && sendWebTest();
   const N = notifications();
   if (!N || !(await remindersEnabled())) return false;
   await ensureChannel(N);
@@ -116,17 +149,30 @@ export async function sendTestReminder(seconds = 5): Promise<boolean> {
   return true;
 }
 
-/** Replaces whatever is pending with the one right reminder, or none. */
+async function nextFor(now: Date): Promise<Date> {
+  const checkIns = await allCheckIns();
+  return nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
+}
+
+/**
+ * Replaces whatever reminder is pending with the one right reminder, or none.
+ * On the web app this also hands the server the sealed letters' days, and
+ * keeps Circle alerts' address current, whether reminders are on or not.
+ */
 export async function syncReminder(now: Date = new Date()): Promise<Date | null> {
+  if (webPushSupported) {
+    const next = (await remindersEnabled()) ? await nextFor(now) : null;
+    await syncWebPush(next, now);
+    return next;
+  }
   const N = notifications();
   if (!N) return null;
-  await N.cancelAllScheduledNotificationsAsync();
+  await cancelReminder(N);
   if (!(await remindersEnabled())) return null;
 
   await ensureChannel(N);
 
-  const checkIns = await allCheckIns();
-  const at = nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
+  const at = await nextFor(now);
   await N.scheduleNotificationAsync({
     // Nothing personal on a lock screen: no feeling, no count, no streak.
     content: { title: 'Lowkei', body: 'A word for today, if you have one.' },

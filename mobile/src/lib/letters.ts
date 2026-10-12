@@ -1,10 +1,11 @@
 import * as Crypto from 'expo-crypto';
 import type * as NotificationsModule from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { allCheckIns } from './checkIns';
 import { getDatabase } from './db/database';
 import { isLowDay } from './glance';
-import { remindersSupported } from './reminders';
+import { LETTER_URL, remindersSupported, syncReminder } from './reminders';
 
 /**
  * Letters to future self (report: "write now, delivered in 3, 6 or 12
@@ -12,6 +13,9 @@ import { remindersSupported } from './reminders';
  * in the phone's encrypted database. Until its day it is sealed — only its
  * dates show. On its day, if the days have been heavy, it waits another
  * week rather than arrive in the middle of it.
+ *
+ * On a phone the notice is scheduled there; the web app on a Home Screen
+ * hands the server only each letter's day (syncReminder), never the letter.
  */
 
 export type Letter = {
@@ -35,7 +39,7 @@ function fromRow(r: Row): Letter {
 }
 
 function notifications(): typeof NotificationsModule | null {
-  if (!remindersSupported) return null;
+  if (!remindersSupported || Platform.OS === 'web') return null;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('expo-notifications') as typeof NotificationsModule;
 }
@@ -66,10 +70,11 @@ export async function writeLetter(body: string, months: Wait, now: Date = new Da
   const N = notifications();
   if (N && (await N.getPermissionsAsync()).granted) {
     await N.scheduleNotificationAsync({
-      content: { title: 'Lowkei', body: 'A letter you wrote is ready, when you are.', data: { url: '/check-in?mode=letter' } },
+      content: { title: 'Lowkei', body: 'A letter you wrote is ready, when you are.', data: { url: LETTER_URL } },
       trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: new Date(letter.deliverAt), channelId: 'reminders' }
     });
   }
+  webSync();
   return letter;
 }
 
@@ -91,6 +96,7 @@ export async function deliverDue(now: Date = new Date()): Promise<Letter[]> {
   if (isLowDay(await allCheckIns(), now)) {
     const later = new Date(now.getTime() + PAUSE_DAYS * 24 * 3600 * 1000).toISOString();
     for (const l of due) await db.runAsync('UPDATE letters SET deliver_at = ? WHERE id = ?', later, l.id);
+    webSync();
     return [];
   }
   for (const l of due) await db.runAsync('UPDATE letters SET delivered_at = ? WHERE id = ?', now.toISOString(), l.id);
@@ -105,4 +111,11 @@ export async function markOpened(id: string, now: Date = new Date()): Promise<vo
 export async function deleteLetter(id: string): Promise<void> {
   const db = await getDatabase();
   await db.runAsync('DELETE FROM letters WHERE id = ?', id);
+  webSync();
+}
+
+/** The web app's server-side schedule follows the letters; a phone's doesn't need to. */
+function webSync(): void {
+  if (Platform.OS !== 'web' || !remindersSupported) return;
+  syncReminder().catch(err => console.warn('Letter days not sent:', err));
 }
