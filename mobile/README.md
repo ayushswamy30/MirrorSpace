@@ -97,8 +97,17 @@ The real app in a browser: signs in, talks to the API, keeps its database in
 the browser's private file system. That needs a cross-origin-isolated page,
 so the site sends COOP/COEP headers for `/app` (`site/vercel.json`), and the
 API must list the site in `CORS_ORIGINS`. There is no SQLCipher in a browser,
-so the copy isn't encrypted (You says so), and reminders, the app lock, voice
-and Health Connect don't run there. Deploy it with `sh site/deploy.sh`.
+so the copy isn't encrypted (You says so), and the app lock, voice and Health
+Connect don't run there. Deploy it with `sh site/deploy.sh`.
+
+Notifications — the daily reminder, letters and Circle alerts — work once the
+web app is added to the Home Screen and opened from there (on iPhone, iOS 16.4
+or later; Android is treated the same way). A browser can't schedule anything,
+so the server sends them: the app subscribes with the browser's push service
+and hands the API that address with the times of the next reminder and each
+sealed letter (`src/lib/webPush.ts`); `site/app/sw.js` shows them. The API
+needs `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` for this (see
+`server/.env.example`).
 
 ## Previewing it in a browser
 
@@ -122,8 +131,8 @@ modules that **Expo Go does not include** (or that crash it on Android). You
 need a development build. In Expo Go the app still opens, but the database is
 not encrypted (You → Privacy says so) and reminders stay off.
 
-Reminders are local notifications, scheduled on the phone — no push server,
-no token, nothing sent anywhere. Once the dev build is installed: You →
+In the phone build, reminders are local notifications, scheduled on the
+phone — no push server, no token, nothing sent anywhere. Once the dev build is installed: You →
 Notifications → Daily reminder, then **Send a test** to see one arrive.
 
 ```bash

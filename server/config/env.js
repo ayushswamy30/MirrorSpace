@@ -74,6 +74,15 @@ export const config = {
 
   corsOrigins: list('CORS_ORIGINS', ['http://localhost:5173']),
 
+  // Notifications for the web app on a Home Screen. A free key pair from
+  // `npx web-push generate-vapid-keys`; without it the web app simply gets
+  // none. Changing the pair makes every browser subscribe again.
+  webPush: {
+    publicKey: optional('VAPID_PUBLIC_KEY'),
+    privateKey: optional('VAPID_PRIVATE_KEY'),
+    subject: optional('VAPID_SUBJECT', 'mailto:getlowkei@gmail.com')
+  },
+
   ai: {
     geminiApiKey: optional('GEMINI_API_KEY'),
     geminiModel: optional('GEMINI_MODEL', 'gemini-3.5-flash'),

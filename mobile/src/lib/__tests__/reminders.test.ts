@@ -33,10 +33,21 @@ test('today if it is still ahead and there is no check-in yet; otherwise tomorro
   expect(nextReminder(9 * 60, false, NOW)).toEqual(new Date(2026, 8, 30, 9, 0));
 });
 
-test('with reminders off, nothing is left pending', async () => {
+const pending = (identifier: string, data?: Record<string, unknown>) => ({ identifier, content: { data }, trigger: null }) as never;
+
+test('with reminders off, nothing is left pending — but letters and reflections keep their day', async () => {
   jest.mocked(kv.get).mockResolvedValue('0');
+  jest
+    .mocked(Notifications.getAllScheduledNotificationsAsync)
+    .mockResolvedValue([
+      pending('reminder'),
+      pending('letter', { url: '/check-in?mode=letter' }),
+      pending('reflection', { url: '/check-in?mode=vent' })
+    ]);
   expect(await syncReminder(NOW)).toBeNull();
-  expect(Notifications.cancelAllScheduledNotificationsAsync).toHaveBeenCalled();
+  expect(Notifications.cancelAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(1);
+  expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('reminder');
   expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 });
 

@@ -67,7 +67,8 @@ AI replies go to Groq (Gemini's unpaid tier never sees personal text; see
    `supabase/tests/` against a real project.
 2. **API**: `cd server && cp .env.example .env && npm install`, fill in
    `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CORS_ORIGINS` (the site's
-   origin, for the web app) and `GROQ_API_KEY`, then `npm run dev`
+   origin, for the web app) and `GROQ_API_KEY` (and, for the web app's
+   notifications, `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`), then `npm run dev`
    (port 5000). The server refuses to start without the required values.
 3. **Email**: run `supabase/configure-auth-email.mjs` with a Supabase access
    token and a Brevo SMTP login and key.
