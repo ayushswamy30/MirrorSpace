@@ -1,17 +1,28 @@
-# Keeps the free Render API from falling asleep.
+# Keeps the free services from going to sleep.
 #
 # Render's free tier sleeps a service after ~15 idle minutes, and waking it
 # takes 20–60 seconds — long enough for a first open of the app to look
-# broken. A light health check every 10 minutes keeps it awake. One always-on
-# free service fits inside Render's 750 free hours a month.
+# broken, and the web app's reminders and letter notices are sent from it on
+# time only while it is awake. A light health check every 10 minutes keeps it
+# up. One always-on free service fits inside Render's 750 free hours a month.
 #
-# Free on a public repository. GitHub pauses scheduled workflows after 60
-# days without any commit to the repo; re-enable it under Actions if so.
+# Supabase pauses a free project after a week without activity. The health
+# check reads from its database each time, so it counts. If the repository
+# secret SUPABASE_PUBLISHABLE_KEY is set (the app's public key), Supabase is
+# also reached directly, so it stays active even while Render is down.
+#
+# A failed check fails the run, so GitHub emails about it.
+#
+# GitHub turns scheduled workflows off after 60 days without a commit. Once a
+# week this one switches itself back on, which resets that clock.
+#
+# Free on a public repository.
 name: Keep API awake
 
 on:
   schedule:
     - cron: '*/10 * * * *'
+    - cron: '17 4 * * 1'
   workflow_dispatch:
 
 permissions: {}
@@ -19,7 +30,28 @@ permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
-      - name: Ping the health check
-        run: curl --silent --show-error --max-time 90 --retry 2 https://mirrorspace-api.onrender.com/api/health
+      - name: Ping the API (and through it, the database)
+        run: curl --silent --show-error --fail --max-time 90 --retry 2 --retry-all-errors https://mirrorspace-api.onrender.com/api/health
+
+      - name: Reach Supabase directly
+        if: always()
+        env:
+          KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "SUPABASE_PUBLISHABLE_KEY not set; skipped"; exit 0; fi
+          curl --silent --show-error --fail --max-time 30 --retry 2 -o /dev/null \
+            -H "apikey: $KEY" https://kgsqewtdznpclcdwdqes.supabase.co/auth/v1/health
+
+  stay-enabled:
+    if: github.event.schedule == '17 4 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Switch this workflow back on
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/keep-api-awake.yml/enable"
