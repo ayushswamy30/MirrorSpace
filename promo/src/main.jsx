@@ -33,7 +33,7 @@ async function preload() {
       name =>
         new Promise(resolve => {
           const img = new Image();
-          img.onload = () => img.decode().then(resolve, resolve);
+          img.onload = resolve;
           img.onerror = resolve;
           img.src = artUrl(name);
         })

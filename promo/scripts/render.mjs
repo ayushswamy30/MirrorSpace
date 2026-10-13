@@ -13,7 +13,7 @@
  * machine. Workers render slices in parallel; each one replays the film from
  * the start (without screenshots) to reach its slice, so state is identical.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createReadStream, existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join, resolve } from 'node:path';
@@ -33,6 +33,8 @@ const opt = (name, fallback) => {
 const FPS = Number(opt('fps', 60));
 const WORKERS = Number(opt('workers', 4));
 const stills = opt('stills', null)?.split(',').map(Number);
+// --resume keeps slices a previous run finished (out/parts/part-N.mp4).
+const RESUME = args.includes('--resume');
 const CHROME =
   opt('chrome', null) ??
   ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome'].find(p =>
@@ -92,32 +94,51 @@ const SHIM = `(() => {
   };
 })();`;
 
-const browser = await puppeteer.launch({
-  executablePath: CHROME,
-  headless: true,
-  args: ['--hide-scrollbars', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--force-color-profile=srgb', '--font-render-hinting=none']
-});
-
+// One browser per page: a background tab in a shared browser can stall
+// while loading, so every worker gets a browser whose only tab is in front.
+// Each browser keeps its profile in out/profiles: Puppeteer then leaves it
+// alone on close (deleting its own temp profile fails on Windows while
+// Chrome still holds a file), and closing never takes the run down.
+let profiles = 0;
 async function openPage() {
-  const page = await browser.newPage();
+  const userDataDir = join(out, 'profiles', `p${process.pid}-${profiles++}`);
+  const browser = await puppeteer.launch({
+    executablePath: CHROME,
+    userDataDir,
+    headless: true,
+    args: ['--hide-scrollbars', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--force-color-profile=srgb', '--font-render-hinting=none']
+  });
+  const [page] = await browser.pages();
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
   await page.evaluateOnNewDocument(SHIM);
   page.on('pageerror', e => console.error('page error:', e.message));
-  await page.goto(url, { waitUntil: 'networkidle0' });
-  await page.waitForFunction('window.__ready === true');
+  await page.goto(url, { waitUntil: 'load', timeout: 120000 });
+  // main.jsx sets this once fonts and every drawing have loaded. Polled from
+  // here: the page's own rAF and timers are frozen by the clock above.
+  for (let tries = 0; !(await page.evaluate(() => window.__ready === true)); tries++) {
+    if (tries > 600) throw new Error('The page never became ready.');
+    await new Promise(r => setTimeout(r, 200));
+  }
   // Let the first render commit before the clock moves.
   await page.evaluate(() => window.__frame(0));
   const cdp = await page.createCDPSession();
-  return { page, cdp };
+  const close = () => browser.close().catch(e => console.warn('browser close:', e.message));
+  return { browser: { close }, page, cdp };
+}
+
+function framesIn(file) {
+  if (!existsSync(file)) return 0;
+  const r = spawnSync('ffprobe', ['-v', 'error', '-count_packets', '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_packets', '-of', 'csv=p=0', file]);
+  return r.status === 0 ? parseInt(String(r.stdout), 10) || 0 : 0;
 }
 
 const TOTAL = await (async () => {
-  const { page } = await openPage();
+  const { browser, page } = await openPage();
   const total = await page.evaluate(() => {
     const s = document.querySelector('[data-total]');
     return s ? Number(s.dataset.total) : null;
   });
-  await page.close();
+  await browser.close();
   return total;
 })();
 if (!TOTAL) throw new Error('The page did not report its length (data-total).');
@@ -130,7 +151,7 @@ async function shoot(cdp, format) {
 }
 
 if (stills) {
-  const { page, cdp } = await openPage();
+  const { browser, page, cdp } = await openPage();
   const want = [...stills].sort((a, b) => a - b).map(s => Math.round(s * FPS));
   for (let f = 0; f <= want[want.length - 1]; f++) {
     if (want.includes(f)) {
@@ -147,7 +168,7 @@ if (stills) {
 
 /* ── the film: slices in parallel, each piped to its own ffmpeg ── */
 const tmp = join(out, 'parts');
-rmSync(tmp, { recursive: true, force: true });
+if (!RESUME) rmSync(tmp, { recursive: true, force: true });
 mkdirSync(tmp, { recursive: true });
 const per = Math.ceil(FRAMES / WORKERS);
 const started = Date.now();
@@ -157,8 +178,13 @@ async function worker(w) {
   const from = w * per;
   const to = Math.min(FRAMES, from + per);
   if (from >= to) return null;
-  const { page, cdp } = await openPage();
   const part = join(tmp, `part-${w}.mp4`);
+  if (RESUME && framesIn(part) === to - from) {
+    console.log(`part ${w} already rendered`);
+    done += to - from;
+    return part;
+  }
+  const { browser, page, cdp } = await openPage();
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-r', String(FPS), part], {
     stdio: ['pipe', 'inherit', 'inherit']
   });
@@ -177,12 +203,11 @@ async function worker(w) {
   }
   ff.stdin.end();
   await finished;
-  await page.close();
+  await browser.close();
   return part;
 }
 
 const parts = (await Promise.all(Array.from({ length: WORKERS }, (_, w) => worker(w)))).filter(Boolean);
-await browser.close();
 server.close();
 
 const list = join(tmp, 'list.txt');
