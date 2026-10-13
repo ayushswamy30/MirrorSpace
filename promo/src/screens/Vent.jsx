@@ -7,7 +7,7 @@ import { AppHeader, Art, Button, Caret, Chip, Lede, Segmented, Sheet, Txt } from
 import { MODES } from './CheckIn';
 import { Swap } from './Swap';
 
-const PAGE = 'I keep saying yes to everything, then resenting everyone for it. I’m tired of being the reliable one.';
+export const PAGE = 'I keep saying yes to everything, then resenting everyone for it. I’m tired of being the reliable one.';
 const LETTER = 'Dear me, by the time you read this, I hope you’ve learned to rest without earning it first.';
 
 const T_VENT = 0.9;

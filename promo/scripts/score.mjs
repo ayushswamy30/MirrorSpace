@@ -5,14 +5,22 @@
  * app's own "Gentle Rain" (mobile/assets/sounds) underneath — louder in the
  * Mirror's dark room and when Calm starts the rain.
  *
- *   node scripts/score.mjs   → out/score.wav (48 kHz stereo)
+ *   node scripts/score.mjs        → out/score-promo.wav (48 kHz stereo, 72 bpm)
+ *   node scripts/score.mjs reel   → out/score-reel.wav  (96 bpm, with a soft pulse
+ *                                   and a breath of air into every cut)
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SCENES, TOTAL } from '../src/scenes.js';
+import { film } from '../src/scenes.js';
+
+const FILM = process.argv[2] === 'reel' ? 'reel' : 'promo';
+const SCENES = film(FILM);
+const TOTAL = SCENES[SCENES.length - 1].end;
+const REEL = FILM === 'reel';
+const BPM = REEL ? 96 : 72;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'out');
@@ -41,7 +49,24 @@ const CHORDS = {
   Bm_dark: [35, 47, 50, 53, 54, 57],
   Gmaj9: [31, 43, 47, 54, 57, 62]
 };
-const PLAN = {
+const PLAN = REEL
+  ? {
+      hook: ['Bm9', 'Gmaj7'],
+      checkin: ['Dmaj9', 'A6sus'],
+      today: ['Gmaj7', 'Dmaj9'],
+      vent: ['Bm9', 'Em9'],
+      letters: ['Gmaj9', 'A6sus'],
+      mirror: ['Bm_dark', 'Fsharp_m7'],
+      chart: ['Dmaj9', 'Gmaj7'],
+      circle: ['Em9', 'A6sus'],
+      calm: ['Gmaj9', 'Dmaj9'],
+      crisis: ['Bm9', 'Bm9'],
+      lowday: ['Gmaj7', 'Gmaj7'],
+      dark: ['Em9', 'Em9'],
+      data: ['A6sus', 'A6sus'],
+      outro: ['Dmaj9', 'Dmaj9']
+    }
+  : {
   intro: ['Dmaj9', 'Dmaj9'],
   hook: ['Bm9', 'Gmaj7'],
   begin: ['Dmaj9', 'A6sus'],
@@ -113,16 +138,18 @@ function pluck(t0, note, vel, pan) {
 }
 
 function piano() {
-  const beat = 60 / 72;
+  const beat = 60 / BPM;
   const eighth = beat / 2;
-  const from = sceneAt('hook').start / 1000 + 0.2;
+  // On the reel the grid starts at 0 so every cut (a multiple of 1.25 s) is on a beat.
+  const from = REEL ? 0 : sceneAt('hook').start / 1000 + 0.2;
   const to = sceneAt('outro').start / 1000 + 4;
   const pattern = [0, 2, 1, 3, 2, 4, 3, 1];
   for (let k = 0; from + k * eighth < to; k++) {
     const t = from + k * eighth;
     // Quieter in the Mirror and in Care; rests make it breathe.
     const inScene = SCENES.find(s => t * 1000 >= s.start && t * 1000 < s.end)?.id;
-    if (rand() < (inScene === 'mirror' || inScene === 'care' ? 0.55 : 0.32)) continue;
+    const quiet = inScene === 'mirror' || inScene === 'care' || inScene === 'crisis';
+    if (rand() < (quiet ? 0.55 : REEL ? 0.24 : 0.32)) continue;
     const chord = chordAt(t).chord;
     const upper = chord.slice(1).map(n => n + 12);
     const note = upper[pattern[k % pattern.length] % upper.length];
@@ -139,9 +166,10 @@ function bells() {
     const root = chordAt(t0 + 0.1).chord[1] + 24;
     const f = midi(root);
     const s0 = Math.floor(t0 * SR);
+    const g = s.dur <= 1250 ? 0.028 : 0.045;
     for (let i = 0; i < 4 * SR && s0 + i < LEN; i++) {
       const t = i / SR;
-      const y = (Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 1.4) + 0.35 * Math.sin(2 * Math.PI * f * 2.76 * t) * Math.exp(-t * 4)) * Math.min(1, t / 0.002) * 0.045;
+      const y = (Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 1.4) + 0.35 * Math.sin(2 * Math.PI * f * 2.76 * t) * Math.exp(-t * 4)) * Math.min(1, t / 0.002) * g;
       L[s0 + i] += y * 0.8;
       R[s0 + i] += y;
     }
@@ -196,13 +224,13 @@ function rain() {
   const frames = data.length / 2;
   const mirror = sceneAt('mirror');
   const calm = sceneAt('calm');
-  const rainOn = calm.start / 1000 + 9.6;
+  const rainOn = calm.start / 1000 + 9.6; // when the promo's Calm taps Gentle Rain
   const level = t => {
     let g = 0.07;
     const ms = t * 1000;
     const near = (a, b, fade) => Math.min(1, Math.max(0, Math.min((ms - a) / fade, (b - ms) / fade)));
     g += 0.11 * near(mirror.start, mirror.end, 900);
-    g += 0.2 * near(rainOn * 1000, calm.end, 500);
+    if (!REEL) g += 0.2 * near(rainOn * 1000, calm.end, 500);
     return g;
   };
   // A slow crossfade at the loop point keeps the seam inaudible.
@@ -223,11 +251,74 @@ function rain() {
   }
 }
 
+/* ── reel only: a soft kick on beats 1 and 3, a shaker on the eighths ── */
+function pulse() {
+  const beat = 60 / BPM;
+  const from = sceneAt('checkin').start / 1000;
+  const to = sceneAt('outro').start / 1000 + 1.25;
+  const mirror = sceneAt('mirror');
+  const inMirror = t => t * 1000 >= mirror.start && t * 1000 < mirror.end - 1250;
+  for (let k = 0; from + k * beat / 2 < to; k++) {
+    const t0 = from + (k * beat) / 2;
+    if (inMirror(t0)) continue; // the dark room is quiet
+    const s0 = Math.floor(t0 * SR);
+    if (k % 4 === 0) {
+      // kick: a pitch-dropping sine, felt more than heard
+      for (let i = 0; i < 0.5 * SR && s0 + i < LEN; i++) {
+        const t = i / SR;
+        const f = 48 + 70 * Math.exp(-t * 30);
+        const y = Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 7) * 0.16;
+        L[s0 + i] += y;
+        R[s0 + i] += y;
+      }
+    }
+    // shaker: a short burst of brightened noise, softer off the beat
+    const g = k % 2 === 0 ? 0.012 : 0.007;
+    let prev = 0;
+    for (let i = 0; i < 0.07 * SR && s0 + i < LEN; i++) {
+      const t = i / SR;
+      const n = rand() * 2 - 1;
+      const hp = n - prev;
+      prev = n;
+      const y = hp * Math.exp(-t * 60) * g;
+      L[s0 + i] += y * 0.8;
+      R[s0 + i] += y;
+    }
+  }
+}
+
+/* ── reel only: a breath of air swelling into each cut ── */
+function air() {
+  for (const sc of SCENES) {
+    if (sc.start === 0) continue;
+    const len = sc.dur <= 1250 ? 0.3 : 0.55;
+    const end = sc.start / 1000;
+    const s0 = Math.floor((end - len) * SR);
+    let lp = 0;
+    for (let i = 0; i < len * SR; i++) {
+      const p = i / (len * SR);
+      lp += (rand() * 2 - 1 - lp) * (0.02 + p * 0.25);
+      const y = lp * p * p * 0.11;
+      if (s0 + i >= 0 && s0 + i < LEN) {
+        L[s0 + i] += y;
+        R[s0 + i] += y * 0.9;
+      }
+    }
+  }
+}
+
 pad();
 piano();
 bells();
-swell(0.3, 6, 38, 0.06);
-swell(sceneAt('outro').start / 1000 + 4.5, 5, 38, 0.05);
+if (REEL) {
+  pulse();
+  air();
+  swell(0, 3.8, 38, 0.05);
+  swell(sceneAt('outro').start / 1000 + 3.6, 2.6, 38, 0.05);
+} else {
+  swell(0.3, 6, 38, 0.06);
+  swell(sceneAt('outro').start / 1000 + 4.5, 5, 38, 0.05);
+}
 reverb(L, 0);
 reverb(R, 23);
 rain();
@@ -260,5 +351,5 @@ for (let s = 0; s < LEN; s++) {
   buf.writeInt16LE(Math.round(Math.max(-1, Math.min(1, L[s] * norm)) * 32767), 44 + s * 4);
   buf.writeInt16LE(Math.round(Math.max(-1, Math.min(1, R[s] * norm)) * 32767), 46 + s * 4);
 }
-writeFileSync(join(out, 'score.wav'), buf);
-console.log(`wrote out/score.wav · ${(TOTAL / 1000).toFixed(1)} s · peak scaled ×${norm.toFixed(2)}`);
+writeFileSync(join(out, `score-${FILM}.wav`), buf);
+console.log(`wrote out/score-${FILM}.wav · ${(TOTAL / 1000).toFixed(1)} s · peak scaled ×${norm.toFixed(2)}`);
