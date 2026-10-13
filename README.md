@@ -9,6 +9,7 @@ see the weather of your weeks — what you write stays on your phone.
 | `server/` | The API (Express 5): accounts, consents, Circle, the Mirror, the legal pages | Render — `mirrorspace-api.onrender.com` |
 | [`site/`](site/README.md) | The public site, static HTML built by a script | Vercel — `getlowkei.vercel.app` |
 | `supabase/` | Postgres migrations, the code-email templates and their setup script | Supabase |
+| [`promo/`](promo/README.md) | The promo film: the app's screens rebuilt in React + Framer Motion, rendered to MP4 | Locally (Chrome + ffmpeg) |
 
 *MirrorSpace New Direction Report.docx* is the product brief.
 
