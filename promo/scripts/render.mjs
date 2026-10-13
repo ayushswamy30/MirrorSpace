@@ -1,7 +1,8 @@
 /**
  * Renders the film frame by frame.
  *
- *   node scripts/render.mjs                      → out/lowkei-promo.mp4 (60 fps, with the score if out/score.wav exists)
+ *   node scripts/render.mjs                      → out/lowkei-promo.mp4 (16:9, 60 fps, with out/score-promo.wav)
+ *   node scripts/render.mjs --film reel          → out/lowkei-reel.mp4  (9:16, with out/score-reel.wav)
  *   node scripts/render.mjs --stills 3,21.5,40   → out/still-3.png … (exact frames, for checking)
  *   options: --fps 60  --workers 4  --chrome <path>
  *
@@ -30,6 +31,8 @@ const opt = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i === -1 ? fallback : args[i + 1];
 };
+const FILM = opt('film', 'promo');
+const [VW, VH] = FILM === 'reel' ? [1080, 1920] : [1920, 1080];
 const FPS = Number(opt('fps', 60));
 const WORKERS = Number(opt('workers', 4));
 const stills = opt('stills', null)?.split(',').map(Number);
@@ -56,7 +59,7 @@ const server = createServer((req, res) => {
   createReadStream(file).pipe(res);
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const url = `http://127.0.0.1:${server.address().port}/`;
+const url = `http://127.0.0.1:${server.address().port}/?film=${FILM}`;
 
 /* ── the virtual clock, installed before any page script runs ── */
 const SHIM = `(() => {
@@ -109,7 +112,7 @@ async function openPage() {
     args: ['--hide-scrollbars', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--force-color-profile=srgb', '--font-render-hinting=none']
   });
   const [page] = await browser.pages();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+  await page.setViewport({ width: VW, height: VH, deviceScaleFactor: 1 });
   await page.evaluateOnNewDocument(SHIM);
   page.on('pageerror', e => console.error('page error:', e.message));
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
@@ -155,7 +158,7 @@ if (stills) {
   const want = [...stills].sort((a, b) => a - b).map(s => Math.round(s * FPS));
   for (let f = 0; f <= want[want.length - 1]; f++) {
     if (want.includes(f)) {
-      const file = join(out, `still-${(f / FPS).toFixed(2).replace(/\.?0+$/, '')}.png`);
+      const file = join(out, `still-${FILM === 'reel' ? 'r' : ''}${(f / FPS).toFixed(2).replace(/\.?0+$/, '')}.png`);
       writeFileSync(file, await shoot(cdp, 'png'));
       console.log('wrote', file);
     }
@@ -167,7 +170,7 @@ if (stills) {
 }
 
 /* ── the film: slices in parallel, each piped to its own ffmpeg ── */
-const tmp = join(out, 'parts');
+const tmp = join(out, `parts-${FILM}`);
 if (!RESUME) rmSync(tmp, { recursive: true, force: true });
 mkdirSync(tmp, { recursive: true });
 const per = Math.ceil(FRAMES / WORKERS);
@@ -212,16 +215,16 @@ server.close();
 
 const list = join(tmp, 'list.txt');
 writeFileSync(list, parts.map(p => `file '${p.replace(/\\/g, '/')}'`).join('\n'));
-const silent = join(out, 'lowkei-promo-silent.mp4');
+const silent = join(out, `lowkei-${FILM}-silent.mp4`);
 await run('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', '-movflags', '+faststart', silent]);
 
-const score = join(out, 'score.wav');
-const final = join(out, 'lowkei-promo.mp4');
+const score = join(out, `score-${FILM}.wav`);
+const final = join(out, `lowkei-${FILM}.mp4`);
 if (existsSync(score)) {
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', score, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', final]);
   console.log('wrote', final);
 } else {
-  console.log('wrote', silent, '(no out/score.wav — run scripts/score.mjs for sound)');
+  console.log('wrote', silent, `(no score — run: node scripts/score.mjs ${FILM})`);
 }
 console.log(`${FRAMES} frames in ${Math.round((Date.now() - started) / 1000)} s`);
 

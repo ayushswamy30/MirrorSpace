@@ -9,7 +9,8 @@ import '@fontsource/dm-mono/500.css';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './App';
-import { ClockProvider } from './timeline';
+import { Reel } from './Reel';
+import { ClockProvider, FILM } from './timeline';
 import { ART_NAMES, artUrl } from './ui';
 
 /**
@@ -44,7 +45,7 @@ async function preload() {
 preload().then(() => {
   createRoot(document.getElementById('root')).render(
     <ClockProvider>
-      <App />
+      {FILM === 'reel' ? <Reel /> : <App />}
     </ClockProvider>
   );
   window.__ready = true;
