@@ -192,11 +192,15 @@ async function worker(w) {
     stdio: ['pipe', 'inherit', 'inherit']
   });
   const finished = new Promise((res, rej) => ff.on('close', code => (code === 0 ? res() : rej(new Error(`ffmpeg exited ${code}`)))));
+  finished.catch(() => undefined);
+  let shot = 0;
+  try {
   for (let f = 0; f < to; f++) {
     if (f >= from) {
       const jpg = await shoot(cdp, 'jpeg');
       if (!ff.stdin.write(jpg)) await new Promise(r => ff.stdin.once('drain', r));
       done++;
+      shot++;
       if (done % 120 === 0) {
         const rate = done / ((Date.now() - started) / 1000);
         console.log(`${done}/${FRAMES} frames · ${rate.toFixed(1)} fps · ~${Math.round((FRAMES - done) / rate)} s left`);
@@ -204,13 +208,35 @@ async function worker(w) {
     }
     await page.evaluate(ms => window.__frame(ms), step);
   }
+  } catch (e) {
+    // Let go of this slice's encoder and browser before it is tried again.
+    done -= shot;
+    ff.stdin.destroy();
+    ff.kill();
+    await finished.catch(() => undefined);
+    await browser.close();
+    throw e;
+  }
   ff.stdin.end();
   await finished;
   await browser.close();
   return part;
 }
 
-const parts = (await Promise.all(Array.from({ length: WORKERS }, (_, w) => worker(w)))).filter(Boolean);
+// A browser can die mid-slice (memory, a crashed tab); the slice is then
+// rendered again from its start, up to three tries.
+async function withRetry(w) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await worker(w);
+    } catch (e) {
+      if (attempt >= 3) throw e;
+      console.warn(`slice ${w} failed (${e.message.split('\n')[0]}); retrying`);
+    }
+  }
+}
+
+const parts = (await Promise.all(Array.from({ length: WORKERS }, (_, w) => withRetry(w)))).filter(Boolean);
 server.close();
 
 const list = join(tmp, 'list.txt');
