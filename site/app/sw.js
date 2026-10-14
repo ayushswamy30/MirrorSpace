@@ -22,15 +22,24 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || url.origin !== location.origin || !url.pathname.startsWith('/app')) return;
 
   if (request.mode === 'navigate') {
+    // A connection that hangs (rather than failing) would leave the app on a
+    // blank screen, so after a few seconds the saved copy opens instead; the
+    // network answer, when it comes, is still saved for next time.
+    const network = fetch(request).then(response => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE).then(c => c.put('/app', copy));
+      }
+      return response;
+    });
+    const saved = () => caches.match('/app');
+    const slow = new Promise(resolve => setTimeout(resolve, 4000)).then(saved);
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE).then(c => c.put('/app', copy));
-          return response;
-        })
-        .catch(() => caches.match('/app'))
+      Promise.race([network, slow.then(hit => hit || network)]).catch(() =>
+        saved().then(hit => hit || network)
+      )
     );
+    event.waitUntil(network.catch(() => {}));
     return;
   }
 
