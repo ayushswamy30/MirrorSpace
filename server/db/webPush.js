@@ -14,7 +14,9 @@ export async function save(userId, { endpoint, p256dh, auth }, alerts, schedule)
   unwrap(await supabase.from('web_push_schedule').delete().eq('endpoint', endpoint), 'webPush.clearSchedule');
   if (schedule.length > 0) {
     unwrap(
-      await supabase.from('web_push_schedule').insert(schedule.map(({ kind, sendAt }) => ({ endpoint, kind, send_at: sendAt }))),
+      await supabase
+        .from('web_push_schedule')
+        .insert(schedule.map(({ kind, sendAt, title, body }) => ({ endpoint, kind, send_at: sendAt, title: title ?? null, body: body ?? null }))),
       'webPush.schedule'
     );
   }
@@ -47,7 +49,7 @@ export async function due(now, limit = 500) {
   return unwrap(
     await supabase
       .from('web_push_schedule')
-      .select('id, kind, send_at, subscription:web_push_subscriptions (endpoint, p256dh, auth)')
+      .select('id, kind, send_at, title, body, subscription:web_push_subscriptions (endpoint, p256dh, auth)')
       .lte('send_at', now.toISOString())
       .order('send_at')
       .limit(limit),

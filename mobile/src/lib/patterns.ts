@@ -1,4 +1,5 @@
 import type { CheckIn } from './checkIns';
+import { generalReading, writeReading, type PageLike, type Reading } from './reading';
 import { formatDuration, type SleepLog } from './sleep';
 import type { Weather } from '@/theme/tokens';
 
@@ -198,64 +199,7 @@ export function sleepFacts(logs: readonly SleepLog[], checkIns: readonly CheckIn
 // ---------------------------------------------------------------------------
 // The reading
 
-export type Reading = {
-  headline: string;
-  subtext: string;
-  dos: readonly string[];
-  donts: readonly string[];
-};
-
-const BY_WEATHER: Record<Weather, Omit<Reading, 'subtext'> & { fallback: string }> = {
-  clear: {
-    headline: 'Let it be easy.',
-    fallback: 'Things have been light lately. Notice what’s helping, so you can find it again.',
-    dos: ['Saying yes', 'Daylight', 'Starting something'],
-    donts: ['Overbooking', 'Skipping rest', 'Dimming it']
-  },
-  mild: {
-    headline: 'Keep the pace you’ve found.',
-    fallback: 'Steady is its own kind of good. Nothing needs fixing today.',
-    dos: ['Routine', 'A long walk', 'One tidy corner'],
-    donts: ['Overplanning', 'Screens in bed', 'Rushing']
-  },
-  overcast: {
-    headline: 'Go gently today.',
-    fallback: 'Not bad, not bright. The kind of day that goes better with less asked of it.',
-    dos: ['An early night', 'A friend’s voice', 'Something warm'],
-    donts: ['Comparisons', 'Skipping meals', 'The news, twice']
-  },
-  fog: {
-    headline: 'Small steps count.',
-    fallback: 'Low and heavy lately. You don’t have to see far ahead — just the next small thing.',
-    dos: ['Water', 'Ten minutes outside', 'One small task'],
-    donts: ['Big decisions', 'Endless scrolling', 'Late nights']
-  },
-  storm: {
-    headline: 'Put something down first.',
-    fallback: 'A lot of charge, not much ease. Let it settle before you act on it.',
-    dos: ['Slow breaths out', 'Moving your body', 'Writing it down'],
-    donts: ['Sending that message', 'More caffeine', 'Arguing at night']
-  }
-};
-
-/** For when readings are off, or there is nothing to read yet. */
-export const GENERAL_READING: Reading = {
-  headline: 'Notice one thing today.',
-  subtext: 'How you slept, what you ate, who you talked to. Noticing is where patterns start.',
-  dos: ['Checking in', 'Daylight', 'A slow breath'],
-  donts: ['Rushing past it', 'Judging it', 'Keeping score']
-};
-
-export function buildReading(weather: Weather | null, leading: Fact | undefined): Reading {
-  if (!weather) return GENERAL_READING;
-  const base = BY_WEATHER[weather];
-  return {
-    headline: base.headline,
-    subtext: leading && leading.key !== 'days' ? leading.text : base.fallback,
-    dos: base.dos,
-    donts: base.donts
-  };
-}
+export { GENERAL_READING, type Reading } from './reading';
 
 export type Today = {
   weather: Weather | null;
@@ -281,17 +225,35 @@ export function today(
     sleep?: readonly SleepLog[];
     /** Facts found elsewhere on the phone — the body's, from Health Connect. */
     extra?: readonly Fact[];
+    /** Pages kept, so the reading can know what has been on their mind. */
+    pages?: readonly PageLike[];
+    /** Whose day it is (the account id): two people never read the same. */
+    seed?: string;
   }
 ): Today {
   const now = opts.now ?? new Date();
   const sleep = opts.sleep ?? [];
   const checkedInToday = checkIns.some(c => c.localDate === opts.todayDate);
   const lastNight = sleep.find(l => l.wakeDate === opts.todayDate) ?? null;
-  if (!opts.personal) return { weather: null, reading: GENERAL_READING, facts: [], checkedInToday, lastNight };
+  const seed = opts.seed ?? '';
+  if (!opts.personal) {
+    return { weather: null, reading: generalReading(seed, opts.todayDate), facts: [], checkedInToday, lastNight };
+  }
 
   const weather = innerWeather(checkIns, now);
   const found = [...facts(checkIns, now), ...sleepFacts(sleep, checkIns, now), ...(opts.extra ?? [])].sort(
     (a, b) => b.weight - a.weight
   );
-  return { weather, reading: buildReading(weather, found[0]), facts: found, checkedInToday, lastNight };
+  const reading = writeReading({
+    weather,
+    facts: found,
+    checkIns: checkIns.filter(c => new Date(c.createdAt).getTime() <= now.getTime()),
+    sleep,
+    lastNight,
+    pages: (opts.pages ?? []).filter(p => new Date(p.createdAt).getTime() <= now.getTime()),
+    now,
+    date: opts.todayDate,
+    seed
+  });
+  return { weather, reading, facts: found, checkedInToday, lastNight };
 }

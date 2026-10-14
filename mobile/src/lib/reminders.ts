@@ -2,18 +2,20 @@ import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { allCheckIns, localDate, type CheckIn } from './checkIns';
+import { dailyNoteWanted, noteForNow, saveDailyNote, upcomingNotes, type DailyNote } from './dailyNote';
 import { kv } from './db/kv';
 import { inExpoGo } from './runtime';
-import { askWebPush, sendWebTest, syncWebPush, webPushSupported } from './webPush';
+import { askWebPush, sendWebTest, syncWebPush, webPushAllowed, webPushSupported } from './webPush';
 
 /**
  * The daily reminder (report §5: "timed to the user's rhythm, never more than
- * one a day by default"). Off until asked for.
+ * one a day by default"), off until asked for, and the 11:11 daily note
+ * (dailyNote.ts), on once notifications are allowed.
  *
- * Only ever one reminder is pending: the next usual check-in time that isn't
- * on a day already checked in. It is rescheduled whenever the app opens or a
- * check-in lands, so a week away brings one gentle nudge, not seven — and
- * never a streak or a guilt line.
+ * A week of each is handed over at a time, so they keep arriving on days the
+ * app isn't opened: the reminder at the usual check-in time — skipping today
+ * once there's a check-in — and the note at 11:11. Both are rewritten
+ * whenever the app opens or a check-in lands. Never a streak or a guilt line.
  *
  * expo-notifications throws as soon as it loads in Expo Go on Android (it was
  * removed there in SDK 53), so it is loaded only in Lowkei's own build. The
@@ -24,6 +26,8 @@ import { askWebPush, sendWebTest, syncWebPush, webPushSupported } from './webPus
 const ENABLED_KEY = 'reminder.enabled';
 const CHANNEL = 'reminders';
 const STEP = 15;
+const DAYS_AHEAD = 7;
+const REMINDER_TEXT = 'A word for today, if you have one.';
 
 export const DEFAULT_TIME = 21 * 60;
 
@@ -69,6 +73,12 @@ export function nextReminder(time: number, checkedInToday: boolean, now: Date = 
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, time);
 }
 
+/** The reminder for each of the next `days` days, starting with the next one. */
+export function nextReminders(time: number, checkedInToday: boolean, now: Date = new Date(), days = DAYS_AHEAD): Date[] {
+  const first = nextReminder(time, checkedInToday, now);
+  return Array.from({ length: days }, (_, i) => new Date(first.getFullYear(), first.getMonth(), first.getDate() + i, 0, time));
+}
+
 export async function remindersEnabled(): Promise<boolean> {
   return remindersSupported && (await kv.get(ENABLED_KEY)) === '1';
 }
@@ -102,13 +112,49 @@ export async function disableReminders(): Promise<void> {
   if (N) await cancelReminder(N);
 }
 
+async function notificationsAllowed(): Promise<boolean> {
+  if (webPushSupported) return webPushAllowed();
+  const N = notifications();
+  return N ? (await N.getPermissionsAsync()).granted : false;
+}
+
+/** The 11:11 note: wanted, and notifications allowed. */
+export async function dailyNoteEnabled(): Promise<boolean> {
+  return remindersSupported && (await dailyNoteWanted()) && (await notificationsAllowed());
+}
+
+/** Asks for notifications if need be (first thing, for iPhone), then schedules the week's notes. */
+export async function enableDailyNote(): Promise<boolean> {
+  if (webPushSupported) {
+    if (!(await askWebPush())) return false;
+  } else {
+    const N = notifications();
+    if (!N) return false;
+    const granted = (await N.getPermissionsAsync()).granted || (await N.requestPermissionsAsync()).granted;
+    if (!granted) return false;
+  }
+  await saveDailyNote(true);
+  await syncReminder();
+  return true;
+}
+
+export async function disableDailyNote(): Promise<void> {
+  await saveDailyNote(false);
+  await syncReminder();
+}
+
 /**
- * Only the reminder. Letters' and reflections' notices name where a tap goes
- * and keep their day; the reminder (and the test) name nowhere.
+ * The reminders and the daily notes. Letters' and reflections' notices name
+ * where a tap goes and keep their day; reminders name nowhere, and notes say
+ * they are notes.
  */
 async function cancelReminder(N: typeof NotificationsModule): Promise<void> {
   const pending = await N.getAllScheduledNotificationsAsync();
-  await Promise.all(pending.filter(p => !p.content.data?.url).map(p => N.cancelScheduledNotificationAsync(p.identifier)));
+  await Promise.all(
+    pending
+      .filter(p => !p.content.data?.url || p.content.data?.kind === 'daily')
+      .map(p => N.cancelScheduledNotificationAsync(p.identifier))
+  );
 }
 
 /**
@@ -134,49 +180,65 @@ async function ensureChannel(N: typeof NotificationsModule): Promise<void> {
 }
 
 /**
- * The same reminder, a few seconds from now, so the person can see what it
- * looks like and that it arrives. It doesn't touch the scheduled one.
+ * Today's note, a few seconds from now, so the person can see what one looks
+ * like and that it arrives. It doesn't touch the scheduled ones. The system
+ * already shows the app's name, so the title is the note itself.
  */
 export async function sendTestReminder(seconds = 5): Promise<boolean> {
-  if (webPushSupported) return (await remindersEnabled()) && sendWebTest();
+  if (!(await remindersEnabled()) && !(await dailyNoteEnabled())) return false;
+  const note = await noteForNow();
+  if (webPushSupported) return sendWebTest(note);
   const N = notifications();
-  if (!N || !(await remindersEnabled())) return false;
+  if (!N) return false;
   await ensureChannel(N);
   await N.scheduleNotificationAsync({
-    content: { title: 'Lowkei', body: 'A word for today, if you have one.', data: { test: true } },
+    content: { title: note.title, body: note.body, data: { test: true } },
     trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: CHANNEL }
   });
   return true;
 }
 
-async function nextFor(now: Date): Promise<Date> {
+async function remindersFor(now: Date): Promise<Date[]> {
   const checkIns = await allCheckIns();
-  return nextReminder(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
+  return nextReminders(usualTime(checkIns, now), checkIns.some(c => c.localDate === localDate(now)), now);
+}
+
+async function notesFor(now: Date): Promise<DailyNote[]> {
+  return (await dailyNoteEnabled()) ? upcomingNotes(now).catch(() => []) : [];
 }
 
 /**
- * Replaces whatever reminder is pending with the one right reminder, or none.
- * On the web app this also hands the server the sealed letters' days, and
- * keeps Circle alerts' address current, whether reminders are on or not.
+ * Replaces whatever reminders and notes are pending with the week's right
+ * ones, or none; returns when the next reminder is. On the web app this also
+ * hands the server the sealed letters' days, and keeps Circle alerts' address
+ * current, whether reminders are on or not.
  */
 export async function syncReminder(now: Date = new Date()): Promise<Date | null> {
   if (webPushSupported) {
-    const next = (await remindersEnabled()) ? await nextFor(now) : null;
-    await syncWebPush(next, now);
-    return next;
+    const reminders = (await remindersEnabled()) ? await remindersFor(now) : [];
+    await syncWebPush({ reminders, notes: await notesFor(now) }, now);
+    return reminders[0] ?? null;
   }
   const N = notifications();
   if (!N) return null;
   await cancelReminder(N);
-  if (!(await remindersEnabled())) return null;
+  const reminders = (await remindersEnabled()) ? await remindersFor(now) : [];
+  const notes = await notesFor(now);
+  if (reminders.length === 0 && notes.length === 0) return null;
 
   await ensureChannel(N);
-
-  const at = await nextFor(now);
-  await N.scheduleNotificationAsync({
-    // Nothing personal on a lock screen: no feeling, no count, no streak.
-    content: { title: 'Lowkei', body: 'A word for today, if you have one.' },
-    trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL }
-  });
-  return at;
+  for (const at of reminders) {
+    await N.scheduleNotificationAsync({
+      // Nothing personal: no feeling, no count, no streak. The system shows the app's name.
+      content: { title: REMINDER_TEXT },
+      trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL }
+    });
+  }
+  for (const note of notes) {
+    await N.scheduleNotificationAsync({
+      content: { title: note.title, body: note.body, data: { kind: 'daily', url: '/' } },
+      trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: note.at, channelId: CHANNEL }
+    });
+  }
+  return reminders[0] ?? null;
 }

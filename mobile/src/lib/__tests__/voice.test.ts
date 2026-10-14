@@ -30,8 +30,13 @@ test('ready only with on-device recognition, an installed model and the micropho
   expect(await voiceReadiness()).toBe('no-permission');
 });
 
-test('in the browser preview it never loads the native module', async () => {
+test('in a browser it uses the browser’s own speech, never the native module', async () => {
   jest.replaceProperty(Platform, 'OS', 'web');
-  expect(await voiceReadiness()).toBe('needs-app-build');
+  const w = window as unknown as { webkitSpeechRecognition?: unknown };
+  expect(await voiceReadiness()).toBe('unavailable');
+
+  w.webkitSpeechRecognition = function Recognizer() {};
+  expect(await voiceReadiness()).toBe('ready');
+  delete w.webkitSpeechRecognition;
   expect(mockModule.isRecognitionAvailable).not.toHaveBeenCalled();
 });

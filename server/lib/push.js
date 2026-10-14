@@ -39,8 +39,8 @@ export function buildBatches(tokens, kind) {
   if (!message) throw new Error(`unknown push kind: ${kind}`);
   const all = tokens.map(to => ({
     to,
-    title: 'Lowkei',
-    body: message.body,
+    // The phone already shows the app's name; the title is what it says.
+    title: message.body,
     sound: 'default',
     channelId: 'circle',
     // Where a tap goes, and nothing else.

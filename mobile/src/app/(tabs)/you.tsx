@@ -20,7 +20,10 @@ import { databaseEncryption } from '@/lib/db/database';
 import { healthConnected, healthPlatform } from '@/lib/health';
 import type { Appearance } from '@/lib/appearance';
 import {
+  dailyNoteEnabled,
+  disableDailyNote,
   disableReminders,
+  enableDailyNote,
   enableReminders,
   remindersEnabled,
   remindersSupported,
@@ -56,12 +59,16 @@ export default function You() {
   const [leaving, setLeaving] = useState<'idle' | 'confirm' | 'leaving'>('idle');
   const [pending, setPending] = useState<Partial<Record<ConsentPurpose, boolean>>>({});
   const [reminder, setReminder] = useState(false);
+  const [dailyNote, setDailyNote] = useState(false);
   const [alerts, setAlerts] = useState(false);
   const [health, setHealth] = useState(false);
 
   useEffect(() => {
     remindersEnabled()
       .then(setReminder)
+      .catch(() => undefined);
+    dailyNoteEnabled()
+      .then(setDailyNote)
       .catch(() => undefined);
     webAlertsOn()
       .then(setAlerts)
@@ -110,6 +117,23 @@ export default function You() {
     }
   };
 
+  const toggleDailyNote = async (on: boolean) => {
+    setNote(null);
+    try {
+      if (on) {
+        const allowed = await enableDailyNote();
+        setDailyNote(allowed);
+        if (!allowed) setNote('Notifications are off for Lowkei in your phone’s settings.');
+      } else {
+        await disableDailyNote();
+        setDailyNote(false);
+      }
+    } catch (err) {
+      console.error('Daily note change failed:', err);
+      setNote('That didn’t work. Nothing changed.');
+    }
+  };
+
   const toggleAlerts = async (on: boolean) => {
     setNote(null);
     try {
@@ -125,7 +149,7 @@ export default function You() {
   const testReminder = async () => {
     setNote(null);
     try {
-      if (await sendTestReminder()) setNote('A test reminder is on its way — give it five seconds.');
+      if (await sendTestReminder()) setNote('Today’s note is on its way — give it five seconds.');
     } catch (err) {
       console.error('Test reminder failed:', err);
       setNote('The test reminder didn’t go out.');
@@ -236,6 +260,19 @@ export default function You() {
 
       <SettingGroup title="Notifications">
         <SettingRow
+          title="Daily note · 11:11"
+          subtitle={
+            remindersSupported
+              ? 'A short reflection or a heads-up for your day, every morning at 11:11 your time'
+              : needsHomeScreen
+                ? 'Add Lowkei to your Home Screen first, then open it from there (on iPhone, iOS 16.4 or later)'
+                : 'Needs Lowkei’s own app build — Expo Go and the preview can’t send them'
+          }
+          value={dailyNote}
+          onValueChange={toggleDailyNote}
+          disabled={!remindersSupported}
+        />
+        <SettingRow
           title="Daily reminder"
           subtitle={
             remindersSupported
@@ -248,8 +285,8 @@ export default function You() {
           onValueChange={toggleReminder}
           disabled={!remindersSupported}
         />
-        {reminder && (
-          <SettingLink title="Send a test" subtitle="See one arrive in five seconds" onPress={testReminder} />
+        {(reminder || dailyNote) && (
+          <SettingLink title="Send a test" subtitle="Today’s note, in five seconds" onPress={testReminder} />
         )}
         {webPushSupported && (
           <SettingRow

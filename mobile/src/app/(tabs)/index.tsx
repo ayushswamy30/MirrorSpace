@@ -159,6 +159,7 @@ function TodayPage({
         <DoDont dos={reading.dos} donts={reading.donts} />
         <ShareButton
           label="share today’s reading"
+          shareKey={[shortDate(), picture, reading.headline, ...reading.dos, ...reading.donts].join('|')}
           card={<ReadingCard reading={reading} art={picture === 'daily' ? artOfTheDay() : picture} date={shortDate()} />}
         />
         {!checkedInToday && (

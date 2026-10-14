@@ -20,6 +20,8 @@ jest.mock('@/lib/voice', () => ({
   setReadAloud: async () => undefined,
   speak: (t: string) => mockSpeak(t),
   stopSpeaking: () => undefined,
+  primeSpeech: () => undefined,
+  WEB_VOICE_NOTE: 'browser note',
   voiceReadiness: () => mockReadiness(),
   downloadVoiceModel: async () => true,
   useListening: () => ({ listening: false, partial: '', start: mockListenStart, stop: jest.fn(), error: null })

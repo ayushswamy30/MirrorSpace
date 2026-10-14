@@ -74,7 +74,13 @@ function WrappedPage() {
         </Section>
       ))}
 
-      {w.checkedIn > 0 && <ShareButton label="share it" card={<WrappedCard story={story} label={w.span.label} />} />}
+      {w.checkedIn > 0 && (
+        <ShareButton
+          label="share it"
+          shareKey={`${w.span.label}|${story.map(s => s.title).join('|')}`}
+          card={<WrappedCard story={story} label={w.span.label} />}
+        />
+      )}
 
       <EndMark />
     </Screen>
