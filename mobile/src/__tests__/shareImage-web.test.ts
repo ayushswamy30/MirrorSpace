@@ -1,6 +1,6 @@
-jest.mock('html2canvas', () => jest.fn());
-
 import { shareImage } from '@/lib/shareImage.web';
+
+jest.mock('html2canvas', () => jest.fn());
 
 const refused = Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' });
 
