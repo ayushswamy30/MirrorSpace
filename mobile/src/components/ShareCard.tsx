@@ -166,7 +166,7 @@ export function ShareButton({ label, card, shareKey = label }: { label: string; 
     const ready = drawn.current?.key === shareKey ? drawn.current.blob : null;
     try {
       if (!ready) setBusy(true);
-      const result = await shareImage(ready ?? (await draw()));
+      const result = await shareImage(ready ?? (await draw()), 'lowkei.png', !ready);
       if (result === 'saved') setNote('Saved the card as a picture.');
       if (result === 'needs-tap') setNote('The card is ready — tap share once more.');
     } catch (err) {

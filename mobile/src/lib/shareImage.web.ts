@@ -36,8 +36,13 @@ export async function renderCard(node: unknown, paper: string): Promise<Blob> {
 
 export type ShareResult = 'shared' | 'saved' | 'cancelled' | 'needs-tap';
 
-/** Opens the share sheet with the picture, or saves it where sharing files isn't possible. */
-export async function shareImage(blob: Blob, name = 'lowkei.png'): Promise<ShareResult> {
+/**
+ * Opens the share sheet with the picture, or saves it where sharing files
+ * isn't possible. `waited` says the card was drawn after the tap, so a
+ * refusal may only mean the tap went stale; otherwise a refusal is the
+ * browser's answer (some desktop browsers refuse files) and the picture is saved.
+ */
+export async function shareImage(blob: Blob, name = 'lowkei.png', waited = false): Promise<ShareResult> {
   const file = new File([blob], name, { type: 'image/png' });
   if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [file] })) {
     try {
@@ -47,8 +52,8 @@ export async function shareImage(blob: Blob, name = 'lowkei.png'): Promise<Share
       const kind = (error as { name?: string }).name;
       if (kind === 'AbortError') return 'cancelled';
       // The tap was too long ago (the card was still being drawn): ask for another.
-      if (kind === 'NotAllowedError') return 'needs-tap';
-      throw error;
+      if (kind === 'NotAllowedError' && waited) return 'needs-tap';
+      if (kind !== 'NotAllowedError') throw error;
     }
   }
   const url = URL.createObjectURL(blob);

@@ -11,6 +11,6 @@ export async function renderCard(_node: unknown, _paper: string): Promise<Blob> 
   throw new Error('Cards are drawn this way only on the web');
 }
 
-export async function shareImage(_blob: Blob, _name?: string): Promise<ShareResult> {
+export async function shareImage(_blob: Blob, _name?: string, _waited?: boolean): Promise<ShareResult> {
   throw new Error('Cards are shared this way only on the web');
 }
