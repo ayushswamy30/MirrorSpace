@@ -8,12 +8,15 @@ import { askWebPush, sendWebTest, syncWebPush } from '../webPush';
 // The web app opened from a Home Screen: the server sends what a phone would schedule.
 jest.mock('../webPush', () => ({
   webPushSupported: true,
+  webPushAllowed: jest.fn(() => true),
   askWebPush: jest.fn(() => Promise.resolve(true)),
   syncWebPush: jest.fn(() => Promise.resolve(true)),
   sendWebTest: jest.fn(() => Promise.resolve(true))
 }));
 jest.mock('../db/kv', () => ({ kv: { get: jest.fn(), set: jest.fn() } }));
 jest.mock('../checkIns', () => ({ ...jest.requireActual('../checkIns'), allCheckIns: jest.fn(() => Promise.resolve([])) }));
+jest.mock('../sleep', () => ({ ...jest.requireActual('../sleep'), allSleep: jest.fn(() => Promise.resolve([])) }));
+jest.mock('../vents', () => ({ ...jest.requireActual('../vents'), listVents: jest.fn(() => Promise.resolve([])) }));
 
 const NOW = new Date(2026, 9, 12, 12, 0);
 
@@ -23,21 +26,28 @@ test('on a Home Screen, reminders are supported', () => {
   expect(remindersSupported).toBe(true);
 });
 
-test('the server is told the next reminder; nothing is scheduled on the device', async () => {
+test('the server is told the week’s reminders and 11:11 notes; nothing is scheduled on the device', async () => {
   jest.mocked(kv.get).mockResolvedValue('1');
   jest.mocked(allCheckIns).mockResolvedValue([]);
 
   const when = await syncReminder(NOW);
 
   expect(when).toEqual(new Date(2026, 9, 12, 21, 0));
-  expect(syncWebPush).toHaveBeenCalledWith(when, NOW);
+  const [week, now] = jest.mocked(syncWebPush).mock.calls[0];
+  expect(now).toBe(NOW);
+  expect(week.reminders).toHaveLength(7);
+  expect(week.reminders[0]).toEqual(when);
+  expect(week.notes).toHaveLength(7);
+  expect(week.notes[0].at).toEqual(new Date(2026, 9, 13, 11, 11));
+  expect(week.notes[0].title).toBeTruthy();
+  expect(week.notes[0].body).toBeTruthy();
   expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 });
 
-test('with reminders off, the server still gets the address and letters, with no reminder', async () => {
+test('with everything off, the server still gets the address and letters, with no reminders or notes', async () => {
   jest.mocked(kv.get).mockResolvedValue('0');
   expect(await syncReminder(NOW)).toBeNull();
-  expect(syncWebPush).toHaveBeenCalledWith(null, NOW);
+  expect(syncWebPush).toHaveBeenCalledWith({ reminders: [], notes: [] }, NOW);
 });
 
 test('switching on asks the browser before anything else', async () => {
@@ -58,15 +68,15 @@ test('switching off clears the reminder on the server', async () => {
   jest.mocked(kv.get).mockResolvedValue('0');
   await disableReminders();
   expect(kv.set).toHaveBeenCalledWith('reminder.enabled', '0');
-  expect(syncWebPush).toHaveBeenCalledWith(null, expect.any(Date));
+  expect(syncWebPush).toHaveBeenCalledWith({ reminders: [], notes: [] }, expect.any(Date));
 });
 
-test('the test reminder comes from the server, only once reminders are on', async () => {
+test('the test — today’s note — comes from the server, only once something is on', async () => {
   jest.mocked(kv.get).mockResolvedValue('0');
   expect(await sendTestReminder()).toBe(false);
   expect(sendWebTest).not.toHaveBeenCalled();
 
   jest.mocked(kv.get).mockResolvedValue('1');
   expect(await sendTestReminder()).toBe(true);
-  expect(sendWebTest).toHaveBeenCalled();
+  expect(sendWebTest).toHaveBeenCalledWith(expect.objectContaining({ title: expect.any(String), body: expect.any(String) }));
 });

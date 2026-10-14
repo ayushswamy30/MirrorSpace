@@ -51,10 +51,13 @@ self.addEventListener('fetch', event => {
   }
 });
 
-// Notifications, for the app on a Home Screen: the daily reminder, a letter's
-// day, a reflection that is ready, Circle alerts. The server sends a title, a line and where a tap goes —
-// nothing else (server/lib/webPush.js). Every push shows something: iPhone
-// stops delivering to a web app that receives pushes silently.
+// Notifications, for the app on a Home Screen: the 11:11 daily note, the
+// daily reminder, a letter's day, a reflection that is ready, Circle alerts.
+// The server sends what it says (a title, sometimes a line under it) and where
+// a tap goes — nothing else (server/lib/webPush.js). The phone already shows
+// the app's name and icon, so the title is the message, not "Lowkei" again.
+// Every push shows something: iPhone stops delivering to a web app that
+// receives pushes silently.
 
 const OPENABLE = ['/', '/circle', '/check-in?mode=letter', '/check-in?mode=vent'];
 
@@ -65,14 +68,13 @@ self.addEventListener('push', event => {
   } catch {
     message = {};
   }
-  event.waitUntil(
-    self.registration.showNotification(message.title || 'Lowkei', {
-      body: message.body || 'Something is waiting for you.',
-      icon: '/app/icon-192.png',
-      tag: message.tag,
-      data: { url: OPENABLE.includes(message.url) ? message.url : '/' }
-    })
-  );
+  const options = {
+    icon: '/app/icon-192.png',
+    tag: message.tag,
+    data: { url: OPENABLE.includes(message.url) ? message.url : '/' }
+  };
+  if (message.body) options.body = message.body;
+  event.waitUntil(self.registration.showNotification(message.title || 'Something is waiting for you.', options));
 });
 
 self.addEventListener('notificationclick', event => {
