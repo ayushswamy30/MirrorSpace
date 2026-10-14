@@ -29,7 +29,7 @@
 <main>
 
 <h1>Privacy Policy</h1>
-<p class="meta">Lowkei · Effective 12 October 2026 · Version 2026-10-12</p>
+<p class="meta">Lowkei · Effective 14 October 2026 · Version 2026-10-14</p>
 
 <div class="short">
   <p><strong>The short version</strong></p>
@@ -60,7 +60,7 @@
 <p>Because this data is on your device, we cannot see it, recover it, or move it to a new phone for you. If you uninstall the app or lose the phone, it is gone. Use “Download everything” to keep a copy.</p>
 
 <h3>Using Lowkei in a browser</h3>
-<p>On iPhone, and anywhere else you open Lowkei at getlowkei.vercel.app/app, the same things are kept in that browser’s storage on your device instead. They are still not uploaded. A browser can’t use SQLCipher, so this copy is not encrypted by Lowkei: protect the device with a passcode, and know that clearing the browser’s website data deletes it. Voice and Health Connect aren’t available in the browser version.</p>
+<p>On iPhone, and anywhere else you open Lowkei at getlowkei.vercel.app/app, the same things are kept in that browser’s storage on your device instead. They are still not uploaded. A browser can’t use SQLCipher, so this copy is not encrypted by Lowkei: protect the device with a passcode, and know that clearing the browser’s website data deletes it. Health Connect isn’t available in the browser version, and voice works differently there (section 4).</p>
 
 <h2>2. What our server holds</h2>
 <p>You sign up with your email address; it is how you sign in, with a six-digit code, on any phone. Our server stores:</p>
@@ -72,7 +72,7 @@
   <tr><td>When you confirmed you are 18 or older, and when you saw the AI disclosure</td><td>To show we asked before you started.</td></tr>
   <tr><td>Each consent you give or withdraw: which one, yes or no, the policy version, and when</td><td>To honour your choices, and to show we did, as the DPDP Act requires.</td></tr>
   <tr><td>A push notification token for your phone, if you allow notifications for Circle</td><td>To tell you when someone in your circle reaches out.</td></tr>
-  <tr><td>If you use Lowkei from your Home Screen and allow notifications: your browser’s push address, and the times of your next daily reminder and of each sealed letter’s day</td><td>To send those notifications, which a browser can’t schedule by itself. Only the times — never what you wrote or what a letter says.</td></tr>
+  <tr><td>If you use Lowkei from your Home Screen and allow notifications: your browser’s push address; the times of the coming week’s daily reminders, of each sealed letter’s day and of each waiting reflection; and the coming week’s 11:11 daily notes — for each, its time and its two short lines (a headline and one sentence)</td><td>To send those notifications, which a browser can’t schedule by itself. The daily notes are written on your device from your own days. They may say what a day is about — a short night, “work” coming up a lot — but never a feeling word you chose, never anything you wrote, and never what a letter says.</td></tr>
 </table>
 
 <h3>Circle — only if you use it</h3>
@@ -99,6 +99,7 @@
 
 <h2>4. Voice</h2>
 <p>When you tap speak in the Mirror, your phone turns your speech into text using its own on-device speech recognition. Lowkei does not record audio, and no audio is sent to us or to anyone else. If you then send the text to the Mirror, it is handled as in section 3. Answers read aloud are spoken by your phone’s own text-to-speech.</p>
+<p>In the browser version, your browser does the listening instead (on iPhone, Apple’s dictation — the same as the keyboard’s microphone), and it may send your voice to its maker’s speech service to turn it into text, under their terms. The audio never reaches Lowkei; only the words, if you then send them. Answers read aloud use the browser’s own voice.</p>
 
 <h2>5. Health Connect</h2>
 <p>On Android, Lowkei can read from Health Connect, but only with your permission, which you can withdraw in Health Connect at any time:</p>
@@ -110,8 +111,8 @@
 <p>Lowkei’s use of information received from Health Connect adheres to the Health Connect Permissions policy, including its Limited Use requirements. We do not use it for advertising, do not sell it, and do not use it to decide whether you are eligible for credit, insurance or anything else.</p>
 
 <h2>6. Notifications</h2>
-<p>In the app, the daily reminder and a letter’s notice are scheduled on your phone; no server is involved. Circle alerts are sent from our server through Expo’s push service and Google’s Firebase Cloud Messaging. They contain no names, feelings or weather — only a line such as “Someone in your circle is thinking of you.”</p>
-<p>If you add Lowkei to your Home Screen from the browser and allow notifications, our server sends all three: it keeps your browser’s push address and the time each one is due (section 2), and sends them through your browser’s own push service — Apple’s on iPhone, Google’s on Android. They say the same plain lines. A reminder or letter time is deleted once it is sent; the address is deleted when the browser stops accepting notifications or you erase your account.</p>
+<p>In the app, the daily reminder, the 11:11 daily note and a letter’s notice are scheduled on your phone; no server is involved. Circle alerts are sent from our server through Expo’s push service and Google’s Firebase Cloud Messaging. They contain no names, feelings or weather — only a line such as “Someone in your circle is thinking of you.”</p>
+<p>If you add Lowkei to your Home Screen from the browser and allow notifications, our server sends them all: it keeps your browser’s push address, the time each one is due and, for daily notes, their two lines (section 2), and sends them through your browser’s own push service — Apple’s on iPhone, Google’s on Android. A reminder, note or letter time is deleted once it is sent, and the week ahead is replaced each time you open the app; the address is deleted when the browser stops accepting notifications or you erase your account.</p>
 
 <h2>7. This website</h2>
 <p>Our website has no cookies, analytics or advertising. Vercel, which hosts it and the browser version of the app, keeps short-lived request logs, such as IP addresses, for security.</p>

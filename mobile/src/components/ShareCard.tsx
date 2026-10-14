@@ -1,11 +1,12 @@
 import * as Sharing from 'expo-sharing';
-import { useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import Svg, { Circle } from 'react-native-svg';
 
 import { WEATHER_INK, type ChartDay } from '@/lib/chart';
 import type { Reading } from '@/lib/patterns';
+import { canShareImages, renderCard, shareImage } from '@/lib/shareImage';
 import type { StoryLine } from '@/lib/wrapped';
 import { light, radius, space } from '@/theme/tokens';
 import type { Weather } from '@/theme/tokens';
@@ -136,14 +137,48 @@ export function WrappedCard({ story, label }: { story: readonly StoryLine[]; lab
 
 /**
  * A "share" link that renders its card off screen, captures it and opens
- * the share sheet. In the browser preview it explains instead.
+ * the share sheet. On the web the card is drawn ahead of time — the share
+ * sheet only opens straight from a tap — and redrawn when `shareKey` (what
+ * the card shows) changes.
  */
-export function ShareButton({ label, card }: { label: string; card: ReactNode }) {
+export function ShareButton({ label, card, shareKey = label }: { label: string; card: ReactNode; shareKey?: string }) {
   const ref = useRef<View>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const drawn = useRef<{ key: string; blob: Blob } | null>(null);
+
+  const draw = useCallback(async (): Promise<Blob> => {
+    if (drawn.current?.key === shareKey) return drawn.current.blob;
+    const blob = await renderCard(ref.current, light.paper);
+    drawn.current = { key: shareKey, blob };
+    return blob;
+  }, [shareKey]);
+
+  useEffect(() => {
+    if (!canShareImages) return;
+    // After the page (and its fonts) have settled, so the tap finds it ready.
+    const timer = setTimeout(() => draw().catch(err => console.warn('Card not drawn yet:', err)), 1200);
+    return () => clearTimeout(timer);
+  }, [draw]);
+
+  const shareOnWeb = async () => {
+    setNote(null);
+    const ready = drawn.current?.key === shareKey ? drawn.current.blob : null;
+    try {
+      if (!ready) setBusy(true);
+      const result = await shareImage(ready ?? (await draw()));
+      if (result === 'saved') setNote('Saved the card as a picture.');
+      if (result === 'needs-tap') setNote('The card is ready — tap share once more.');
+    } catch (err) {
+      console.warn('Card not shared:', err);
+      setNote('That card didn’t come out. Try once more.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const share = async () => {
+    if (canShareImages) return shareOnWeb();
     setNote(null);
     if (Platform.OS === 'web' || !(await Sharing.isAvailableAsync())) {
       setNote('Sharing works from the phone app.');

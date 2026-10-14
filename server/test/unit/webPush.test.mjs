@@ -58,27 +58,55 @@ test('waiting reflections are kept too; with alerts off, only the reminder', () 
   assert.throws(() => parseSchedule({ reflections: [later(5 * 24 * HOUR)] }, NOW), /too far ahead/);
 });
 
+test('a week of reminders and 11:11 notes, each note with its two lines', () => {
+  const notes = [1, 2].map(d => ({ at: later(d * 24 * HOUR), title: 'Go gently today.', body: 'A grey stretch lately.' }));
+  const rows = parseSchedule({ reminders: [later(9 * HOUR), later(33 * HOUR)], notes, alerts: false }, NOW);
+  assert.deepEqual(rows, [
+    { kind: 'reminder', sendAt: later(9 * HOUR) },
+    { kind: 'reminder', sendAt: later(33 * HOUR) },
+    { kind: 'daily', sendAt: later(24 * HOUR), title: 'Go gently today.', body: 'A grey stretch lately.' },
+    { kind: 'daily', sendAt: later(48 * HOUR), title: 'Go gently today.', body: 'A grey stretch lately.' }
+  ]);
+  // Line breaks and control characters are flattened; nothing empty or long gets through.
+  assert.equal(parseSchedule({ notes: [{ ...notes[0], body: 'one\ntwo' }] }, NOW)[0].body, 'one two');
+  assert.throws(() => parseSchedule({ notes: [{ ...notes[0], title: '' }] }, NOW), WebPushValidationError);
+  assert.throws(() => parseSchedule({ notes: [{ ...notes[0], body: 'x'.repeat(201) }] }, NOW), WebPushValidationError);
+  assert.throws(() => parseSchedule({ notes: [{ ...notes[0], title: 7 }] }, NOW), WebPushValidationError);
+  assert.throws(() => parseSchedule({ notes: Array(9).fill(notes[0]) }, NOW), WebPushValidationError);
+  assert.throws(() => parseSchedule({ reminders: Array(9).fill(later(HOUR)) }, NOW), WebPushValidationError);
+});
+
 test('the schedule refuses what the app would never ask for', () => {
-  assert.throws(() => parseSchedule({ reminderAt: later(5 * 24 * HOUR) }, NOW), /too far ahead/);
+  assert.throws(() => parseSchedule({ reminderAt: later(10 * 24 * HOUR) }, NOW), /too far ahead/);
+  assert.throws(() => parseSchedule({ notes: [{ at: later(10 * 24 * HOUR), title: 'a', body: 'b' }] }, NOW), /too far ahead/);
   assert.throws(() => parseSchedule({ reminderAt: 'tonight' }, NOW), WebPushValidationError);
   assert.throws(() => parseSchedule({ letters: 'soon' }, NOW), WebPushValidationError);
   assert.throws(() => parseSchedule({ letters: Array(101).fill(later(HOUR)) }, NOW), WebPushValidationError);
 });
 
-test('nothing personal, and a tap goes somewhere the app knows', () => {
+test('nothing personal, never "Lowkei" as the title, and a tap goes somewhere the app knows', () => {
   for (const kind of ['reminder', 'test', 'letter', 'reflection', 'request', 'accepted', 'nudge', 'low']) {
     const message = JSON.parse(webMessage(kind));
-    assert.equal(message.title, 'Lowkei');
-    assert.doesNotMatch(message.body, /clear|mild|overcast|fog|storm/i);
+    assert.notEqual(message.title, 'Lowkei');
+    assert.ok(message.title.length > 0, kind);
+    assert.doesNotMatch(message.title, /clear|mild|overcast|fog|storm/i);
     assert.ok(['/', '/circle', '/check-in?mode=letter', '/check-in?mode=vent'].includes(message.url), kind);
   }
   assert.equal(JSON.parse(webMessage('low')).url, '/circle');
   assert.throws(() => webMessage('anything'));
 });
 
+test('the daily note, and a test of it, say what the phone wrote', () => {
+  const text = { title: 'Go gently today.', body: 'A grey stretch lately.' };
+  assert.deepEqual(JSON.parse(webMessage('daily', text)), { ...text, url: '/', tag: 'daily' });
+  assert.deepEqual(JSON.parse(webMessage('test', text)), { ...text, url: '/', tag: 'daily' });
+  assert.throws(() => webMessage('daily', null), WebPushValidationError);
+});
+
 test('a reminder hours late is let go; a letter never is', () => {
   const at = new Date(NOW.getTime() - 3 * HOUR).toISOString();
   assert.equal(worthSending({ kind: 'reminder', send_at: at }, NOW), false);
   assert.equal(worthSending({ kind: 'reminder', send_at: later(-5 * 60 * 1000) }, NOW), true);
+  assert.equal(worthSending({ kind: 'daily', send_at: at }, NOW), false);
   assert.equal(worthSending({ kind: 'letter', send_at: at }, NOW), true);
 });

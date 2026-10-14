@@ -18,12 +18,12 @@ export function publicVapidKey() {
 }
 
 /** Sends one message; true if it went, false if the subscription is gone (and forgotten). */
-async function send(subscription, kind) {
+async function send(subscription, kind, text = null) {
   try {
     await webpush.sendNotification(
       { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
-      webMessage(kind),
-      { TTL: TTL_SECONDS, timeout: TIMEOUT_MS, urgency: ['reminder', 'letter', 'reflection'].includes(kind) ? 'normal' : 'high' }
+      webMessage(kind, text),
+      { TTL: TTL_SECONDS, timeout: TIMEOUT_MS, urgency: ['reminder', 'daily', 'letter', 'reflection'].includes(kind) ? 'normal' : 'high' }
     );
     return true;
   } catch (error) {
@@ -45,22 +45,24 @@ export function notifyWeb(userIds, kind) {
     .catch(err => console.warn(`webPush.${kind} not sent:`, err.message));
 }
 
-/** The test from You: straight to the browser that asked. */
-export async function sendTest(userId, endpoint) {
+/** The test from You — today's note, if the app sent it — straight to the browser that asked. */
+export async function sendTest(userId, endpoint, text = null) {
   const subscription = await store.find(userId, endpoint);
-  return subscription ? send(subscription, 'test') : false;
+  return subscription ? send(subscription, 'test', text) : false;
 }
 
 /**
- * Sends every reminder and letter notice that has come due. Rows are taken
- * off first, so a slow or failing push is never sent twice.
+ * Sends every reminder, daily note and letter notice that has come due. Rows
+ * are taken off first, so a slow or failing push is never sent twice.
  */
 export async function sendDue(now = new Date()) {
   const rows = await store.due(now);
   if (rows.length === 0) return 0;
   await store.done(rows.map(r => r.id));
   const results = await Promise.allSettled(
-    rows.filter(r => r.subscription && worthSending(r, now)).map(r => send(r.subscription, r.kind))
+    rows
+      .filter(r => r.subscription && worthSending(r, now))
+      .map(r => send(r.subscription, r.kind, r.kind === 'daily' ? { title: r.title, body: r.body } : null))
   );
   for (const r of results) if (r.status === 'rejected') console.warn('webPush scheduled not sent:', r.reason?.message);
   return results.filter(r => r.status === 'fulfilled' && r.value).length;
