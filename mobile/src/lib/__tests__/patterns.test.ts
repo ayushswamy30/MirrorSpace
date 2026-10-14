@@ -1,5 +1,6 @@
 import type { CheckIn } from '../checkIns';
-import { buildReading, facts, GENERAL_READING, innerWeather, today } from '../patterns';
+import { facts, innerWeather, today } from '../patterns';
+import { generalReading } from '../reading';
 
 const NOW = new Date('2026-09-29T20:00:00Z');
 const HOUR = 60 * 60 * 1000;
@@ -80,20 +81,9 @@ describe('facts', () => {
 });
 
 describe('the reading', () => {
-  test('no weather reads as the general reading', () => {
-    expect(buildReading(null, undefined)).toBe(GENERAL_READING);
-  });
-
-  test('the strongest fact becomes the subtext; the day count never does', () => {
-    const fact = { key: 'unpleasant', text: 'A heavier week.', receipt: '', weight: 1 };
-    expect(buildReading('fog', fact).subtext).toBe('A heavier week.');
-    const days = { key: 'days', text: 'You checked in on 2 of the last 7 days.', receipt: '', weight: 0 };
-    expect(buildReading('fog', days).subtext).not.toBe(days.text);
-  });
-
   test('with readings consent off: general reading, no weather, no facts', () => {
-    const t = today([ci(1, -4, -4), ci(2, -4, -4), ci(3, -4, -4)], { personal: false, todayDate: '2026-09-29', now: NOW });
-    expect(t).toMatchObject({ weather: null, reading: GENERAL_READING, facts: [] });
+    const t = today([ci(1, -4, -4), ci(2, -4, -4), ci(3, -4, -4)], { personal: false, todayDate: '2026-09-29', now: NOW, seed: 'a' });
+    expect(t).toMatchObject({ weather: null, reading: generalReading('a', '2026-09-29'), facts: [] });
   });
 
   test('knows whether there has been a check-in today', () => {

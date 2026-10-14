@@ -11,8 +11,9 @@ import { isWebApp } from './preview';
  *
  * A browser can't schedule a notification for later, so the server sends
  * them: the browser subscribes with the browser's own push service and hands
- * the API that address with the times of the next reminder, each sealed
- * letter and each waiting reflection. Only times — never what was written.
+ * the API that address with the times of the week's reminders, each sealed
+ * letter and each waiting reflection, and the week's 11:11 notes with their
+ * two lines (written on the phone; never a feeling word or anything written).
  * Circle alerts reach the same address. The service worker (site/app/sw.js)
  * shows them.
  */
@@ -129,20 +130,27 @@ async function upcoming(now: Date): Promise<{ letters: string[]; reflections: st
 
 let lastSent: string | null = null;
 
+/** A note to show at a time: the 11:11 daily note. */
+export type TimedNote = { at: Date; title: string; body: string };
+
 /**
  * Tells the server where this browser's notifications go, whether it wants
- * more than the reminder, and when the next reminder (or none), each sealed
- * letter and each waiting reflection are due. Does nothing until
- * notifications are allowed; never asks.
+ * more than the reminders, the week's reminders and 11:11 notes (with what
+ * each note says), and when each sealed letter and waiting reflection is
+ * due. Does nothing until notifications are allowed; never asks.
  */
-export async function syncWebPush(reminderAt: Date | null, now: Date = new Date()): Promise<boolean> {
+export async function syncWebPush(
+  week: { reminders: readonly Date[]; notes: readonly TimedNote[] },
+  now: Date = new Date()
+): Promise<boolean> {
   if (!webPushAllowed()) return false;
   const sub = await subscription();
   if (!sub) return false;
   const body = {
     subscription: sub.toJSON(),
     alerts: (await kv.get(ALERTS_KEY)) !== '0',
-    reminderAt: reminderAt?.toISOString() ?? null,
+    reminders: week.reminders.map(at => at.toISOString()),
+    notes: week.notes.map(n => ({ at: n.at.toISOString(), title: n.title, body: n.body })),
     ...(await upcoming(now))
   };
   const signature = JSON.stringify(body);
@@ -152,12 +160,12 @@ export async function syncWebPush(reminderAt: Date | null, now: Date = new Date(
   return true;
 }
 
-/** The test reminder, sent by the server straight away. */
-export async function sendWebTest(): Promise<boolean> {
+/** A test, sent by the server straight away: today's note, as it stands. */
+export async function sendWebTest(note: { title: string; body: string }): Promise<boolean> {
   if (!webPushAllowed()) return false;
   const sub = await subscription();
   if (!sub) return false;
-  await api().post('/user/web-push/test', { endpoint: sub.endpoint });
+  await api().post('/user/web-push/test', { endpoint: sub.endpoint, title: note.title, body: note.body });
   return true;
 }
 

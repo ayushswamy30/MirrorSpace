@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import * as checkIns from '@/lib/checkIns';
+import { today } from '@/lib/patterns';
+import { generalReading } from '@/lib/reading';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 import Today from '@/app/(tabs)/index';
@@ -87,7 +89,8 @@ test('with no check-ins: a general reading and a way to start', async () => {
   mocked.allCheckIns.mockResolvedValue([]);
   await renderToday();
 
-  expect(screen.getByText('Notice one thing today.')).toBeTruthy();
+  // Written for this person and this day — the general one, with nothing to read yet.
+  expect(screen.getByText(generalReading('', checkIns.localDate(new Date())).headline)).toBeTruthy();
   expect(screen.queryByText('inner weather')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'check in' }));
   expect(mockNavigate).toHaveBeenCalledWith('/check-in');
@@ -95,15 +98,18 @@ test('with no check-ins: a general reading and a way to start', async () => {
 
 test('a low, heavy few days read as fog, with the facts behind it', async () => {
   // The newest is "now", so it's today whatever time the suite runs.
-  mocked.allCheckIns.mockResolvedValue([checkIn(30, -4, -4), checkIn(20, -3, -3), checkIn(0, -4, -3)]);
+  const list = [checkIn(30, -4, -4), checkIn(20, -3, -3), checkIn(0, -4, -3)];
+  mocked.allCheckIns.mockResolvedValue(list);
   await renderToday();
 
   // Heavy days open on the gentle screen; the whole day is one tap away.
   fireEvent.press(screen.getByRole('button', { name: 'show the whole day' }));
-  expect(screen.getByText('Small steps count.')).toBeTruthy();
+  const { reading } = today(list, { personal: true, todayDate: checkIns.localDate(new Date()), now: new Date(), sleep: [] });
+  expect(screen.getByText(reading.headline)).toBeTruthy();
+  expect(screen.getByText(reading.subtext)).toBeTruthy();
   expect(screen.getByText('fog')).toBeTruthy();
   expect(screen.getByText('behind this reading')).toBeTruthy();
-  expect(screen.getByText(/low on energy/)).toBeTruthy();
+  expect(screen.getAllByText(/low on energy/).length).toBeGreaterThan(0);
   expect(screen.getByLabelText(/^Do: /)).toBeTruthy();
   // Checked in today already: no nudge.
   expect(screen.queryByRole('button', { name: 'check in' })).toBeNull();
@@ -115,7 +121,7 @@ test('readings consent off: the same check-ins give the general reading', async 
   await renderToday();
 
   fireEvent.press(screen.getByRole('button', { name: 'show the whole day' }));
-  expect(screen.getByText('Notice one thing today.')).toBeTruthy();
+  expect(screen.getByText(generalReading('', checkIns.localDate(new Date())).headline)).toBeTruthy();
   expect(screen.queryByText('fog')).toBeNull();
 });
 

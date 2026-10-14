@@ -24,7 +24,18 @@ import {
 import { citations, memoryForMirror } from '@/lib/memory';
 import { reflectionsPaused } from '@/lib/safety/log';
 import { useProfile } from '@/lib/session';
-import { downloadVoiceModel, readAloudOn, setReadAloud, speak, stopSpeaking, useListening, voiceReadiness } from '@/lib/voice';
+import { kv } from '@/lib/db/kv';
+import {
+  downloadVoiceModel,
+  primeSpeech,
+  readAloudOn,
+  setReadAloud,
+  speak,
+  stopSpeaking,
+  useListening,
+  voiceReadiness,
+  WEB_VOICE_NOTE
+} from '@/lib/voice';
 import { answerConcern } from '@/lib/safety/respond';
 import { atLeast, screenText } from '@/lib/safety/screen';
 import { dark, gutter, hitTarget, space } from '@/theme/tokens';
@@ -41,6 +52,8 @@ import { fonts } from '@/theme/typography';
 
 const LIGHT = dark.ink;
 const SOFT = dark.inkSoft;
+/** Whether the web app has said who does the listening. */
+const WEB_VOICE_SEEN = 'mirror.voice.web-noted';
 
 type Note = { kind: 'care' | 'withheld' | 'quiet' | 'error'; text: string } | null;
 
@@ -79,7 +92,15 @@ function Room() {
       return;
     }
     const ready = await voiceReadiness().catch(() => 'unavailable' as const);
-    if (ready === 'ready') hearing.start();
+    if (ready === 'ready' && Platform.OS === 'web') {
+      hearing.start();
+      // Once: who does the listening in a browser.
+      if ((await kv.get(WEB_VOICE_SEEN).catch(() => null)) !== '1') {
+        setVoiceNote({ text: WEB_VOICE_NOTE });
+        kv.set(WEB_VOICE_SEEN, '1').catch(() => undefined);
+      }
+    } else if (ready === 'ready') hearing.start();
+    else if (Platform.OS === 'web') setVoiceNote({ text: 'This browser can’t turn speech into words. The keyboard’s mic works here instead.' });
     else if (ready === 'needs-model') setVoiceNote({ text: 'Voice works on the phone itself, so it needs Android’s English speech model first.', download: true });
     else if (ready === 'no-permission') setVoiceNote({ text: 'Voice needs the microphone. You can allow it in your phone’s settings.' });
     else if (ready === 'needs-app-build') setVoiceNote({ text: 'Voice needs Lowkei’s own app build — not Expo Go or the preview.' });
@@ -117,6 +138,8 @@ function Room() {
       return;
     }
 
+    // Still inside the tap: lets the browser read the answer aloud later.
+    if (readAloud) primeSpeech();
     setSending(true);
     setText('');
     try {
@@ -170,6 +193,7 @@ function Room() {
               label={readAloud ? 'reading answers aloud · stop' : 'read answers aloud'}
               onPress={() => {
                 const next = !readAloud;
+                if (next) primeSpeech();
                 setReadAloudState(next);
                 setReadAloud(next).catch(() => undefined);
               }}
@@ -250,7 +274,7 @@ function Room() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={hearing.listening ? 'stop listening' : 'speak'}
-              accessibilityHint="Turns what you say into words here, on the phone"
+              accessibilityHint={Platform.OS === 'web' ? 'Turns what you say into words' : 'Turns what you say into words here, on the phone'}
               onPress={speakInstead}
               disabled={sending}
               hitSlop={6}

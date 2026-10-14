@@ -47,7 +47,8 @@ export function weekOf(anchor: Date, weekStart: WeekStart): Date[] {
 export function dayRecord(
   date: Date,
   data: { checkIns: readonly CheckIn[]; sleep: readonly SleepLog[]; pages: readonly Vent[] },
-  personal: boolean
+  personal: boolean,
+  seed = ''
 ): DayRecord {
   const key = localDate(date);
   const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
@@ -58,7 +59,14 @@ export function dayRecord(
 
   return {
     date: key,
-    view: today(sofar, { personal, todayDate: key, now: endOfDay, sleep: data.sleep.filter(l => l.wakeDate <= key) }),
+    view: today(sofar, {
+      personal,
+      todayDate: key,
+      now: endOfDay,
+      sleep: data.sleep.filter(l => l.wakeDate <= key),
+      pages: data.pages,
+      seed
+    }),
     weather: weatherOf(own),
     checkIns: own,
     night: data.sleep.find(l => l.wakeDate === key) ?? null,
@@ -93,6 +101,7 @@ export function useDays(): Data | null {
 }
 
 export function useDayRecord(date: Date, data: Data | null): DayRecord | null {
-  const personal = useProfile().consents.readings?.granted === true;
-  return data ? dayRecord(date, data, personal) : null;
+  const profile = useProfile();
+  const personal = profile.consents.readings?.granted === true;
+  return data ? dayRecord(date, data, personal, profile.id) : null;
 }

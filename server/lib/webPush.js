@@ -3,8 +3,13 @@
  * browser may register, the times it may ask for, and what each message
  * says. Kept free of network and database code so it can be unit tested.
  *
- * The same lock-screen rule as the phone: no names, no feelings, no weather,
- * nothing of a letter.
+ * The same lock-screen rule as the phone: no names, no weather, nothing of a
+ * letter. The one message with words from the app is the 11:11 daily note,
+ * written on the person's own phone from their day (a headline and a line);
+ * the server only checks its size and passes it on.
+ *
+ * The phone and the browser already show the app's name and icon, so a
+ * message's title is what it says — never "Lowkei" a second time.
  */
 
 import { MESSAGES } from './push.js';
@@ -16,8 +21,12 @@ const P256DH = /^[A-Za-z0-9_-]{80,100}$/;
 const AUTH = /^[A-Za-z0-9_-]{16,32}$/;
 
 const DAY = 24 * 60 * 60 * 1000;
-// The next reminder is at most a day and a bit away; a letter at most a year.
-const REMINDER_HORIZON = 2 * DAY;
+// A week of reminders and daily notes at a time; a letter at most a year away.
+const REMINDER_HORIZON = 9 * DAY;
+const MAX_REMINDERS = 8;
+const MAX_NOTES = 8;
+const TITLE_MAX = 80;
+const BODY_MAX = 200;
 const LETTER_HORIZON = 400 * DAY;
 const MAX_LETTERS = 100;
 // A reflection shows a few hours after its page is kept.
@@ -76,42 +85,78 @@ export function parseAlerts(body) {
   return body.alerts;
 }
 
+/** Plain, single-line text of at most `max` characters. */
+function line(value, max, field) {
+  if (typeof value !== 'string') throw new WebPushValidationError(`${field} must be text`);
+  // eslint-disable-next-line no-control-regex
+  const text = value.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim();
+  if (!text || text.length > max) throw new WebPushValidationError(`${field} must be 1 to ${max} characters`);
+  return text;
+}
+
+/** A daily note's two lines: a headline and what's under it. */
+export function parseNoteText(value, field = 'note') {
+  return { title: line(value?.title, TITLE_MAX, `${field}.title`), body: line(value?.body, BODY_MAX, `${field}.body`) };
+}
+
+/** The week's reminders; an older app sends just the next one as `reminderAt`. */
+function reminders(body, now) {
+  if (body?.reminders != null) return dates(body, 'reminders', 'reminder', MAX_REMINDERS, REMINDER_HORIZON, now);
+  if (body?.reminderAt == null) return [];
+  const at = when(body.reminderAt, now, REMINDER_HORIZON, 'reminderAt');
+  return at > now ? [{ kind: 'reminder', sendAt: at.toISOString() }] : [];
+}
+
+/** The week's 11:11 notes, each with its time and its two lines. */
+function notes(body, now) {
+  const values = body?.notes ?? [];
+  if (!Array.isArray(values) || values.length > MAX_NOTES) throw new WebPushValidationError(`notes must be at most ${MAX_NOTES} notes`);
+  return values
+    .map((note, i) => ({ at: when(note?.at, now, REMINDER_HORIZON, `notes[${i}].at`), ...parseNoteText(note, `notes[${i}]`) }))
+    .filter(note => note.at > now)
+    .map(({ at, title, body: text }) => ({ kind: 'daily', sendAt: at.toISOString(), title, body: text }));
+}
+
 /**
- * The next reminder (or null), each sealed letter's day and each waiting
- * reflection's hour, as rows to keep. Times already past are dropped: the
- * app asks again whenever it opens. With alerts off, only the reminder.
+ * The week's reminders and daily notes, each sealed letter's day and each
+ * waiting reflection's hour, as rows to keep. Times already past are dropped:
+ * the app asks again whenever it opens. With alerts off, only the reminders
+ * and the notes.
  */
 export function parseSchedule(body, now = new Date()) {
-  const rows = [];
-  if (body?.reminderAt != null) {
-    const at = when(body.reminderAt, now, REMINDER_HORIZON, 'reminderAt');
-    if (at > now) rows.push({ kind: 'reminder', sendAt: at.toISOString() });
-  }
+  const rows = [...reminders(body, now), ...notes(body, now)];
   const letters = dates(body, 'letters', 'letter', MAX_LETTERS, LETTER_HORIZON, now);
   const reflections = dates(body, 'reflections', 'reflection', MAX_REFLECTIONS, REFLECTION_HORIZON, now);
   return parseAlerts(body) ? [...rows, ...letters, ...reflections] : rows;
 }
 
 const WEB_MESSAGES = {
-  reminder: { body: 'A word for today, if you have one.', url: '/' },
-  test: { body: 'A word for today, if you have one.', url: '/' },
-  letter: { body: 'A letter you wrote is ready, when you are.', url: '/check-in?mode=letter' },
-  reflection: { body: 'A reflection on something you wrote is waiting.', url: '/check-in?mode=vent' },
-  ...Object.fromEntries(Object.entries(MESSAGES).map(([kind, { body }]) => [kind, { body, url: '/circle' }]))
+  reminder: { title: 'A word for today, if you have one.', url: '/' },
+  test: { title: 'A word for today, if you have one.', url: '/' },
+  letter: { title: 'A letter you wrote is ready, when you are.', url: '/check-in?mode=letter' },
+  reflection: { title: 'A reflection on something you wrote is waiting.', url: '/check-in?mode=vent' },
+  ...Object.fromEntries(Object.entries(MESSAGES).map(([kind, { body }]) => [kind, { title: body, url: '/circle' }]))
 };
 
-/** What the service worker shows: a title, a line, and where a tap goes. */
-export function webMessage(kind) {
+/**
+ * What the service worker shows: what it says, and where a tap goes. The
+ * daily note (and a test of it) brings its own two lines.
+ */
+export function webMessage(kind, text = null) {
+  const tag = ['test', 'daily'].includes(kind) ? 'daily' : ['reminder', 'letter', 'reflection'].includes(kind) ? kind : undefined;
+  if (kind === 'daily' || (kind === 'test' && text)) {
+    const { title, body } = parseNoteText(text);
+    return JSON.stringify({ title, body, url: '/', tag });
+  }
   const message = WEB_MESSAGES[kind];
   if (!message) throw new Error(`unknown web push kind: ${kind}`);
-  // One reminder, letter or reflection notice on screen at a time; each Circle alert stands alone.
-  const tag = kind === 'test' ? 'reminder' : ['reminder', 'letter', 'reflection'].includes(kind) ? kind : undefined;
-  return JSON.stringify({ title: 'Lowkei', body: message.body, url: message.url, ...(tag ? { tag } : {}) });
+  // One reminder, note, letter or reflection notice on screen at a time; each Circle alert stands alone.
+  return JSON.stringify({ title: message.title, url: message.url, ...(tag ? { tag } : {}) });
 }
 
-/** Due rows worth sending now: a reminder that is hours late is let go. */
+/** Due rows worth sending now: a reminder or a note that is hours late is let go. */
 export function worthSending(row, now = new Date()) {
-  return row.kind !== 'reminder' || now.getTime() - new Date(row.send_at).getTime() <= STALE_REMINDER_MS;
+  return !['reminder', 'daily'].includes(row.kind) || now.getTime() - new Date(row.send_at).getTime() <= STALE_REMINDER_MS;
 }
 
 /** The push service says this subscription is gone for good. */
